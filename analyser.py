@@ -63,6 +63,26 @@ def analyser(chemin):
             for n, c in collections.Counter(i["nature"] for i in inc).most_common():
                 print(f"    {n:24s} {c}")
 
+    rec = [e for e in evs if e["schema"] == "recuperation.v1"]
+    if rec:
+        vides = sum(1 for r in rec if r["nb_resultats"] == 0)
+        moyenne = sum(r["nb_resultats"] for r in rec) / len(rec)
+        print(f"\nRECUPERATION  {len(rec)} recherches, "
+              f"{moyenne:.2f} passage(s) par decision, "
+              f"{vides} recherche(s) sans resultat ({vides/len(rec):.1%})")
+        tires = collections.Counter()
+        scores = collections.defaultdict(list)
+        for r in rec:
+            for x in r["resultats"]:
+                tires[x["id"]] += 1
+                scores[x["id"]].append(x["score"])
+        print("  documents les plus retrouves :")
+        for doc, n in tires.most_common(6):
+            moy = sum(scores[doc]) / len(scores[doc])
+            print(f"    {doc:24s} {n:4d} fois, score moyen {moy:5.2f}")
+        jamais = len({d for d in tires}) 
+        print(f"  {jamais} document(s) different(s) effectivement utilise(s)")
+
     if bilan.get("appels"):
         print(f"\nCOUT  {bilan['appels']} appels, "
               f"{bilan['tokens_entree']} tokens entree, "

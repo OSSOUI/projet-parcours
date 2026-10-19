@@ -23,6 +23,7 @@ python3 simuler.py --agents 20 --jours 25 --mode asynchrone --fournisseur groq -
 
 # Vérifications des agents, sans aucun appel réseau
 python3 tests/test_agents.py
+python3 tests/test_rag.py
 ```
 
 ### Avec la visualisation
@@ -227,6 +228,53 @@ du sujet :
 
 Chacune agit sur la **situation**, jamais sur la décision d'un agent.
 
+## Ce que fait l'étape 3
+
+### Le corpus de Tessaline (`corpus/`)
+
+Neuf documents fictifs, écrits pour ce projet : trois archives du journal
+étudiant *La Criée* sur les modes passées du campus (les lacets dépareillés, les
+badges émaillés, le bonnet de mai), les chartes de trois associations, le
+règlement des résidences, un portrait de l'atelier de design, et une enquête sur
+le ruban qui paraît **au jour 9 de la simulation**.
+
+Chaque document porte un en-tête qui dit qui peut le lire et à partir de quand.
+
+### La recherche (`ephemere/rag.py`)
+
+BM25 écrit à la main, soixante lignes, aucune dépendance. Le sujet autorise les
+frameworks à condition de savoir expliquer leur fonctionnement interne : BM25 se
+démontre au tableau, un moteur vectoriel beaucoup moins, et sur neuf documents il
+n'apporterait rien de mesurable.
+
+Deux filtres s'appliquent **avant** le classement, et ils ne sont pas cosmétiques.
+
+**Le temps.** Un article paru au jour 9 n'existe pas pour un agent qui décide au
+jour 4. Vérifié : la même requête ne renvoie l'enquête sur le ruban qu'à partir
+du jour 9, jamais avant. Sans ce filtre, les agents citeraient l'avenir et
+l'exigence C6 tomberait.
+
+**Le groupe.** La charte de l'atelier de design n'est lisible que par ses
+membres. Vérifié : elle est invisible depuis la résidence B, visible pour un
+membre de l'atelier.
+
+### Ce que chaque agent va chercher
+
+La requête dépend du profil, donc deux agents dans la même situation ne
+retrouvent pas la même chose. Un pionnier cherche autour de « se distinguer,
+devenir banal, abandonner les premiers », un réfractaire autour de « refuser une
+mode par principe ». C'est ce qui rend la récupération défendable, et c'est aussi
+une partie de la réponse à l'exigence A3.
+
+### La preuve (exigence F2)
+
+Chaque recherche produit un événement `recuperation.v1` qui contient la requête,
+les identifiants retrouvés, leurs scores et le jour de chaque document.
+`analyser.py` en sort le nombre de recherches, la moyenne de passages par
+décision, la part de recherches sans résultat et les documents les plus
+retrouvés. C'est ce tableau qui répond à « montrez la qualité de votre
+récupération », et à la question Q5 du jury.
+
 ## Couverture des exigences
 
 | Exigence | État à l'étape 1 |
@@ -251,13 +299,16 @@ Chacune agit sur la **situation**, jamais sur la décision d'un agent.
 | D2 inspection d'un agent | fait |
 | D3 injection depuis l'interface | fait |
 | E3 rejeu sans appel LLM | fait, `pont.py --rejeu` |
-| F1 F2 F3 RAG et corpus | étape 3, reste à faire |
+| F1 décisions appuyées sur une base de connaissances | fait |
+| F2 qualité de la récupération démontrée | fait, traçée dans le flux |
+| F3 où vivent flux, état, historique, base | fait |
+| C6 cohérence temporelle de l'information | fait, vérifié par les tests |
 | B3 E2 E5 protocole expérimental | étape 6, reste à faire |
 
 ## Suite
 
 2. ~~Agents LLM, mémoire et échanges~~ fait
-3. Corpus de Tessaline et RAG (F1, F2, F3)
+3. ~~Corpus de Tessaline et RAG~~ fait
 4. ~~Kafka et pont WebSocket~~ fait
 5. ~~Scène Godot, inspection, injection~~ fait
 6. Protocole expérimental, runs répétés, bilan de sobriété (B3, E2, E5)
@@ -280,10 +331,12 @@ Ephemere/
     bus.py              publication des événements dans Kafka
     campus.py           reconstruction de l'état à partir du flux
     commandes.py        injections venues de la scène
+    rag.py              base de connaissances et recherche BM25
     journal.py          écriture des événements et isolement des rejets
   tests/test_agents.py  vérifications hors ligne des agents
+  tests/test_rag.py     vérifications du corpus et des filtres
   runs/                 un fichier .jsonl par run
-  corpus/               base de connaissances de Tessaline (étape 3)
+  corpus/               les neuf documents fictifs de Tessaline
   pont.py               Kafka vers WebSocket, et rejeu d'un run
   analyser.py           chiffres d'un run, pour le rapport
   docker-compose.yml    Kafka en un seul nœud

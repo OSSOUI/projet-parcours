@@ -47,6 +47,8 @@ CORPS = {
                        "sens_dominant": str, "part_sens_dominant": float,
                        "porteurs": list},
     "injection.v1": {"nature": str, "details": dict, "source": str},
+    "recuperation.v1": {"agent": str, "requete": str, "resultats": list,
+                        "nb_resultats": int, "corpus": dict},
     "incident.v1": {"agent": (str, NUL), "nature": str, "details": dict},
     "bilan.v1": {"appels": int, "tokens_entree": int, "tokens_sortie": int,
                  "duree_run_s": float, "interrompu": bool,

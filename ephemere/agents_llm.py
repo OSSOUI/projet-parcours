@@ -37,6 +37,9 @@ Ce que tu as lu sur le reseau interne depuis ton dernier passage :
 Ce dont tu te souviens :
 {souvenirs}
 
+Ce que tu as lu ou entendu dire sur le campus :
+{documents}
+
 Aujourd'hui, tu {etat} le ruban. Decide pour la suite.
 
 Reponds par un objet JSON avec exactement ces six champs :
@@ -148,13 +151,33 @@ def souvenirs(agent, limite_recents=4):
     return "\n".join(lignes)
 
 
+# Ce que chaque profil va chercher dans la base. La requete depend de l'agent,
+# donc deux profils places dans la meme situation ne retrouvent pas la meme
+# chose : c'est ce qui rend la recuperation defendable (exigences F1 et A3).
+ANGLES = {
+    "pionnier": "se distinguer cercle creatif devenir banal abandonner les premiers",
+    "figure_populaire": "populaire imite surprendre entrainer le campus",
+    "suiveur": "adopter attendre que le groupe s'y mette majorite",
+    "refractaire": "refuser une mode par principe detonner",
+    "ironique": "detournement moquerie second degre tourner en derision",
+}
+
+
+def requete_de(agent):
+    """La question que l'agent se pose, transformee en requete documentaire."""
+    etat = "je le porte" if agent["porte"] else "je ne le porte pas"
+    return (f"ruban au poignet mode du campus {etat} "
+            f"{agent.get('categorie', '')} {ANGLES.get(agent['profil'], '')}")
+
+
 class DecideurLLM:
     """Un moteur par taille de modele : llm_grand ou llm_petit (exigence A5)."""
 
-    def __init__(self, client, taille, personnalites=None):
+    def __init__(self, client, taille, base=None, k=3):
         self.client = client
         self.taille = taille
-        self.personnalites = personnalites or {}
+        self.base = base      # base de connaissances, exigence F1
+        self.k = k
 
     def _situation(self, agent):
         """Ce que l'agent sait de SA propre histoire avec le ruban.
@@ -172,7 +195,18 @@ class DecideurLLM:
         return ("Tu n'as pas de ruban au poignet. Certains etudiants du campus "
                 "en portent un depuis quelques jours.")
 
-    def _consigne(self, agent, monde, t_sim, horloge_lisible):
+    def _recuperer(self, agent, t_sim):
+        """Interroge la base avec les filtres de temps et de groupe (F1, C6)."""
+        if self.base is None:
+            return "", []
+        jour = t_sim // 1440 + 1
+        requete = requete_de(agent)
+        trouves = self.base.chercher(requete, jour, agent["groupe"], k=self.k)
+        if not trouves:
+            return requete, []
+        return requete, trouves
+
+    def _consigne(self, agent, monde, t_sim, horloge_lisible, documents=None):
         groupe = agent["groupe"]
         porteurs, pairs = monde.porteurs_du_groupe(agent)
         noms = [a["nom"] for a in porteurs]
@@ -188,6 +222,9 @@ class DecideurLLM:
             noms_groupe=(" : " + ", ".join(noms)) if noms else "",
             nb_campus=nb_campus, total=len(monde.agents),
             tendance=monde.tendance(),
+            documents="\n".join(
+                f"- {d['titre']} ({d['source']}) : {d['passage'][:220]}"
+                for d in (documents or [])) or "- (rien qui te revienne)",
             messages="\n".join(
                 f"- {m['nom_auteur']} : {m['texte']}" for m in messages
             ) or "- (rien de nouveau)",
@@ -200,7 +237,8 @@ class DecideurLLM:
         )
 
     def decider(self, agent, monde, t_sim, horloge_lisible=""):
-        consigne = self._consigne(agent, monde, t_sim, horloge_lisible)
+        requete, documents = self._recuperer(agent, t_sim)
+        consigne = self._consigne(agent, monde, t_sim, horloge_lisible, documents)
         reponse = self.client.json(SYSTEME, consigne, self.taille)
         mesure = dict(self.client.derniere_mesure)
         nature, details = detecter_derive(reponse)
@@ -214,7 +252,8 @@ class DecideurLLM:
                     "publication": "", "destinataire": "",
                     "valide": False, "moteur": self.taille,
                     "incident": {"nature": nature, "details": details},
-                    "mesure": mesure}
+                    "mesure": mesure,
+                    "recuperation": {"requete": requete, "resultats": documents}}
 
         return {"porte": reponse["porte"],
                 "categorie": reponse["categorie"],
@@ -222,4 +261,5 @@ class DecideurLLM:
                 "raison": str(reponse.get("raison", ""))[:300],
                 "publication": str(reponse.get("publication", ""))[:280],
                 "destinataire": str(reponse.get("destinataire", ""))[:60],
-                "valide": True, "moteur": self.taille, "mesure": mesure}
+                "valide": True, "moteur": self.taille, "mesure": mesure,
+                "recuperation": {"requete": requete, "resultats": documents}}

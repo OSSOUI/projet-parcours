@@ -19,6 +19,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from ephemere import population
 from ephemere.agents_llm import DecideurLLM
 from ephemere import commandes as cmd
+from ephemere.rag import Base
 from ephemere.contrat import VERSION_CONTRAT
 from ephemere.horloge import MINUTES_PAR_JOUR, Echeancier, Horloge
 from ephemere.journal import Journal
@@ -28,7 +29,7 @@ from ephemere.regles import Regles
 RACINE = os.path.dirname(os.path.abspath(__file__))
 
 
-def fabriquer_decideurs(agents, args, config):
+def fabriquer_decideurs(agents, args, config, base=None):
     """Un moteur de decision par agent (exigences A5 et A6).
 
     Renvoie (decideurs, client). Les agents a regles et les agents LLM
@@ -53,7 +54,7 @@ def fabriquer_decideurs(agents, args, config):
         client = ClientLLM(args.fournisseur, modeles, pause=args.pause,
                            attente_max=args.attente_max)
         for taille in tailles:
-            moteurs[taille] = DecideurLLM(client, taille)
+            moteurs[taille] = DecideurLLM(client, taille, base=base, k=args.passages)
             print(f"  {taille:10s} -> {modeles[taille]}")
     return {a["id"]: moteurs[a["moteur"]] for a in agents}, client
 
@@ -63,6 +64,15 @@ def enregistrer(journal, monde, agent, d, horloge):
     journal.ecrire("decision.v1", agent=agent["id"], porte=d["porte"],
                    categorie=d["categorie"], sens=d["sens"], raison=d["raison"],
                    moteur=agent["moteur"], valide=d["valide"])
+    rec = d.get("recuperation")
+    if rec and rec.get("requete"):
+        # Trace de ce qui a ete retrouve : c'est la preuve demandee par F2.
+        journal.ecrire("recuperation.v1", agent=agent["id"], requete=rec["requete"],
+                       resultats=[{"id": r["id"], "score": r["score"],
+                                   "jour": r["jour"], "numero": r["numero"]}
+                                  for r in rec["resultats"]],
+                       nb_resultats=len(rec["resultats"]),
+                       corpus={"passages_demandes": len(rec["resultats"])})
     if d.get("incident"):
         journal.ecrire("incident.v1", agent=agent["id"],
                        nature=d["incident"]["nature"], details=d["incident"]["details"])
@@ -209,6 +219,10 @@ def main():
                    help="intervalle entre deux releves d'indicateurs")
     p.add_argument("--tout-regles", action="store_true",
                    help="aucun agent LLM : c'est la baseline de l'exigence E1")
+    p.add_argument("--corpus", default=os.path.join(RACINE, "corpus"),
+                   help="dossier de la base de connaissances (exigence F1)")
+    p.add_argument("--passages", type=int, default=3,
+                   help="nombre de passages retrouves par decision")
     p.add_argument("--kafka", nargs="?", const="localhost:9092", default=None,
                    metavar="SERVEUR",
                    help="publie aussi les evenements dans Kafka (defaut localhost:9092)")
@@ -222,7 +236,9 @@ def main():
     print(f"  profils : {resume['par_profil']}")
     print(f"  moteurs : {resume['par_moteur']}")
 
-    decideurs, client = fabriquer_decideurs(agents, args, config)
+    base = Base(args.corpus)
+    print(f"  corpus  : {base.resume()}")
+    decideurs, client = fabriquer_decideurs(agents, args, config, base=base)
     print()
     monde = Monde(agents, config.get("perception"))
     horloge = Horloge(0)
