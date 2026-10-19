@@ -4,3 +4,11 @@ __pycache__/
 .env
 .DS_Store
 godot/.godot/
+
+# Les runs sont des resultats, pas des sources. On ne garde que ceux qui
+# servent de preuve : les dix runs du protocole experimental (exigences B3 et
+# E2) et les runs de demonstration, rejouables en soutenance. Tous les autres
+# se regenerent avec experience.py.
+runs/*
+!runs/exp_*.jsonl
+!runs/demo_*.jsonl
