@@ -35,8 +35,8 @@
       "justification_moteur": "Son basculement entraine les autres : une decision mal raisonnee ici deforme tout le run.",
       "minimum": 1,
       "seuil": [
-        0.08,
-        0.2
+        0.05,
+        0.15
       ]
     },
     "suiveur": {
@@ -50,9 +50,10 @@
       "justification_moteur": "Sa decision est surtout de l'imitation. Six suiveurs sur dix peuvent etre des agents a regles sans rien perdre, et c'est la le levier de sobriete (E5).",
       "minimum": 3,
       "seuil": [
-        0.12,
-        0.4
-      ]
+        0.05,
+        0.45
+      ],
+      "commentaire_seuil": "Borne basse a 0,05 volontairement : un modele a seuils ne produit de cascade que s'il existe des agents dont le seuil est inferieur a la fraction initiale de porteurs (Granovetter, 1978). Avec une borne a 0,12, aucun suiveur ne pouvait reagir aux deux pionnieres du depart, et la mode ne s'allumait qu'une fois sur cinq, par hasard."
     },
     "refractaire": {
       "part": 0.15,

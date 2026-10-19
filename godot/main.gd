@@ -12,7 +12,7 @@ const RAYON := 22.0
 
 # Une couleur par sens possible du ruban. C'est la lecture principale de
 # la scene : la couleur dit ce que le ruban VEUT DIRE pour cet etudiant.
-const COULEURS := {
+var COULEURS := {
 	"cercle_creatif": Color("#7b5cd6"),
 	"tendance": Color("#2a9d8f"),
 	"suivre_la_foule": Color("#e9a23b"),
@@ -25,10 +25,10 @@ const LIBELLES := {
 	"suivre_la_foule": "suit la foule", "ringard": "ringard",
 	"ironie": "ironie", "aucun_sens": "aucun sens",
 }
-const FOND := Color("#f7f6fa")
-const ENCRE := Color("#24212e")
-const DOUX := Color("#64607a")
-const TRAIT := Color("#dcd8e6")
+var FOND := Color("#f7f6fa")
+var ENCRE := Color("#24212e")
+var DOUX := Color("#64607a")
+var TRAIT := Color("#dcd8e6")
 const PANNEAU_X := 920.0
 
 var ws := WebSocketPeer.new()
@@ -58,7 +58,7 @@ func _poser_boutons() -> void:
 	var x := 30.0
 	for n in noms:
 		boutons.append({"titre": n["titre"], "nature": n["nature"],
-			"rect": Rect2(x, 712, 196, 40)})
+			"rect": Rect2(x, 722, 196, 36)})
 		x += 210.0
 
 
@@ -149,6 +149,8 @@ func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO, get_viewport_rect().size), FOND)
 	_entete()
 	_groupes()
+	_courbe()
+	_repartition()
 	_boutons()
 	_panneau()
 
@@ -211,13 +213,86 @@ func _groupes() -> void:
 			ENCRE if not a.get("porte", false) else Color(1, 1, 1))
 
 
+func _courbe() -> void:
+	## La courbe de vie de la tendance, en cours de construction.
+	## Chaque point prend la couleur du sens dominant a ce moment-la : on lit
+	## donc d'un coup d'oeil QUAND le ruban a change de signification.
+	var x := 28.0
+	var y := 524.0
+	var l := 854.0
+	var h := 150.0
+	draw_rect(Rect2(x, y, l, h), Color(1, 1, 1, 0.75))
+	draw_rect(Rect2(x, y, l, h), TRAIT, false, 1.0)
+	_txt(Vector2(x + 12, y + 20), "vie de la tendance", 12, DOUX)
+
+	var hist: Array = etat.get("historique", [])
+	if hist.size() < 2:
+		_txt(Vector2(x + 12, y + 80), "en attente de donnees...", 12, DOUX)
+		return
+
+	var bas := y + h - 22.0
+	var haut := y + 32.0
+	# Reperes 0, 50 et 100 pour cent.
+	for part in [0.0, 0.5, 1.0]:
+		var yy: float = bas - part * (bas - haut)
+		draw_line(Vector2(x + 44, yy), Vector2(x + l - 14, yy), TRAIT, 1.0)
+		_txt(Vector2(x + 12, yy + 4), "%d%%" % int(part * 100), 10, DOUX)
+
+	var pas: float = (l - 62.0) / float(max(1, hist.size() - 1))
+	var points := PackedVector2Array()
+	for i in hist.size():
+		var t: float = float(hist[i].get("taux_adoption", 0.0))
+		points.append(Vector2(x + 46 + i * pas, bas - t * (bas - haut)))
+	draw_polyline(points, DOUX, 2.0)
+	for i in hist.size():
+		var dom: String = hist[i].get("sens_dominant", "aucun_sens")
+		draw_circle(points[i], 4.0, COULEURS.get(dom, DOUX))
+	var dernier: Dictionary = hist[hist.size() - 1]
+	_txt(Vector2(x + l - 150, y + 20), "%s  %d%%"
+		% [dernier.get("t_sim_lisible", ""),
+		int(round(float(dernier.get("taux_adoption", 0.0)) * 100))], 12, DOUX)
+
+
+func _repartition() -> void:
+	## Ce que le ruban veut dire, maintenant, pour tout le campus.
+	## Une barre empilee : si une couleur occupe toute la largeur, le campus
+	## s'accorde sur un sens unique, et c'est cela que mesure l'indicateur.
+	var ind: Dictionary = etat.get("indicateurs", {})
+	var repartition: Dictionary = ind.get("repartition_sens", {})
+	if repartition.is_empty():
+		return
+	var total := 0
+	for cle in repartition:
+		total += int(repartition[cle])
+	if total == 0:
+		return
+
+	var x := 28.0
+	var y := 690.0
+	var l := 854.0
+	_txt(Vector2(x, y - 6), "ce que le ruban veut dire, maintenant", 12, DOUX)
+	var curseur := x
+	var ordre := ["cercle_creatif", "tendance", "suivre_la_foule", "ironie",
+		"ringard", "aucun_sens"]
+	for cle in ordre:
+		var n := int(repartition.get(cle, 0))
+		if n == 0:
+			continue
+		var large: float = l * float(n) / float(total)
+		draw_rect(Rect2(curseur, y, large, 14), COULEURS.get(cle, DOUX))
+		if large > 74:
+			_txt(Vector2(curseur + 5, y + 11), "%s %d" % [LIBELLES.get(cle, cle), n],
+				10, Color(1, 1, 1, 0.95))
+		curseur += large
+
+
 func _boutons() -> void:
-	_txt(Vector2(28, 700), "bousculer le monde", 12, DOUX)
+	_txt(Vector2(28, 716), "bousculer le monde", 12, DOUX)
 	for b in boutons:
 		var r: Rect2 = b["rect"]
 		draw_rect(r, Color(1, 1, 1, 0.9))
 		draw_rect(r, TRAIT, false, 1.0)
-		_txt(r.position + Vector2(14, 26), b["titre"], 14, ENCRE)
+		_txt(r.position + Vector2(14, 24), b["titre"], 13, ENCRE)
 
 
 func _panneau() -> void:

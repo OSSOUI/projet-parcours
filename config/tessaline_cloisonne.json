@@ -1,0 +1,141 @@
+{
+  "monde": "Tessaline",
+  "commentaire": "CONFIGURATION TEMOIN de l'exigence B3. Identique a tessaline.json, sauf la perception : chaque etudiant ne voit QUE son groupe. Le campus n'existe plus comme espace commun, donc aucun sens partage ne devrait emerger a son echelle.",
+  "groupes": [
+    "atelier_design",
+    "residence_a",
+    "residence_b",
+    "asso_sportive",
+    "club_humour",
+    "cafeteria"
+  ],
+  "profils": {
+    "pionnier": {
+      "part": 0.1,
+      "moteurs": {
+        "llm_grand": 1.0
+      },
+      "cadence_min": 720,
+      "porte_au_depart": true,
+      "justification_moteur": "Il doit argumenter, reformuler et se distinguer : c'est lui qui fabrique le sens. Le petit modele le rend plat.",
+      "minimum": 2,
+      "seuil": [
+        0.4,
+        0.6
+      ],
+      "commentaire_minimum": "Deux pionnieres lancent le ruban, comme dans la fiche du sujet. Avec une seule, la mode n'a aucune chance de s'allumer."
+    },
+    "figure_populaire": {
+      "part": 0.05,
+      "moteurs": {
+        "llm_grand": 1.0
+      },
+      "cadence_min": 960,
+      "porte_au_depart": false,
+      "justification_moteur": "Son basculement entraine les autres : une decision mal raisonnee ici deforme tout le run.",
+      "minimum": 1,
+      "seuil": [
+        0.05,
+        0.15
+      ]
+    },
+    "suiveur": {
+      "part": 0.55,
+      "moteurs": {
+        "llm_petit": 0.4,
+        "regles": 0.6
+      },
+      "cadence_min": 1440,
+      "porte_au_depart": false,
+      "justification_moteur": "Sa decision est surtout de l'imitation. Six suiveurs sur dix peuvent etre des agents a regles sans rien perdre, et c'est la le levier de sobriete (E5).",
+      "minimum": 3,
+      "seuil": [
+        0.05,
+        0.45
+      ],
+      "commentaire_seuil": "Borne basse a 0,05 volontairement : un modele a seuils ne produit de cascade que s'il existe des agents dont le seuil est inferieur a la fraction initiale de porteurs (Granovetter, 1978). Avec une borne a 0,12, aucun suiveur ne pouvait reagir aux deux pionnieres du depart, et la mode ne s'allumait qu'une fois sur cinq, par hasard."
+    },
+    "refractaire": {
+      "part": 0.15,
+      "moteurs": {
+        "llm_petit": 0.7,
+        "regles": 0.3
+      },
+      "cadence_min": 1440,
+      "porte_au_depart": false,
+      "justification_moteur": "Il doit savoir dire pourquoi il refuse, mais son refus est stable : le petit modele suffit.",
+      "minimum": 1,
+      "seuil": [
+        0.9,
+        1.0
+      ]
+    },
+    "ironique": {
+      "part": 0.15,
+      "moteurs": {
+        "llm_petit": 1.0
+      },
+      "cadence_min": 1200,
+      "porte_au_depart": false,
+      "justification_moteur": "Le detournement est un acte de langage : il ne se simule pas avec une regle.",
+      "minimum": 1,
+      "seuil": [
+        0.4,
+        0.65
+      ]
+    }
+  },
+  "attribution": "L'attribution d'un moteur repose sur le ROLE dans le phenomene, jamais sur une categorie sociale. Un pionnier a besoin de produire du sens, un suiveur a besoin de copier : ce sont des exigences de calcul differentes.",
+  "horaires": {
+    "commentaire": "Plage de la journee ou un etudiant consulte le reseau interne, en minutes depuis minuit.",
+    "reveil_min": 420,
+    "coucher_min": 1380,
+    "dispersion_min": 180
+  },
+  "perception": {
+    "commentaire": "groupe seul, campus invisible",
+    "poids_groupe": 1.0,
+    "poids_campus": 0.0
+  },
+  "modeles": {
+    "commentaire": "Deux tailles, exigence A5. qwen2.5:1.5b echoue 13 % du temps sur la liste fermee : garde comme configuration temoin sous ollama_tres_petit, pour mesurer l'effet de la taille.",
+    "groq": {
+      "llm_grand": "llama-3.3-70b-versatile",
+      "llm_petit": "llama-3.1-8b-instant"
+    },
+    "openrouter": {
+      "llm_grand": "meta-llama/llama-3.3-70b-instruct:free",
+      "llm_petit": "meta-llama/llama-3.2-3b-instruct:free"
+    },
+    "ollama": {
+      "llm_grand": "qwen2.5:7b",
+      "llm_petit": "qwen2.5:3b"
+    },
+    "ollama_tres_petit": {
+      "llm_grand": "qwen2.5:7b",
+      "llm_petit": "qwen2.5:1.5b"
+    }
+  },
+  "personnalites": {
+    "pionnier": [
+      "Tu as lance ce ruban avec une amie de l'atelier. Tu cherches a te distinguer et tu laisses tomber tout ce qui devient banal.",
+      "Tu aimes les codes discrets que seul le cercle creatif comprend. Quand tout le monde s'y met, ca perd son interet a tes yeux."
+    ],
+    "figure_populaire": [
+      "Tu es connu de tout le campus et ce que tu portes se retrouve sur dix poignets la semaine suivante. Tu aimes surprendre, pas suivre."
+    ],
+    "suiveur": [
+      "Tu es prudent. Tu attends de voir si une mode prend avant de t'y mettre.",
+      "Tu es tres present sur le reseau interne et tu adoptes volontiers ce que portent tes amis.",
+      "Tu es discret et tu suis surtout ce que fait ton groupe, sans te poser trop de questions."
+    ],
+    "refractaire": [
+      "Tu rejettes les modes par principe, et tu le dis volontiers a ceux qui suivent.",
+      "Tu trouves ridicule de porter un signe pour appartenir a quelque chose, et tu assumes de detonner."
+    ],
+    "ironique": [
+      "Tu animes le club d'humour. Tu adoptes parfois une mode pour t'en moquer et la detourner.",
+      "Tu joues avec les codes : tu portes le ruban au second degre, et tu veux que ca se voie."
+    ]
+  }
+}
