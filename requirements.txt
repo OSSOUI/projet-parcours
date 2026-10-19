@@ -1,0 +1,4 @@
+# Le moteur de simulation ne depend de rien : bibliotheque standard seulement.
+# Ces deux paquets ne servent qu'au pont vers Godot.
+kafka-python>=2.0,<3        # publication et lecture du topic Kafka
+websockets>=12              # pont.py -> scene Godot

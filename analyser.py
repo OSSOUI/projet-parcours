@@ -1,0 +1,94 @@
+"""Lecture d'un ou plusieurs runs enregistres. Aucun appel LLM.
+
+    python3 analyser.py runs/synchrone_xxx.jsonl
+    python3 analyser.py runs/baseline.jsonl runs/synchrone_xxx.jsonl
+
+Sort les chiffres a mettre dans le rapport : courbe d'adoption, part du sens
+dominant, taux de sortie de role par moteur (A4 et A5), cout (E4).
+"""
+import collections
+import json
+import sys
+
+
+def lire(chemin):
+    with open(chemin, encoding="utf-8") as f:
+        return [json.loads(l) for l in f if l.strip()]
+
+
+def analyser(chemin):
+    evs = lire(chemin)
+    meta = next((e for e in evs if e["schema"] == "run.v1"), {})
+    dec = [e for e in evs if e["schema"] == "decision.v1"]
+    inc = [e for e in evs if e["schema"] == "incident.v1"]
+    ind = [e for e in evs if e["schema"] == "indicateurs.v1"]
+    bilan = next((e for e in evs if e["schema"] == "bilan.v1"), {})
+
+    print(f"\n=== {chemin}")
+    print(f"{meta.get('mode', '?')}, {meta.get('nb_agents', '?')} agents, "
+          f"{meta.get('jours', '?')} jours, graine {meta.get('graine', '?')}")
+
+    if ind:
+        pics = max(ind, key=lambda e: e["taux_adoption"])
+        fin = ind[-1]
+        print(f"\nADOPTION  depart {ind[0]['taux_adoption']:.0%}   "
+              f"pic {pics['taux_adoption']:.0%} ({pics['t_sim_lisible']})   "
+              f"fin {fin['taux_adoption']:.0%}")
+        print(f"SENS DOMINANT  fin : {fin['sens_dominant']} a {fin['part_sens_dominant']:.0%}")
+        pic_sens = max(ind, key=lambda e: e["part_sens_dominant"])
+        print(f"  accord maximal : {pic_sens['part_sens_dominant']:.0%} "
+              f"sur {pic_sens['sens_dominant']} ({pic_sens['t_sim_lisible']})")
+        # Un cycle complet suppose une montee PUIS une descente marquee.
+        apres = [e for e in ind if e["t_sim"] > pics["t_sim"]]
+        creux = min(apres, key=lambda e: e["taux_adoption"])["taux_adoption"] if apres else None
+        if creux is not None and pics["taux_adoption"] - creux >= 0.2:
+            print(f"  CYCLE COMPLET : montee a {pics['taux_adoption']:.0%} "
+                  f"puis retombee a {creux:.0%}")
+        elif creux is not None:
+            print(f"  pas de cycle net : apres le pic, le creux reste a {creux:.0%}")
+
+    if dec:
+        print("\nSORTIES DE ROLE par moteur")
+        moteur_de = {}
+        for d in dec:
+            moteur_de[d["agent"]] = d["moteur"]
+        total = collections.Counter(d["moteur"] for d in dec)
+        rates = collections.Counter()
+        for i in inc:
+            rates[moteur_de.get(i["agent"], "?")] += 1
+        for m in sorted(total):
+            print(f"  {m:12s} {rates[m]:4d} / {total[m]:4d} decisions = {rates[m]/total[m]:6.1%}")
+        if inc:
+            print("  par nature :")
+            for n, c in collections.Counter(i["nature"] for i in inc).most_common():
+                print(f"    {n:24s} {c}")
+
+    if bilan.get("appels"):
+        print(f"\nCOUT  {bilan['appels']} appels, "
+              f"{bilan['tokens_entree']} tokens entree, "
+              f"{bilan['tokens_sortie']} sortie, "
+              f"{bilan['duree_run_s']:.0f}s")
+        for t, c in sorted(bilan.get("par_taille", {}).items()):
+            print(f"  {t:12s} {c['modele']:24s} {c['appels']:4d} appels, "
+                  f"latence moyenne {c['latence_moy_s']}s")
+    return ind
+
+
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        raise SystemExit(__doc__)
+    courbes = {}
+    for chemin in sys.argv[1:]:
+        courbes[chemin] = analyser(chemin)
+    if len(courbes) > 1:
+        print("\n=== COMPARAISON, adoption par jour")
+        noms = list(courbes)
+        entete = "jour  " + "".join(f"{n.split('/')[-1][:18]:>20s}" for n in noms)
+        print(entete)
+        longueur = max(len(c) for c in courbes.values())
+        for i in range(longueur):
+            ligne = f"{i:4d}  "
+            for n in noms:
+                c = courbes[n]
+                ligne += f"{c[i]['taux_adoption']:19.0%} " if i < len(c) else " " * 20
+            print(ligne)
