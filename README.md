@@ -391,6 +391,96 @@ L'accord mesuré est la part du campus sur le sens le plus répandu **autre que
 « aucun sens »**, avec les non-porteurs au dénominateur. Quand « aucun sens »
 domine, le relevé n'est donc plus jeté.
 
+## Suivi en direct
+
+```bash
+python3 direct.py             # puis ouvrir http://localhost:8770
+```
+
+La page suit le run le plus récent pendant qu'il tourne et se rafraîchit
+toutes les 1,5 s. On peut aussi choisir un run passé. Elle fonctionne à côté
+d'une simulation ou d'une série `experience.py`, sans Kafka et sans appel au LLM.
+
+- **Agents** : les 20 agents, avec pour chacun :
+  - son état dans le pas en cours (a répondu, réfléchit depuis X s, en
+    attente, pas ce jour) ;
+  - s'il porte le ruban, le sens qu'il lui donne ;
+  - sa dernière réponse et sa réponse moyenne ;
+  - ses décisions, ses incidents, ses changements d'avis, ses messages ;
+  - sa dernière raison.
+- **Performances des agents LLM**, par modèle :
+  - temps de réponse médian, p95 et pire cas ;
+  - débit de génération en tokens par seconde ;
+  - tokens lus et écrits par appel ;
+  - surcoût hors LLM (recherche et prompt) ;
+  - appels relancés, attente de quota, appels en échec ;
+  - le temps de réponse de chaque appel au fil du run ;
+  - la durée réelle de chaque jour simulé ;
+  - le rythme et la fin estimée.
+- **Phénomène** : adoption, accord, sens du ruban jour par jour.
+- **Fiabilité, comportement, cohérence** : décisions exploitables, incidents
+  par nature, changements d'avis, messages, violations C6, qualité de la
+  recherche, derniers messages du réseau.
+
+Les temps de réponse appel par appel viennent de `runs/<run>.direct.jsonl`,
+écrit par `simuler.py` au moment où chaque appel se termine. En synchrone, le
+journal ne reçoit les décisions qu'une fois tout le pas terminé. Ce fichier ne
+modifie aucune décision, et un test le vérifie. Pour un run produit sans ce
+fichier, la page se replie sur le journal.
+
+Pour ouvrir la page depuis une autre machine du réseau (par exemple la
+machine de l'école) : `python3 direct.py --hote 0.0.0.0`.
+
+## Tableau de bord des runs
+
+```bash
+python3 tableau.py            # lit tous les runs terminés de runs/
+open runs/tableau.html
+```
+
+Le script produit une page HTML autonome, sans dépendance et sans accès réseau.
+La scène Godot montre **un** run en direct ; ce tableau **compare** les runs
+entre eux après coup, série par série et configuration par configuration :
+
+- **métriques à évaluer** : runs émergents, accord, adoption, déclin, jour du
+  pic, incidents, appels, tokens, énergie, durée et C6. On voit la moyenne,
+  l'écart type, l'étendue et chaque run, à côté de l'hypothèse écrite avant
+  la mesure ;
+- **dynamique** : adoption et accord jour par jour, chaque run et la moyenne ;
+- **vitesses** : latence de chaque taille de modèle, temps simulé par seconde
+  réelle, cadence des agents par profil, jour où l'accord passe le seuil ;
+- **agents** : pour un run donné, le sens du ruban jour après jour, l'état de
+  chaque agent, et ses décisions avec leurs raisons ;
+- **incidents** : par nature et par moteur.
+
+Les chiffres sortent des mêmes fonctions qu'`experience.py`. Un run sans
+`bilan.v1`, en cours ou interrompu, est ignoré et signalé.
+
+## GLM-5.2 sous Colibri, sur la machine de la classe
+
+Le fournisseur `colibri` fait tenir le grand modèle par **GLM-5.2**, servi par
+[Colibri](https://github.com/JustVugg/colibri). Le petit modèle reste
+`qwen2.5:3b` sous Ollama, comme dans la configuration `ollama` : on ne change
+qu'une variable. Tout tourne dans Docker, sur la machine de la classe :
+
+```bash
+hf download mastouri/GLM-5.2-colibri-int4-g64-with-int8-mtp --local-dir modeles/glm-5.2
+docker compose --profile colibri up -d --build      # Colibri, Ollama, suivi en direct
+docker compose --profile colibri run --rm ephemere \
+    python3 experience.py --plan b3_llm --fournisseur colibri
+```
+
+Le suivi en direct s'ouvre depuis un autre poste sur `http://<machine>:8770`.
+Les runs s'écrivent dans `runs/`, sur la machine.
+
+GLM-5.2 compte **744 milliards de paramètres**, dont environ 40 milliards
+actifs par token. Le modèle int4 pèse environ 430 Go. Colibri garde en RAM la
+partie commune du modèle (16 à 24 Go, voir `COLI_RAM`) et lit les experts sur
+le disque à la demande. Il faut donc un SSD local, jamais un montage réseau. Un
+appel peut durer plusieurs minutes : le client attend jusqu'à 30 minutes au
+lieu de 90 s. Colibri traite un appel à la fois, ce qui convient au mode
+synchrone, où les appels se suivent.
+
 ## Couverture des exigences
 
 | Exigence | État à l'étape 1 |
@@ -462,6 +552,9 @@ Ephemere/
   corpus/               les neuf documents fictifs de Tessaline
   pont.py               Kafka vers WebSocket, et rejeu d'un run
   analyser.py           chiffres d'un run, pour le rapport
-  docker-compose.yml    Kafka en un seul nœud
+  tableau.py            tableau de bord HTML : métriques, vitesses, agents
+  direct.py             suivi en direct d'un run : agents et performances
+  docker-compose.yml    Kafka ; profil colibri : GLM-5.2, Ollama, simulation
+  Dockerfile            image de la simulation
   godot/main.gd         la scène du campus
 ```

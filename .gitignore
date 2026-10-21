@@ -12,3 +12,6 @@ godot/.godot/
 runs/*
 !runs/exp_*.jsonl
 !runs/demo_*.jsonl
+
+# Poids des modeles (GLM-5.2 sous Colibri : ~430 Go)
+modeles/

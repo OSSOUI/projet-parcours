@@ -365,8 +365,50 @@ with tempfile.TemporaryDirectory() as dossier:
         journal.ecrire("coherence.v1", **coherence)
         rejets = journal.nb_rejets
 verifier("aucun evenement rejete par le contrat", rejets == 0, f"({rejets} rejets)")
+
+print("\n15. La telemetrie en direct note chaque appel sans toucher au run (direct.py)")
+import json as _json
+agents, config = population.construire("config/tessaline.json", 12, 2)
+monde_a = Monde(agents, config.get("perception"))
+monde_b = Monde([dict(a, memoire=[]) for a in agents], config.get("perception"))
+with tempfile.TemporaryDirectory() as dossier:
+    resultats = []
+    for monde_x, tele in ((monde_a, None), (monde_b, simuler.Telemetrie(os.path.join(dossier, "t.direct.jsonl")))):
+        hx = Horloge(0)
+        with Journal(dossier, "x", hx) as journal, contextlib.redirect_stdout(io.StringIO()):
+            simuler.tourner_synchrone(
+                monde_x, {a["id"]: DecideurLLM(Repondeur(), "llm_petit") for a in monde_x.agents.values()},
+                journal, hx, types.SimpleNamespace(jours=2, pas_min=1440, releve_min=1440, telemetrie=tele))
+        resultats.append([(a["porte"], a["categorie"]) for a in monde_x.agents.values()])
+    tele.fermer()
+    with open(os.path.join(dossier, "t.direct.jsonl"), encoding="utf-8") as f:
+        lignes = [_json.loads(x) for x in f]
+appels = [x for x in lignes if x["type"] == "appel"]
+verifier("un debut de pas par jour simule", sum(x["type"] == "debut_pas" for x in lignes) == 2)
+verifier("un appel note par decision", len(appels) == sum(len(x["ordre"]) for x in lignes if x["type"] == "debut_pas"))
+verifier("chaque appel porte sa latence et ses tokens",
+         all(x["latence_s"] == 0.2 and x["duree_s"] >= 0 for x in appels))
+verifier("la telemetrie ne change aucune decision", resultats[0] == resultats[1])
 verifier("chaque decision LLM a ete controlee", coherence["controles"] > 0)
 verifier("zero violation C6 sur le run", coherence["violations"] == 0)
+
+
+print("\n16. Colibri sert le grand modele, Ollama le petit, adresses venues de l'environnement")
+from ephemere.llm import ClientLLM
+
+anciennes = {k: os.environ.pop(k, None) for k in ("COLIBRI_URL", "OLLAMA_URL")}
+os.environ["COLIBRI_URL"] = "http://colibri:5000/v1/chat/completions"
+os.environ["OLLAMA_URL"] = "http://ollama:11434/v1/chat/completions"
+client = ClientLLM("colibri", {"llm_grand": "glm-5.2", "llm_petit": "qwen2.5:3b"})
+verifier("le grand modele va a Colibri", client.urls["llm_grand"] == os.environ["COLIBRI_URL"])
+verifier("le petit modele va a Ollama", client.urls["llm_petit"] == os.environ["OLLAMA_URL"])
+verifier("delai allonge pour Colibri", client.delai_s >= 600)
+for k, v in anciennes.items():
+    os.environ.pop(k, None) if v is None else os.environ.__setitem__(k, v)
+client = ClientLLM("ollama", {"llm_grand": "qwen2.5:7b", "llm_petit": "qwen2.5:3b"})
+verifier("sans variable, Ollama reste en local",
+         set(client.urls.values()) == {"http://localhost:11434/v1/chat/completions"}
+         and client.delai_s == 90)
 
 print()
 if echecs:
