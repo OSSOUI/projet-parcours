@@ -1,6 +1,14 @@
 # Kafka en un seul noeud, mode KRaft (sans ZooKeeper), pour le suivi en direct.
 #   docker compose up -d     demarre Kafka sur localhost:9092
 #   docker compose down      l'arrete
+#
+# Profil colibri, sur la machine de la classe : GLM-5.2 sous Colibri pour le
+# grand modele, qwen2.5:3b sous Ollama pour le petit, la simulation et le suivi
+# en direct. Le modele GLM (~430 Go, int4) se telecharge a part, sur un SSD local :
+#   hf download mastouri/GLM-5.2-colibri-int4-g64-with-int8-mtp --local-dir modeles/glm-5.2
+#   docker compose --profile colibri up -d --build
+#   docker compose --profile colibri run --rm ephemere \
+#       python3 experience.py --plan b3_llm --fournisseur colibri
 services:
   kafka:
     image: apache/kafka:3.8.0
@@ -21,3 +29,67 @@ services:
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
       KAFKA_NUM_PARTITIONS: 1
+
+  # Construit depuis le depot de Colibri : image CPU, le modele est monte en
+  # lecture seule, jamais copie dans l'image. Un seul appel a la fois.
+  colibri:
+    profiles: [colibri]
+    build:
+      context: https://github.com/JustVugg/colibri.git#main
+      dockerfile: docker/Dockerfile.slim
+    image: colibri
+    ports:
+      - "5000:5000"
+    volumes:
+      # Dossier du modele GLM-5.2 int4, sur un SSD local (jamais un montage reseau).
+      - "${MODEL_DIR:-./modeles/glm-5.2}:/model:ro"
+    environment:
+      COLI_RAM: "${COLI_RAM:-24}"
+    # Budget de RAM en Go : plus il y a d'experts en cache, plus c'est rapide.
+    command: [serve, --host, 0.0.0.0, --model-id, glm-5.2, --ram, "${COLI_RAM:-24}"]
+    shm_size: "2gb"
+    restart: unless-stopped
+
+  ollama:
+    profiles: [colibri]
+    image: ollama/ollama:0.5.7
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama:/root/.ollama
+    restart: unless-stopped
+
+  # Telecharge le petit modele une fois, puis s'arrete.
+  ollama-init:
+    profiles: [colibri]
+    image: ollama/ollama:0.5.7
+    environment:
+      OLLAMA_HOST: ollama:11434
+    entrypoint: ["ollama", "pull", "qwen2.5:3b"]
+    depends_on: [ollama]
+    restart: on-failure
+
+  ephemere:
+    profiles: [colibri]
+    build: .
+    image: ephemere
+    environment:
+      COLIBRI_URL: http://colibri:5000/v1/chat/completions
+      OLLAMA_URL: http://ollama:11434/v1/chat/completions
+    volumes:
+      - ./runs:/app/runs
+    depends_on: [colibri, ollama-init]
+
+  # Suivi en direct, lisible depuis un autre poste : http://<machine>:8770
+  direct:
+    profiles: [colibri]
+    image: ephemere
+    command: [python3, direct.py, --hote, 0.0.0.0]
+    ports:
+      - "8770:8770"
+    volumes:
+      - ./runs:/app/runs
+    depends_on: [ephemere]
+
+volumes:
+  ollama:

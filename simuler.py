@@ -157,6 +157,63 @@ def relever(monde, journal, horloge):
     return ind
 
 
+class Telemetrie:
+    """Mesures en direct, appel par appel, dans runs/<run>.direct.jsonl.
+
+    Le journal du run reste la reference (rejeu, contrat). Ce fichier-ci sert au
+    suivi en direct (direct.py) : en synchrone, les decisions d'un pas ne
+    partent dans le journal qu'apres que les 20 agents ont repondu, alors qu'ici
+    chaque appel est note a l'instant ou il se termine, avec sa latence. Il ne
+    modifie rien a la simulation, et une erreur d'ecriture ne l'arrete jamais.
+    """
+
+    def __init__(self, chemin):
+        self.chemin = chemin
+        os.makedirs(os.path.dirname(chemin), exist_ok=True)
+        self._f = open(chemin, "w", encoding="utf-8")
+
+    def _ecrire(self, **corps):
+        try:
+            corps["t_reel"] = datetime.now().isoformat(timespec="milliseconds")
+            self._f.write(json.dumps(corps, ensure_ascii=False) + "\n")
+            self._f.flush()
+        except (OSError, TypeError, ValueError):
+            pass
+
+    def debut_pas(self, horloge, ordre):
+        self._ecrire(type="debut_pas", t_sim=horloge.minutes, ordre=ordre)
+
+    def appel(self, horloge, agent, d, duree_s):
+        m = d.get("mesure") or {}
+        inc = d.get("incident") or {}
+        rec = (d.get("recuperation") or {}).get("resultats")
+        self._ecrire(type="appel", t_sim=horloge.minutes, agent=agent["id"],
+                     moteur=agent["moteur"], modele=m.get("modele"),
+                     duree_s=round(duree_s, 3), latence_s=m.get("latence_s"),
+                     attente_s=m.get("attente_s"), essais=m.get("essais"),
+                     tokens_entree=m.get("tokens_entree"), tokens_sortie=m.get("tokens_sortie"),
+                     echec=m.get("echec"), valide=d["valide"], incident=inc.get("nature"),
+                     porte=d["porte"], categorie=d["categorie"],
+                     passages=None if rec is None else len(rec),
+                     publie=bool((d.get("publication") or "").strip()))
+
+    def fermer(self):
+        try:
+            self._f.close()
+        except OSError:
+            pass
+
+
+def _decider(decideurs, agent, monde, horloge, t_sim, args):
+    """Appelle le moteur de l'agent et note la mesure en direct, si demandee."""
+    t0 = time.perf_counter()
+    d = decideurs[agent["id"]].decider(agent, monde, t_sim, horloge.lisible())
+    tele = getattr(args, "telemetrie", None)
+    if tele:
+        tele.appel(horloge, agent, d, time.perf_counter() - t0)
+    return d
+
+
 def tourner_synchrone(monde, decideurs, journal, horloge, args, ecoute=None):
     """Tous les agents decident au meme pas de temps, sur l'etat precedent.
 
@@ -178,11 +235,14 @@ def tourner_synchrone(monde, decideurs, journal, horloge, args, ecoute=None):
         traiter_injections(ecoute, monde, journal, horloge)
         pas = horloge.minutes // args.pas_min
         decisions = []
+        if getattr(args, "telemetrie", None):
+            args.telemetrie.debut_pas(horloge, [
+                a["id"] for a in monde.agents.values()
+                if not (a["id"] in phase and (pas + phase[a["id"]]) % 2)])
         for agent in monde.agents.values():
             if agent["id"] in phase and (pas + phase[agent["id"]]) % 2:
                 continue
-            d = decideurs[agent["id"]].decider(agent, monde, horloge.minutes,
-                                               horloge.lisible())
+            d = _decider(decideurs, agent, monde, horloge, horloge.minutes, args)
             monde.marquer_lu(agent, horloge.minutes)
             decisions.append((agent, d))
             tracer(horloge, agent, d)
@@ -227,7 +287,7 @@ def tourner_asynchrone(monde, decideurs, journal, horloge, args, rng, ecoute=Non
         if agent_id in en_reflexion:
             d = en_reflexion.pop(agent_id)
         else:
-            d = decideurs[agent_id].decider(agent, monde, t_sim, horloge.lisible())
+            d = _decider(decideurs, agent, monde, horloge, t_sim, args)
             monde.marquer_lu(agent, t_sim)
             latence = (d.get("mesure") or {}).get("latence_s") or 0
             reflexion = int(latence * args.minutes_par_seconde)
@@ -250,7 +310,7 @@ def main():
     p.add_argument("--mode", choices=["synchrone", "asynchrone"], default="synchrone")
     p.add_argument("--graine", type=int, default=42)
     p.add_argument("--config", default=os.path.join(RACINE, "config", "tessaline.json"))
-    p.add_argument("--fournisseur", default="ollama", help="ollama, groq ou openrouter")
+    p.add_argument("--fournisseur", default="ollama", help="ollama, colibri, groq ou openrouter")
     p.add_argument("--pause", type=float, default=0.0,
                    help="secondes entre deux appels LLM, pour rester sous le quota")
     p.add_argument("--attente-max", type=float, default=90,
@@ -304,6 +364,7 @@ def main():
     if args.tout_regles and args.tout_grand:
         raise SystemExit("--tout-regles et --tout-grand s'excluent.")
     mesureur = Energie(args.energie == "auto", nom)
+    args.telemetrie = Telemetrie(os.path.join(RACINE, "runs", f"{nom}.direct.jsonl"))
     t0 = time.perf_counter()
     interrompu = False
     with Journal(os.path.join(RACINE, "runs"), nom, horloge, bus=bus) as journal:
@@ -339,6 +400,7 @@ def main():
                        interrompu=interrompu, incidents=incidents,
                        par_taille=bilan["par_taille"])
         ecrits, rejets, chemin = journal.nb_ecrits, journal.nb_rejets, journal.chemin
+    args.telemetrie.fermer()
 
     print(f"\n{ecrits} evenements conformes, {rejets} rejetes, {incidents} incidents d'agent")
     if bilan["appels"]:

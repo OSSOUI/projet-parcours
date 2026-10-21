@@ -98,7 +98,7 @@
     "poids_campus": 0.0
   },
   "modeles": {
-    "commentaire": "Deux tailles, exigence A5. qwen2.5:1.5b echoue 13 % du temps sur la liste fermee : garde comme configuration temoin sous ollama_tres_petit, pour mesurer l'effet de la taille.",
+    "commentaire": "Deux tailles, exigence A5. qwen2.5:1.5b echoue 13 % du temps sur la liste fermee : garde comme configuration temoin sous ollama_tres_petit, pour mesurer l'effet de la taille. colibri : GLM-5.2 sous Colibri, sur la machine de la classe, pour le grand ; le petit reste qwen2.5:3b sous Ollama, pour ne changer qu'une variable par rapport a ollama.",
     "groq": {
       "llm_grand": "llama-3.3-70b-versatile",
       "llm_petit": "llama-3.1-8b-instant"
@@ -114,6 +114,10 @@
     "ollama_tres_petit": {
       "llm_grand": "qwen2.5:7b",
       "llm_petit": "qwen2.5:1.5b"
+    },
+    "colibri": {
+      "llm_grand": "glm-5.2",
+      "llm_petit": "qwen2.5:3b"
     }
   },
   "personnalites": {

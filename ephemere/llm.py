@@ -1,4 +1,4 @@
-"""Client LLM compatible API OpenAI : Groq, OpenRouter, Ollama.
+"""Client LLM compatible API OpenAI : Groq, OpenRouter, Ollama, Colibri.
 
 Aucune dependance externe, urllib suffit. Le client sait appeler DEUX tailles
 de modele (exigence A5) et compte separement les appels de chacune, parce que
@@ -18,8 +18,21 @@ FOURNISSEURS = {
              "cle": "GROQ_API_KEY"},
     "openrouter": {"url": "https://openrouter.ai/api/v1/chat/completions",
                    "cle": "OPENROUTER_API_KEY"},
-    "ollama": {"url": "http://localhost:11434/v1/chat/completions", "cle": None},
+    "ollama": {"url": "http://localhost:11434/v1/chat/completions", "cle": None,
+               "env_url": "OLLAMA_URL"},
+    # GLM-5.2 (744 Md de parametres, ~40 Md actifs) sous Colibri, sur la machine
+    # de la classe. Seul le grand modele y passe : l'image Docker de Colibri ne
+    # sert que GLM, le petit reste donc sous Ollama. Colibri lit les experts sur
+    # le disque, un appel peut durer plusieurs minutes : delai long.
+    "colibri": {"url": "http://localhost:5000/v1/chat/completions", "cle": None,
+                "env_url": "COLIBRI_URL", "par_taille": {"llm_petit": "ollama"},
+                "delai_s": 1800},
 }
+
+
+def _url(conf):
+    """URL du fournisseur, remplacable par une variable (Docker, autre machine)."""
+    return os.environ.get(conf.get("env_url", ""), "") or conf["url"]
 
 
 def charger_env(chemin=".env"):
@@ -40,8 +53,11 @@ class ClientLLM:
             raise SystemExit(f"Fournisseur inconnu : {fournisseur}")
         conf = FOURNISSEURS[fournisseur]
         self.fournisseur = fournisseur
-        self.url = conf["url"]
         self.modeles = modeles            # {"llm_grand": "...", "llm_petit": "..."}
+        par_taille = conf.get("par_taille", {})
+        self.urls = {t: _url(FOURNISSEURS[par_taille[t]]) if t in par_taille else _url(conf)
+                     for t in modeles}
+        self.delai_s = conf.get("delai_s", 90)
         self.cle = os.environ.get(conf["cle"], "") if conf["cle"] else ""
         if conf["cle"] and not self.cle:
             raise SystemExit(f"Variable {conf['cle']} absente. Copiez .env.example en .env.")
@@ -60,16 +76,16 @@ class ClientLLM:
             "modele": self.modeles[taille], "appels": 0, "erreurs": 0,
             "tokens_entree": 0, "tokens_sortie": 0, "latences": []})
 
-    def _poster(self, corps):
+    def _poster(self, url, corps):
         entetes = {"Content-Type": "application/json",
                    # Cloudflare, devant Groq, refuse l'User-Agent par defaut d'urllib.
                    "User-Agent": "ephemere/1.0"}
         if self.cle:
             entetes["Authorization"] = f"Bearer {self.cle}"
-        req = urllib.request.Request(self.url,
+        req = urllib.request.Request(url,
                                      data=json.dumps(corps).encode("utf-8"),
                                      headers=entetes)
-        with urllib.request.urlopen(req, timeout=90) as rep:
+        with urllib.request.urlopen(req, timeout=self.delai_s) as rep:
             return json.loads(rep.read().decode("utf-8"))
 
     def json(self, systeme, consigne, taille="llm_petit", essais=3):
@@ -96,7 +112,7 @@ class ClientLLM:
             mesure["essais"] = essai + 1
             t0 = time.perf_counter()
             try:
-                rep = self._poster(corps)
+                rep = self._poster(self.urls[taille], corps)
             except urllib.error.HTTPError as e:
                 if e.code == 429:
                     mesure["echec"] = "quota"
