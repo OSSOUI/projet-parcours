@@ -23,6 +23,8 @@ def analyser(chemin):
     inc = [e for e in evs if e["schema"] == "incident.v1"]
     ind = [e for e in evs if e["schema"] == "indicateurs.v1"]
     bilan = next((e for e in evs if e["schema"] == "bilan.v1"), {})
+    coherence = next((e for e in evs if e["schema"] == "coherence.v1"), None)
+    energie = next((e for e in evs if e["schema"] == "energie.v1"), None)
 
     print(f"\n=== {chemin}")
     print(f"{meta.get('mode', '?')}, {meta.get('nb_agents', '?')} agents, "
@@ -35,9 +37,15 @@ def analyser(chemin):
               f"pic {pics['taux_adoption']:.0%} ({pics['t_sim_lisible']})   "
               f"fin {fin['taux_adoption']:.0%}")
         print(f"SENS DOMINANT  fin : {fin['sens_dominant']} a {fin['part_sens_dominant']:.0%}")
-        pic_sens = max(ind, key=lambda e: e["part_sens_dominant"])
-        print(f"  accord maximal : {pic_sens['part_sens_dominant']:.0%} "
-              f"sur {pic_sens['sens_dominant']} ({pic_sens['t_sim_lisible']})")
+        # Accord sur un sens AUTRE que "aucun sens", meme quand celui-ci domine.
+        def partage(e):
+            rep = {s: c for s, c in e["repartition_sens"].items() if s != "aucun_sens"}
+            sens = max(rep, key=rep.get) if rep else "aucun_sens"
+            return rep.get(sens, 0) / (sum(e["repartition_sens"].values()) or 1), sens
+        pic_sens = max(ind, key=lambda e: partage(e)[0])
+        part, sens = partage(pic_sens)
+        print(f"  accord maximal sur un sens partage : {part:.0%} "
+              f"sur {sens} ({pic_sens['t_sim_lisible']})")
         # Un cycle complet suppose une montee PUIS une descente marquee.
         apres = [e for e in ind if e["t_sim"] > pics["t_sim"]]
         creux = min(apres, key=lambda e: e["taux_adoption"])["taux_adoption"] if apres else None
@@ -82,6 +90,14 @@ def analyser(chemin):
             print(f"    {doc:24s} {n:4d} fois, score moyen {moy:5.2f}")
         jamais = len({d for d in tires}) 
         print(f"  {jamais} document(s) different(s) effectivement utilise(s)")
+
+    if coherence and coherence["controles"]:
+        print(f"\nCOHERENCE TEMPORELLE (C6)  {coherence['violations']} violation(s) "
+              f"sur {coherence['controles']} contextes controles")
+    if energie:
+        print("\nENERGIE  " + (f"{energie['kwh'] * 1000:.2f} Wh, {energie['co2_kg'] * 1000:.2f} g CO2"
+                              if energie["kwh"] is not None else energie["note"])
+              + f" ({energie['portee']})")
 
     if bilan.get("appels"):
         print(f"\nCOUT  {bilan['appels']} appels, "

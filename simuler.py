@@ -8,6 +8,7 @@ Les deux modes relevent les indicateurs sur la MEME grille de temps simule,
 sinon leur comparaison (exigence C5) ne voudrait rien dire.
 """
 import argparse
+import json
 import os
 import random
 import sys
@@ -23,7 +24,7 @@ from ephemere.rag import Base
 from ephemere.contrat import VERSION_CONTRAT
 from ephemere.horloge import MINUTES_PAR_JOUR, Echeancier, Horloge
 from ephemere.journal import Journal
-from ephemere.monde import Monde
+from ephemere.monde import Monde, memoriser
 from ephemere.regles import Regles
 
 RACINE = os.path.dirname(os.path.abspath(__file__))
@@ -37,6 +38,11 @@ def fabriquer_decideurs(agents, args, config, base=None):
     reellement appelees : c'est A5.
     """
     regles = Regles()
+    if getattr(args, "tout_grand", False):
+        # Reference de l'exigence E5 : meme population, meme graine, mais
+        # chaque agent raisonne avec le plus grand modele.
+        for a in agents:
+            a["moteur"] = "llm_grand"
     if args.tout_regles:
         for a in agents:
             a["moteur"] = "regles"
@@ -73,6 +79,13 @@ def enregistrer(journal, monde, agent, d, horloge):
                                   for r in rec["resultats"]],
                        nb_resultats=len(rec["resultats"]),
                        corpus={"passages_demandes": len(rec["resultats"])})
+    perception = d.get("perception")
+    if perception:
+        journal.ecrire("perception.v1", agent=agent["id"], moteur=agent["moteur"],
+                       **perception)
+        if perception["violations_c6"]:
+            print(f"  [C6 : {len(perception['violations_c6'])} info(s) venue(s) du futur "
+                  f"dans le contexte de {agent['nom']}]")
     if d.get("incident"):
         journal.ecrire("incident.v1", agent=agent["id"],
                        nature=d["incident"]["nature"], details=d["incident"]["details"])
@@ -92,21 +105,27 @@ def enregistrer(journal, monde, agent, d, horloge):
                        portee="campus", destinataire=None)
 
 
-def appliquer(agent, d, monde, horloge, ecoule=0):
-    """Ecrit la decision dans l'etat de l'agent."""
+def appliquer(agent, d, monde, horloge):
+    """Ecrit la decision dans l'etat de l'agent.
+
+    Le temps de port s'accumule depuis la decision PRECEDENTE de l'agent, et
+    non depuis sa derniere lecture du fil : le relais massif remet la lecture
+    a zero sans gonfler le temps de port (et sans lasser la figure populaire).
+    """
+    ecoule = horloge.minutes - agent.get("derniere_decision", 0)
+    if d["porte"]:
+        agent["minutes_porte"] += max(0, ecoule)
     agent["porte"] = d["porte"]
     agent["categorie"] = d["categorie"]
     agent["sens"] = d["sens"]
-    if d["porte"]:
-        agent["minutes_porte"] += max(0, ecoule)
-    agent["memoire"] = (agent["memoire"] + [{
+    agent["derniere_decision"] = horloge.minutes
+    agent["memoire"] = memoriser(agent["memoire"], {
         "genre": "decision",
         "t_sim": horloge.minutes,
         "t_sim_lisible": horloge.lisible(),
         "fait": f"j'ai decide de {'porter' if d['porte'] else 'ne pas porter'} le ruban",
         "raison": d.get("raison", ""),
-    }])[-12:]
-    agent["vu_jusqu_a"] = horloge.minutes
+    })
 
 
 def tracer(horloge, agent, d):
@@ -139,22 +158,38 @@ def relever(monde, journal, horloge):
 
 
 def tourner_synchrone(monde, decideurs, journal, horloge, args, ecoute=None):
-    """Tous les agents decident au meme pas de temps, sur l'etat precedent."""
+    """Tous les agents decident au meme pas de temps, sur l'etat precedent.
+
+    Sauf les pionnieres, qui se relaient : une sur deux reevalue a chaque pas.
+    Toutes ensemble, elles voyaient le meme etat, abandonnaient le meme jour
+    puis revenaient le meme jour, et l'adoption oscillait avec une periode de
+    deux pas (13 runs sur 30 en baseline, 24 sur 30 dans le temoin). Ce n'etait
+    pas un phenomene du campus mais un artefact de la simultaneite.
+    --pionnieres-simultanees retablit l'ancien comportement pour le montrer.
+    """
     fin = args.jours * MINUTES_PAR_JOUR
+    pionnieres = [a["id"] for a in monde.agents.values() if a["profil"] == "pionnier"]
+    phase = {aid: i % 2 for i, aid in enumerate(pionnieres)}
+    if getattr(args, "pionnieres_simultanees", False):
+        phase = {}
     relever(monde, journal, horloge)
     while horloge.minutes < fin:
         horloge.aller_a(horloge.minutes + args.pas_min)
         traiter_injections(ecoute, monde, journal, horloge)
+        pas = horloge.minutes // args.pas_min
         decisions = []
         for agent in monde.agents.values():
+            if agent["id"] in phase and (pas + phase[agent["id"]]) % 2:
+                continue
             d = decideurs[agent["id"]].decider(agent, monde, horloge.minutes,
                                                horloge.lisible())
+            monde.marquer_lu(agent, horloge.minutes)
             decisions.append((agent, d))
             tracer(horloge, agent, d)
         # Simultaneite : on n'applique qu'apres avoir interroge tout le monde.
         for agent, d in decisions:
             enregistrer(journal, monde, agent, d, horloge)
-            appliquer(agent, d, monde, horloge, ecoule=args.pas_min)
+            appliquer(agent, d, monde, horloge)
         if horloge.minutes % args.releve_min == 0:
             relever(monde, journal, horloge)
 
@@ -170,6 +205,10 @@ def tourner_asynchrone(monde, decideurs, journal, horloge, args, rng, ecoute=Non
     echeancier = Echeancier()
     for agent in monde.agents.values():
         echeancier.planifier(agent["heure_reveil"] + agent["decalage_min"], agent["id"])
+    # Decisions prises mais pas encore effectives : l'agent reflechit encore.
+    # Elles reviennent par l'echeancier a t + reflexion, si bien que l'horloge
+    # n'a jamais a reculer quand un autre agent se reveille entre-temps.
+    en_reflexion = {}
     prochaine_releve = 0
     relever(monde, journal, horloge)
 
@@ -184,16 +223,21 @@ def tourner_asynchrone(monde, decideurs, journal, horloge, args, rng, ecoute=Non
         horloge.aller_a(t_sim)
         traiter_injections(ecoute, monde, journal, horloge)
         agent = monde.agents[agent_id]
-        ecoule = t_sim - agent["vu_jusqu_a"]
-        d = decideurs[agent_id].decider(agent, monde, t_sim, horloge.lisible())
 
-        latence = (d.get("mesure") or {}).get("latence_s") or 0
-        reflexion = int(latence * args.minutes_par_seconde)
-        if reflexion:
-            horloge.aller_a(t_sim + reflexion)
+        if agent_id in en_reflexion:
+            d = en_reflexion.pop(agent_id)
+        else:
+            d = decideurs[agent_id].decider(agent, monde, t_sim, horloge.lisible())
+            monde.marquer_lu(agent, t_sim)
+            latence = (d.get("mesure") or {}).get("latence_s") or 0
+            reflexion = int(latence * args.minutes_par_seconde)
+            if reflexion:
+                en_reflexion[agent_id] = d
+                echeancier.planifier(t_sim + reflexion, agent_id)
+                continue
         tracer(horloge, agent, d)
         enregistrer(journal, monde, agent, d, horloge)
-        appliquer(agent, d, monde, horloge, ecoule=ecoule)
+        appliquer(agent, d, monde, horloge)
         echeancier.planifier(horloge.minutes + agent["cadence_min"]
                              + rng.randint(-120, 120), agent_id)
 
@@ -215,10 +259,17 @@ def main():
                    help="minutes simulees par seconde de reflexion du modele (mode asynchrone)")
     p.add_argument("--pas-min", type=int, default=MINUTES_PAR_JOUR,
                    help="pas de temps du mode synchrone, en minutes simulees")
+    p.add_argument("--pionnieres-simultanees", action="store_true",
+                   help="mode synchrone : toutes les pionnieres reevaluent au meme pas "
+                        "(artefact d'oscillation, garde pour comparaison)")
     p.add_argument("--releve-min", type=int, default=MINUTES_PAR_JOUR,
                    help="intervalle entre deux releves d'indicateurs")
     p.add_argument("--tout-regles", action="store_true",
                    help="aucun agent LLM : c'est la baseline de l'exigence E1")
+    p.add_argument("--tout-grand", action="store_true",
+                   help="tous les agents sur le grand modele : reference de l'exigence E5")
+    p.add_argument("--energie", choices=["auto", "non"], default="auto",
+                   help="mesure l'energie avec CodeCarbon s'il est installe (E4)")
     p.add_argument("--corpus", default=os.path.join(RACINE, "corpus"),
                    help="dossier de la base de connaissances (exigence F1)")
     p.add_argument("--passages", type=int, default=3,
@@ -250,6 +301,9 @@ def main():
         bus = Bus(args.kafka, nom_run=nom)   # echoue vite, avant tout appel LLM
         ecoute = cmd.Ecoute(args.kafka)      # injections venues de la scene (D3)
 
+    if args.tout_regles and args.tout_grand:
+        raise SystemExit("--tout-regles et --tout-grand s'excluent.")
+    mesureur = Energie(args.energie == "auto", nom)
     t0 = time.perf_counter()
     interrompu = False
     with Journal(os.path.join(RACINE, "runs"), nom, horloge, bus=bus) as journal:
@@ -262,6 +316,7 @@ def main():
         journal.ecrire("population.v1", resume=resume, agents=[
             {k: a[k] for k in ("id", "nom", "profil", "groupe", "moteur", "porte")}
             for a in agents])
+        mesureur.demarrer()
         try:
             if args.mode == "synchrone":
                 tourner_synchrone(monde, decideurs, journal, horloge, args, ecoute)
@@ -271,6 +326,8 @@ def main():
             interrompu = True
             print("\n!! Run arrete a la main. Les evenements deja ecrits restent valides.")
 
+        journal.ecrire("energie.v1", **mesureur.arreter())
+        journal.ecrire("coherence.v1", **_controler_coherence(journal.chemin))
         bilan = client.bilan() if client else {
             "appels": 0, "tokens_entree": 0, "tokens_sortie": 0,
             "temps_llm_s": 0.0, "temps_attente_s": 0.0, "erreurs": 0, "par_taille": {}}
@@ -293,6 +350,60 @@ def main():
                   f"latence moyenne {c['latence_moy_s']}s")
         print(f"Temps : LLM {bilan['temps_llm_s']}s, attente {bilan['temps_attente_s']}s")
     print(f"Run enregistre dans {chemin}")
+
+
+class Energie:
+    """Energie de la machine locale pendant le run, via CodeCarbon (E4).
+
+    Avec Ollama, c'est l'energie de l'inference elle-meme. Avec une API, la
+    mesure ne couvre que la machine locale : le cout du serveur distant s'estime
+    a part (EcoLogits, par exemple), et la note le dit.
+    """
+
+    def __init__(self, active, nom_run):
+        self.suivi = None
+        self.note = ""
+        if not active:
+            self.note = "mesure desactivee (--energie non)"
+            return
+        try:
+            from codecarbon import OfflineEmissionsTracker
+        except ImportError:
+            self.note = "CodeCarbon absent : pip install codecarbon"
+            return
+        self.suivi = OfflineEmissionsTracker(
+            project_name=nom_run, country_iso_code="MAR", log_level="error",
+            save_to_file=False)
+
+    def demarrer(self):
+        if self.suivi:
+            self.suivi.start()
+
+    def arreter(self):
+        if not self.suivi:
+            return {"outil": None, "kwh": None, "co2_kg": None,
+                    "portee": "machine locale", "note": self.note}
+        co2 = self.suivi.stop()
+        donnees = getattr(self.suivi, "final_emissions_data", None)
+        kwh = getattr(donnees, "energy_consumed", None)
+        return {"outil": "codecarbon", "kwh": None if kwh is None else float(kwh),
+                "co2_kg": None if co2 is None else float(co2),
+                "portee": "machine locale",
+                "note": "inference locale comprise si le fournisseur est ollama"}
+
+
+def _controler_coherence(chemin):
+    """Total des controles C6 du run, relus dans le journal comme les incidents."""
+    controles, details = 0, []
+    with open(chemin, encoding="utf-8") as f:
+        for ligne in f:
+            if '"perception.v1"' not in ligne:
+                continue
+            e = json.loads(ligne)
+            controles += 1
+            for v in e["violations_c6"]:
+                details.append({"agent": e["agent"], "t_sim": e["t_sim"], **v})
+    return {"controles": controles, "violations": len(details), "details": details[:50]}
 
 
 def _compter_incidents(chemin):

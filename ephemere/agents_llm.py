@@ -21,6 +21,7 @@ Tu n'es pas un assistant : tu ne donnes aucun conseil et tu ne fais jamais la mo
 On ne te demande pas de juger les modes ni de defendre ton independance.
 On te demande seulement de vivre ta journee et de decider comme ce personnage
 deciderait, avec ses interets, ses envies et ses contradictions.
+Tu ecris toujours en francais, comme un etudiant francophone.
 Tu reponds uniquement par un objet JSON, sans aucun texte autour."""
 
 CONSIGNE = """Tu es {nom}, {profil} du groupe {groupe}. {personnalite}
@@ -29,7 +30,7 @@ Nous sommes {date}. {situation}
 
 Ce que tu vois autour de toi :
 - dans ton groupe ({groupe}) : {nb_groupe}{noms_groupe}
-- sur le campus : {nb_campus} etudiants sur {total} le portent, {tendance}
+- sur le campus : {campus}
 
 Ce que tu as lu sur le reseau interne depuis ton dernier passage :
 {messages}
@@ -47,10 +48,12 @@ Reponds par un objet JSON avec exactement ces six champs :
 "porte" : true si tu as le ruban au poignet a partir de maintenant, false si tu
 ne l'as pas. C'est ton geste, pas ton avis.
 
-"categorie" : ce que le ruban signifie POUR TOI aujourd'hui. Une seule valeur,
-copiee exactement depuis cette liste : {categories}
+"categorie" : ce que le ruban VEUT DIRE aujourd'hui sur le campus, selon toi,
+que tu le portes ou non. Ce n'est pas ton geste, c'est ta lecture du signe.
+Une seule valeur, copiee exactement depuis cette liste :
+{categories}
 
-"sens" : la meme chose, mais avec tes mots. Une phrase courte, en "je".
+"sens" : ce que le ruban veut dire, avec tes mots. Une phrase courte.
 
 "publication" : ce que tu ecris sur le reseau interne, avec tes mots a toi,
 ou "" si tu n'as rien a dire aujourd'hui.
@@ -69,13 +72,23 @@ Reponds uniquement par ton objet JSON, sans aucun texte avant ni apres."""
 # Tournures typiques d'un modele qui repond en assistant au lieu d'incarner
 # un etudiant. Liste a assumer et a citer dans le rapport : elle est lexicale,
 # donc faillible, et c'est une limite a discuter en soutenance.
+#
+# Chaque motif doit viser une tournure d'ASSISTANT, pas du francais courant.
+# "en tant que", "je ne peux pas" ou "cependant, il" seuls attrapaient des
+# reponses parfaitement en role ("en tant que membre du club d'humour",
+# "je ne peux pas le porter en cours") : la decision etait jetee a tort,
+# le taux d'incidents gonfle et une partie des refus disparaissait.
+_IA = r"(une? )?(ia|intelligence artificielle|assistant|mod[eè]le( de langage)?|programme)\b"
 MARQUEURS_ASSISTANT = [
-    r"\ben tant qu('|e )", r"\bje suis une? (ia|intelligence artificielle|mod[eè]le)",
-    r"\bil est important de\b", r"\bil convient de\b", r"\bje ne peux pas\b",
+    r"\ben tant qu(e |')" + _IA, r"\bje suis " + _IA,
+    r"\bil est (important|essentiel|crucial) de\b", r"\bil convient de\b",
+    r"\bje ne (peux|suis pas en mesure de) (pas )?(vous |t')?(aider|r[eé]pondre|fournir"
+    r"|donner (un |une |d'|de )?(avis|conseil|opinion)|incarner|jouer ce r[oô]le"
+    r"|pr[eé]tendre|avoir (d'|des )?(opinion|avis|go[uû]ts?|pr[eé]f[eé]rences?))",
     r"\bn'h[eé]sitez pas\b", r"\bje vous (conseille|recommande|invite)\b",
     r"\bvoici (quelques|une liste)\b", r"\ben conclusion\b", r"\bil faut noter que\b",
-    r"\bcependant, il\b", r"\bje n'ai pas d'(opinion|avis|pr[eé]f[eé]rence)",
-    r"\bje suis (l[aà] pour|con[cç]u)", r"\bce ph[eé]nom[eè]ne (s'appelle|est connu)",
+    r"\bje n'ai pas d'(opinion|avis|pr[eé]f[eé]rence)",
+    r"\bje suis (l[aà] pour (vous|t')|con[cç]u)", r"\bce ph[eé]nom[eè]ne (s'appelle|est connu)",
 ]
 _MARQUEURS = [re.compile(m, re.IGNORECASE) for m in MARQUEURS_ASSISTANT]
 
@@ -89,9 +102,37 @@ FUITES = [
 _JSON_IMBRIQUE = re.compile(r'^\s*[\{\[]\s*["\{]')
 _FUITES = [re.compile(m, re.IGNORECASE) for m in FUITES]
 
-# Ce que l'agent affirme faire, pour le confronter a son champ porte.
-_DIT_PORTE = re.compile(r"\bje (le )?porte\b(?! pas)", re.IGNORECASE)
-_DIT_PAS = re.compile(r"\bje ne (le )?porte pas\b|\bje refuse de (le )?porter\b", re.IGNORECASE)
+# Ce que l'agent affirme faire, pour le confronter a son champ porte. Les
+# tournures viennent des reponses observees ("je prends part a l'engouement"
+# avec porte=false). Une phrase qui contient les deux sens n'est pas jugee.
+_DIT_PORTE = re.compile(
+    r"\bje (le |la )?porte\b(?! pas)(?! plus)"
+    r"|\bje (le |la )?(mets|remets|noue|garde|adopte)\b(?! pas)(?! plus)"
+    r"|\bj'adopte\b|\bje prends part\b|\bje (me )?joins\b|\bje rejoins\b"
+    r"|(?<!pas )(?<!plus )(?<!jamais )(?<!refuse de )(?<!refuser de )\bporter (le|ce) ruban\b"
+    r"|(?<!pas )(?<!plus )\b(de|a|à) le porter\b",
+    re.IGNORECASE)
+_DIT_PAS = re.compile(
+    r"\bje ne (le |la )?(porte|mets|garde|mettrai|porterai)\s+(pas|plus|jamais)\b"
+    r"|\bje refuse de (le )?porter\b|\bne (pas|plus) (le )?porter\b"
+    r"|\bje (l'|le )?(enl[eè]ve|retire|abandonne)\b|\bj'(enl[eè]ve|abandonne)\b",
+    re.IGNORECASE)
+
+# Reperage d'une reponse ecrite dans une autre langue (vu : qwen2.5:3b repond
+# parfois en italien). Seuls des mots sans equivalent francais comptent comme
+# etrangers, et des mots outils francais tres frequents comme francais.
+_MOTS = re.compile(r"[a-zà-ÿ']+", re.IGNORECASE)
+_ETRANGERS = {
+    "questo", "questa", "una", "sono", "che", "della", "dello", "voglio", "io", "nel",
+    "anche", "molto", "perche", "perché", "the", "and", "is", "to", "my", "this",
+    "that", "with", "not", "it", "el", "los", "las", "por", "muy", "pero", "yo",
+    "quiero", "porque", "das", "ich", "nicht", "und", "ist",
+}
+_FRANCAIS = {
+    "le", "les", "des", "du", "je", "ne", "pas", "et", "un", "est", "pour", "au",
+    "ce", "mon", "suis", "qui", "dans", "avec", "mais", "on", "tu", "nous", "c'est",
+    "j'ai", "plus", "veux", "aux", "cette", "ruban", "moi",
+}
 
 
 def detecter_derive(reponse):
@@ -102,7 +143,11 @@ def detecter_derive(reponse):
     sur place, pour que l'appelant utilise la valeur normalisee.
     """
     if isinstance(reponse, dict) and "categorie" in reponse:
-        reponse["categorie"] = normaliser_categorie(reponse["categorie"])
+        brute = reponse["categorie"]
+        reponse["categorie"] = normaliser_categorie(brute)
+        if (isinstance(brute, str) and reponse["categorie"] in SENS
+                and reponse["categorie"] != brute.strip().lower().replace(" ", "_")):
+            reponse["_categorie_brute"] = brute
     if reponse is None:
         return "appel_echoue", {}
     if not isinstance(reponse, dict):
@@ -112,6 +157,11 @@ def detecter_derive(reponse):
     if reponse.get("categorie") not in SENS:
         return "categorie_hors_liste", {"recu": repr(reponse.get("categorie"))[:80]}
     texte = " ".join(str(reponse.get(k, "")) for k in ("sens", "raison", "publication"))
+    mots = [m.lower() for m in _MOTS.findall(texte)]
+    etrangers = sum(m in _ETRANGERS for m in mots)
+    francais = sum(m in _FRANCAIS for m in mots)
+    if etrangers >= 3 and etrangers > francais:
+        return "hors_langue", {"mots_etrangers": etrangers, "mots_francais": francais}
     for motif in _MARQUEURS:
         trouve = motif.search(texte)
         if trouve:
@@ -125,14 +175,15 @@ def detecter_derive(reponse):
     # L'agent dit l'inverse de ce que dit son champ porte : la decision est
     # inexploitable, meme si le JSON est parfaitement forme.
     avis = " ".join(str(reponse.get(k, "")) for k in ("sens", "raison"))
-    if _DIT_PORTE.search(avis) and not reponse["porte"]:
-        return "incoherence_texte_etat", {"porte": False, "dit": "je porte"}
-    if _DIT_PAS.search(avis) and reponse["porte"]:
-        return "incoherence_texte_etat", {"porte": True, "dit": "je ne porte pas"}
+    dit_porte, dit_pas = _DIT_PORTE.search(avis), _DIT_PAS.search(avis)
+    if dit_porte and not dit_pas and not reponse["porte"]:
+        return "incoherence_texte_etat", {"porte": False, "dit": dit_porte.group(0)[:60]}
+    if dit_pas and not dit_porte and reponse["porte"]:
+        return "incoherence_texte_etat", {"porte": True, "dit": dit_pas.group(0)[:60]}
     return None, None
 
 
-def souvenirs(agent, limite_recents=4):
+def choisir_souvenirs(agent, limite_recents=4):
     """Selection de memoire injectee dans le prompt (exigence A1).
 
     On donne les souvenirs recents ET le plus ancien echange avec une
@@ -141,7 +192,13 @@ def souvenirs(agent, limite_recents=4):
     """
     memoire = agent.get("memoire", [])
     echanges = [m for m in memoire if m.get("genre") == "echange"]
-    choisis = echanges[:1] + [m for m in memoire[-limite_recents:] if m not in echanges[:1]]
+    return echanges[:1] + [m for m in memoire[-limite_recents:] if m not in echanges[:1]]
+
+
+def souvenirs(agent, limite_recents=4, choisis=None):
+    """Les souvenirs choisis, mis en forme pour le prompt."""
+    if choisis is None:
+        choisis = choisir_souvenirs(agent, limite_recents)
     if not choisis:
         return "- (rien pour l'instant)"
     lignes = []
@@ -151,12 +208,34 @@ def souvenirs(agent, limite_recents=4):
     return "\n".join(lignes)
 
 
+def controler_c6(perception, t_sim):
+    """Verifie qu'aucune information du contexte ne vient du futur (exigence C6).
+
+    Les filtres du fil, de la memoire et de la base empechent deja ces cas :
+    ce controle independant les COMPTE, pour qu'un zero soit une mesure et pas
+    une supposition. Un document vaut pour toute sa journee de parution.
+    """
+    jour = t_sim // 1440 + 1
+    violations = []
+    for m in perception["messages"]:
+        if m["t_sim"] > t_sim:
+            violations.append({"source": "message", "auteur": m["auteur"], "t_sim": m["t_sim"]})
+    for m in perception["souvenirs"]:
+        if m.get("t_sim") is not None and m["t_sim"] > t_sim:
+            violations.append({"source": "souvenir", "t_sim": m["t_sim"]})
+    for d in perception["documents"]:
+        if d["jour"] > jour:
+            violations.append({"source": "document", "id": d["id"], "jour": d["jour"]})
+    return violations
+
+
 # Ce que chaque profil va chercher dans la base. La requete depend de l'agent,
 # donc deux profils places dans la meme situation ne retrouvent pas la meme
 # chose : c'est ce qui rend la recuperation defendable (exigences F1 et A3).
 ANGLES = {
-    "pionnier": "se distinguer cercle creatif devenir banal abandonner les premiers",
-    "figure_populaire": "populaire imite surprendre entrainer le campus",
+    "pionnier": ("se distinguer cercle creatif devenir banal abandonner les premiers "
+                 "signe distinctif membres atelier"),
+    "figure_populaire": "populaire imite surprendre entrainer equipe distinguer groupe",
     "suiveur": "adopter attendre que le groupe s'y mette majorite",
     "refractaire": "refuser une mode par principe detonner",
     "ironique": "detournement moquerie second degre tourner en derision",
@@ -165,9 +244,12 @@ ANGLES = {
 
 def requete_de(agent):
     """La question que l'agent se pose, transformee en requete documentaire."""
-    etat = "je le porte" if agent["porte"] else "je ne le porte pas"
-    return (f"ruban au poignet mode du campus {etat} "
-            f"{agent.get('categorie', '')} {ANGLES.get(agent['profil'], '')}")
+    # Pas de prefixe commun du type "ruban au poignet" : "ruban" et "poignet",
+    # rares dans le corpus, ramenaient le meme passage pour TOUS les profils
+    # (33 passages sur 54 lors du run d'essai). La requete est faite de l'angle
+    # du profil et de son etat, rien d'autre.
+    etat = "porter garder" if agent["porte"] else "refuser abandonner"
+    return f"{ANGLES.get(agent['profil'], '')} {etat}"
 
 
 class DecideurLLM:
@@ -207,12 +289,32 @@ class DecideurLLM:
         return requete, trouves
 
     def _consigne(self, agent, monde, t_sim, horloge_lisible, documents=None):
+        """Renvoie (consigne, perception) : le prompt et ce qu'il donne a voir."""
         groupe = agent["groupe"]
         porteurs, pairs = monde.porteurs_du_groupe(agent)
         noms = [a["nom"] for a in porteurs]
         messages = monde.fil_visible(agent, t_sim, limite=6)
-        nb_campus = len(monde.porteurs())
-        return CONSIGNE.format(
+        choisis = choisir_souvenirs(agent)
+        if monde.cloisonne:
+            # Temoin B3 : le campus n'existe plus comme espace commun. Un agent
+            # LLM ne doit pas plus le voir qu'un agent a regles.
+            campus = "tu ne sais pas ce qui se passe hors de ton groupe"
+        else:
+            campus = (f"{len(monde.porteurs())} etudiants sur {len(monde.agents)} "
+                      f"le portent, {monde.tendance()}")
+        perception = {
+            "messages": [{"auteur": m["agent"], "t_sim": m["t_sim"], "texte": m["texte"]}
+                         for m in messages],
+            "souvenirs": [{"genre": m.get("genre", ""), "t_sim": m.get("t_sim"),
+                           "fait": m.get("fait", "")} for m in choisis],
+            "documents": [{"id": d["id"], "numero": d["numero"], "jour": d["jour"]}
+                          for d in (documents or [])],
+            "vue": {"porteurs_groupe": noms, "pairs_groupe": len(pairs),
+                    "campus": campus, "porte": agent["porte"],
+                    "categorie": agent["categorie"]},
+        }
+        perception["violations_c6"] = controler_c6(perception, t_sim)
+        consigne = CONSIGNE.format(
             nom=agent["nom"], profil=agent["profil"].replace("_", " "), groupe=groupe,
             personnalite=agent.get("personnalite", ""),
             date=horloge_lisible,
@@ -220,28 +322,34 @@ class DecideurLLM:
             nb_groupe=(f"{len(porteurs)} personne(s) sur {len(pairs)} le portent"
                        if pairs else "tu es seul dans ton groupe"),
             noms_groupe=(" : " + ", ".join(noms)) if noms else "",
-            nb_campus=nb_campus, total=len(monde.agents),
-            tendance=monde.tendance(),
+            campus=campus,
             documents="\n".join(
                 f"- {d['titre']} ({d['source']}) : {d['passage'][:220]}"
                 for d in (documents or [])) or "- (rien qui te revienne)",
             messages="\n".join(
                 f"- {m['nom_auteur']} : {m['texte']}" for m in messages
             ) or "- (rien de nouveau)",
-            souvenirs=souvenirs(agent),
+            souvenirs=souvenirs(agent, choisis=choisis),
             etat="portes" if agent["porte"] else "ne portes pas",
-            categories=", ".join(SENS),
+            categories="\n".join(f"- {cle} : {texte}" for cle, texte in SENS.items()),
             voisins=(" Dans ton groupe il y a : "
                      + ", ".join(a["nom"] for a in pairs[:5]) + ".")
                     if pairs else "",
         )
+        return consigne, perception
 
     def decider(self, agent, monde, t_sim, horloge_lisible=""):
         requete, documents = self._recuperer(agent, t_sim)
-        consigne = self._consigne(agent, monde, t_sim, horloge_lisible, documents)
+        consigne, perception = self._consigne(agent, monde, t_sim, horloge_lisible, documents)
         reponse = self.client.json(SYSTEME, consigne, self.taille)
         mesure = dict(self.client.derniere_mesure)
+        brut = getattr(self.client, "dernier_brut", None)
+        perception["reponse_brute"] = None if brut is None else str(brut)[:4000]
         nature, details = detecter_derive(reponse)
+        if isinstance(reponse, dict) and "_categorie_brute" in reponse:
+            # Champ facultatif de perception.v1 : faute de frappe ramenee.
+            perception["categorie_corrigee"] = {"recu": str(reponse.pop("_categorie_brute"))[:80],
+                                                "retenu": reponse["categorie"]}
 
         if nature:
             # L'agent n'a pas vraiment decide : il garde son etat de la veille.
@@ -252,7 +360,7 @@ class DecideurLLM:
                     "publication": "", "destinataire": "",
                     "valide": False, "moteur": self.taille,
                     "incident": {"nature": nature, "details": details},
-                    "mesure": mesure,
+                    "mesure": mesure, "perception": perception,
                     "recuperation": {"requete": requete, "resultats": documents}}
 
         return {"porte": reponse["porte"],
@@ -262,4 +370,5 @@ class DecideurLLM:
                 "publication": str(reponse.get("publication", ""))[:280],
                 "destinataire": str(reponse.get("destinataire", ""))[:60],
                 "valide": True, "moteur": self.taille, "mesure": mesure,
+                "perception": perception,
                 "recuperation": {"requete": requete, "resultats": documents}}

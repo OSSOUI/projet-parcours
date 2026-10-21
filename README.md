@@ -77,8 +77,11 @@ Chaque événement porte :
 | `t_traitement` | horloge réelle au traitement, rempli par le consommateur |
 
 `t_traitement` vaut `null` tant que personne n'a consommé l'événement. C'est le
-pont Kafka qui l'horodatera, à l'étape 4. Le décalage entre `t_sim` et
-`t_traitement` est la mesure attendue par l'exigence C7.
+pont qui l'horodate, à la milliseconde comme `t_emission`. En direct, il calcule
+`delai_ms = t_traitement - t_emission` pour chaque événement, l'enregistre dans
+`runs/<run>.traitement.jsonl` et en affiche la moyenne, la médiane, le p95 et le
+pire cas à la fin du run : c'est la mesure de l'exigence C7. En rejeu, ce délai
+n'est pas calculé, car il ne mesurerait que l'ancienneté du fichier.
 
 ### 3. Deux modes d'exécution
 
@@ -86,9 +89,21 @@ pont Kafka qui l'horodatera, à l'étape 4. Le décalage entre `t_sim` et
 de la veille. On interroge tout le monde avant d'appliquer quoi que ce soit : une
 publication du matin n'est visible que le lendemain.
 
+Les pionnières font exception : elles se relaient, une sur deux réévalue à
+chaque pas. Quand elles décidaient toutes ensemble sur le même état, elles
+abandonnaient le même jour puis revenaient le même jour, et l'adoption oscillait
+avec une période de deux jours (13 runs sur 30 en baseline, 24 sur 30 dans le
+témoin). C'est un artefact de la simultanéité, pas un phénomène du campus. Avec
+le relais, il n'y a plus aucun run oscillant, et la séparation B3 est intacte
+(23/30 contre 0/30). `--pionnieres-simultanees` rétablit l'ancien comportement
+pour le montrer.
+
 **Asynchrone.** Chaque agent se réveille à sa propre cadence (720 min pour un
 pionnier, 1440 pour un suiveur), avec un décalage individuel. Le monde change
 entre deux agents, donc celui qui parle tôt influence ceux qui parlent après.
+Une décision qui a demandé du temps de réflexion repasse par l'échéancier et
+prend effet à `t + réflexion` : les agents réveillés entre-temps décident sur
+l'état d'avant, et l'horloge n'a jamais à reculer.
 
 Les deux modes relèvent les indicateurs sur la **même grille de temps simulé**,
 sans quoi leur comparaison ne voudrait rien dire.
@@ -117,6 +132,15 @@ de l'exigence E1. Ce sont deux choses différentes.
 
 Le ruban peut vouloir dire six choses, et six seulement :
 `cercle_creatif`, `tendance`, `suivre_la_foule`, `ringard`, `ironie`, `aucun_sens`.
+
+La catégorie dit ce que le ruban **veut dire sur le campus** selon l'agent, que
+celui-ci le porte ou non. Son geste est un champ séparé (`porte`). Un
+non-porteur peut donc très bien répondre « ironie » : pour lui, le ruban, on le
+porte pour s'en moquer. Le prompt donne la définition de chacun des six sens.
+Le run d'essai du 21 octobre a montré pourquoi c'est nécessaire. Avec la seule
+liste des mots et la question « ce que le ruban signifie pour toi », des
+non-porteurs choisissaient « ironie » ou « suivre la foule » pour dire leur
+propre refus, et l'indicateur mélangeait deux questions.
 
 L'indicateur d'émergence est **`part_sens_dominant`** : la fraction du campus qui
 attribue au ruban le même sens.
@@ -149,11 +173,22 @@ La mémoire injectée dans le prompt mélange les souvenirs récents **et le plu
 ancien échange avec une personne**. C'est exactement ce que l'exigence A1
 demande : pouvoir tenir compte d'un échange vieux de plusieurs jours simulés.
 
+Les décisions et les échanges ont des plafonds **séparés** : 8 décisions et
+30 échanges. Avec un plafond commun de 12, une pionnière, qui décide deux fois
+par jour, perdait un échange au bout de 6 jours. Désormais, un échange du J1 est
+encore là au J25 (c'est vérifié par `tests/test_agents.py`).
+
+Le fil du réseau ne montre que les messages **nouveaux** depuis le dernier
+passage de l'agent (curseur `vu_jusqu_a`). L'injection « relais massif » remet
+ce curseur à zéro : au passage suivant, chacun relit tout le fil en plus de
+l'article. Elle ne touche pas au temps de port, qui se compte depuis la
+décision précédente.
+
 ### Détection des dérives (A4)
 
 La fiche du sujet prévient : un LLM aligné sur la sécurité répond volontiers
 en assistant prudent au lieu d'incarner un étudiant. On ne peut pas l'empêcher,
-donc on le **mesure**. Cinq natures de dérive sont détectées et comptées :
+donc on le **mesure**. Ces natures de dérive sont détectées et comptées :
 
 | nature | déclencheur |
 |---|---|
@@ -161,14 +196,72 @@ donc on le **mesure**. Cinq natures de dérive sont détectées et comptées :
 | `json_illisible` | la réponse n'est pas un objet JSON |
 | `champ_porte_invalide` | `porte` n'est pas un booléen |
 | `categorie_hors_liste` | une catégorie inventée hors des six |
+| `hors_langue` | réponse écrite dans une autre langue (vu : du qwen2.5:3b en italien) |
 | `posture_assistant` | tournures du type « en tant qu'IA », « il est important de » |
+| `fuite_de_consigne` | le modèle recopie la consigne au lieu de la remplir |
+| `incoherence_texte_etat` | le texte dit « je le porte » ou « je prends part » alors que `porte` vaut `false`, ou l'inverse |
+
+Une faute de frappe très proche d'une catégorie (`suivre_la_folle`) est ramenée
+à la bonne valeur au lieu d'être comptée comme dérive. La correction est notée
+dans `perception.v1` (`categorie_corrigee`), si bien que le taux de fautes par
+taille de modèle reste mesurable. Une vraie invention (`seulement_circulaire`)
+reste une dérive.
+
+Le contrôle de cohérence entre texte et état est lexical. Il repère les
+tournures observées dans les runs, pas toutes les façons de dire qu'on porte
+ou non le ruban : c'est une limite à mentionner.
 
 Dans tous les cas, **l'agent garde son état de la veille et le run continue**.
 Chaque incident part dans un événement `incident.v1`, et le total figure dans
 le bilan : le taux de sortie de rôle devient un résultat du rapport.
 
 Le détecteur de posture est lexical, donc faillible. C'est une limite à
-assumer dans le rapport plutôt qu'à cacher.
+assumer dans le rapport plutôt qu'à cacher. Chaque motif vise une tournure
+d'assistant et non du français courant. « En tant que membre du club
+d'humour », « je ne peux pas le mettre à l'atelier » et « cependant, il
+commence à se voir » ne sont plus signalés, alors que « en tant qu'IA » ou
+« je ne peux pas donner d'avis » le restent. Les tests fixent ces cas dans
+les deux sens.
+
+### Ce que l'agent a vu (`perception.v1`)
+
+Chaque décision d'un agent LLM produit un événement `perception.v1` qui contient :
+- les messages du fil qu'il avait sous les yeux ;
+- les souvenirs injectés ;
+- les passages retrouvés dans la base ;
+- ce qu'il voyait de son groupe et du campus ;
+- la **réponse brute** du modèle, mot pour mot.
+
+Trois usages :
+- le détecteur de dérives se recalcule hors ligne, sans relancer un seul appel ;
+- les échanges qui précèdent un basculement se retrouvent (B4) ;
+- deux profils placés devant le même contexte se comparent directement (A3).
+
+### Cohérence temporelle mesurée (C6)
+
+Les filtres du fil, de la mémoire et de la base empêchent un agent de voir
+l'avenir. Un contrôle indépendant le **vérifie** à chaque décision LLM : aucun
+message, souvenir ou document ne doit être postérieur au moment simulé de la
+décision. Le total du run part dans `coherence.v1` : contextes contrôlés,
+violations trouvées, et le détail de chacune. Un zéro est donc une mesure,
+pas une supposition.
+
+### Énergie (E4)
+
+Si CodeCarbon est installé (`pip install codecarbon`), chaque run mesure
+l'énergie de la machine locale et l'écrit dans `energie.v1`. Avec Ollama, cela
+comprend l'inférence. Avec une API, seule la machine locale est couverte, et
+l'événement le précise. Sans CodeCarbon, l'événement est quand même écrit, avec
+`kwh: null` et la raison.
+
+### Cloisonnement
+
+Quand la perception du campus vaut zéro (configuration témoin, ou injection
+« cloisonnement »), un agent LLM est cloisonné exactement comme un agent à
+règles. Son prompt ne donne plus le compteur ni la tendance du campus. Il ne
+montre plus les messages des autres groupes. Les échanges adressés d'un groupe
+à l'autre n'arrivent pas. Seules les injections de la scène restent visibles
+de tous.
 
 ### Le temps de réflexion devient du temps simulé
 
@@ -262,9 +355,14 @@ membre de l'atelier.
 
 La requête dépend du profil, donc deux agents dans la même situation ne
 retrouvent pas la même chose. Un pionnier cherche autour de « se distinguer,
-devenir banal, abandonner les premiers », un réfractaire autour de « refuser une
-mode par principe ». C'est ce qui rend la récupération défendable, et c'est aussi
-une partie de la réponse à l'exigence A3.
+devenir banal, signe distinctif de l'atelier », un réfractaire autour de
+« refuser une mode par principe ». C'est ce qui rend la récupération défendable,
+et c'est aussi une partie de la réponse à l'exigence A3.
+
+La requête ne contient **pas** de préfixe commun comme « ruban au poignet ». Lors
+du run d'essai, ces deux mots rares ramenaient le même paragraphe du même
+article pour tous les profils : 33 passages sur 54 venaient de lui. Chaque
+recherche renvoie aussi au plus **un passage par document**.
 
 ### La preuve (exigence F2)
 
@@ -274,6 +372,24 @@ les identifiants retrouvés, leurs scores et le jour de chaque document.
 décision, la part de recherches sans résultat et les documents les plus
 retrouvés. C'est ce tableau qui répond à « montrez la qualité de votre
 récupération », et à la question Q5 du jury.
+
+## Protocole expérimental
+
+```bash
+python3 experience.py --liste                     # plans et hypothèses
+python3 experience.py --plan socle --jours 25     # 30 graines, sans LLM
+python3 experience.py --plan b3_llm --fournisseur ollama   # B3 et Q2 côté LLM
+python3 experience.py --plan temps  --fournisseur ollama   # C5
+python3 experience.py --plan sobriete --fournisseur ollama # E5
+```
+
+Toutes les configurations d'un plan tournent sur les **mêmes graines**, et la
+comparaison se fait aussi graine par graine. L'hypothèse de chaque
+configuration est écrite dans `experience.py` avant toute mesure.
+
+L'accord mesuré est la part du campus sur le sens le plus répandu **autre que
+« aucun sens »**, avec les non-porteurs au dénominateur. Quand « aucun sens »
+domine, le relevé n'est donc plus jeté.
 
 ## Couverture des exigences
 
@@ -303,7 +419,14 @@ récupération », et à la question Q5 du jury.
 | F2 qualité de la récupération démontrée | fait, traçée dans le flux |
 | F3 où vivent flux, état, historique, base | fait |
 | C6 cohérence temporelle de l'information | fait, vérifié par les tests |
-| B3 E2 E5 protocole expérimental | étape 6, reste à faire |
+| C5 comparaison synchrone / asynchrone | outillée (`experience.py --plan temps`), runs LLM à faire |
+| C7 délai entre émission et traitement | fait, `runs/<run>.traitement.jsonl` écrit par le pont |
+| F6 indicateur remontable aux événements bruts | fait, un événement Kafka par événement métier |
+| B3 E2 protocole socle | fait : 30 graines communes, 23/30 runs émergents contre 0/30 pour le témoin |
+| C6 violations détectées et comptées | fait, `coherence.v1` à chaque run |
+| E4 énergie | outillé avec CodeCarbon, `energie.v1` |
+| B3 avec agents LLM | plan `b3_llm` prêt, runs à faire |
+| E5 sobriété | plan `sobriete` prêt (`--tout-grand`), runs à faire |
 
 ## Suite
 

@@ -52,6 +52,7 @@ class ClientLLM:
         self.nb_erreurs = 0
         self.attente_totale = 0.0
         self.derniere_mesure = {}
+        self.dernier_brut = None          # texte renvoye par le modele, mot pour mot
         self._dernier_quota = None
 
     def _casier(self, taille):
@@ -85,6 +86,7 @@ class ClientLLM:
         mesure = {"taille": taille, "modele": self.modeles[taille], "latence_s": None,
                   "attente_s": 0.0, "essais": 0, "tokens_entree": 0, "tokens_sortie": 0}
         self.derniere_mesure = mesure
+        self.dernier_brut = None
 
         for essai in range(essais):
             if attente:
@@ -136,7 +138,9 @@ class ClientLLM:
                 mesure["echec"] = "reponse_malformee"
                 casier["erreurs"] += 1
                 self.nb_erreurs += 1
+                self.dernier_brut = json.dumps(rep, ensure_ascii=False)[:4000]
                 return None
+            self.dernier_brut = texte if isinstance(texte, str) else repr(texte)
             return extraire_json(texte)
 
         casier["erreurs"] += 1
