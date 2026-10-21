@@ -93,7 +93,8 @@ def construire(chemin_config="config/tessaline.json", n=12, graine=42):
                 "sens": "",
                 "memoire": [],
                 "minutes_porte": 0,
-                "vu_jusqu_a": 0,
+                "derniere_decision": 0,   # t_sim de la derniere decision appliquee
+                "vu_jusqu_a": 0,          # position atteinte dans le fil du reseau
                 "seuil": round(rng.uniform(*spec.get("seuil", [0.15, 0.55])), 3),
             })
             i += 1

@@ -25,7 +25,9 @@ import time
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from ephemere.bus import TOPIC
-from ephemere.campus import Campus
+from ephemere.campus import Campus, resumer_delais
+
+RACINE = os.path.dirname(os.path.abspath(__file__))
 
 TOPIC_COMMANDES = "ephemere.commandes"
 
@@ -37,6 +39,8 @@ class Pont:
         self.clients = set()
         self.boucle = None
         self.producteur_commandes = None
+        self.mesures = None       # runs/<run>.traitement.jsonl, exigence C7
+        self.run_mesure = None
 
     # ------------------------------------------------------------ sortie
     async def accueil(self, ws):
@@ -59,6 +63,7 @@ class Pont:
         charge = json.dumps({"type": "evenement", "evenement": evt,
                              "etat": self.campus.instantane()}, ensure_ascii=False)
         self.campus.latences_ms.append((time.perf_counter() - t0) * 1000)
+        self.noter_delai(evt)
         if self.clients:
             websockets.broadcast(self.clients, charge)
         if evt.get("schema") == "indicateurs.v1":
@@ -66,6 +71,37 @@ class Pont:
             print(f"[pont] {evt.get('t_sim_lisible', ''):10s} adoption "
                   f"{i['taux_adoption']:4.0%}  sens dominant {i['sens_dominant']:16s} "
                   f"{i['part_sens_dominant']:4.0%}")
+
+    def noter_delai(self, evt):
+        """Enregistre le delai emission -> traitement de chaque evenement (C7).
+
+        Un fichier par run, a cote du run lui-meme : la mesure survit au pont
+        et se compare au journal du producteur sans rien recalculer.
+        """
+        if evt.get("delai_ms") is None:
+            return
+        if self.campus.run != self.run_mesure:
+            self.fermer_mesures()
+            self.run_mesure = self.campus.run
+            chemin = os.path.join(RACINE, "runs", f"{self.run_mesure}.traitement.jsonl")
+            os.makedirs(os.path.dirname(chemin), exist_ok=True)
+            self.mesures = open(chemin, "a", encoding="utf-8")
+            print(f"[pont] delais de traitement enregistres dans {chemin}")
+        self.mesures.write(json.dumps({
+            "schema": evt.get("schema"), "t_sim": evt.get("t_sim"),
+            "t_emission": evt.get("t_emission"), "t_traitement": evt["t_traitement"],
+            "delai_ms": evt["delai_ms"]}, ensure_ascii=False) + "\n")
+        self.mesures.flush()
+        if evt.get("schema") == "bilan.v1":
+            d = resumer_delais(self.campus.delais_ms)
+            print(f"[pont] fin du run {self.run_mesure} : delai emission -> traitement "
+                  f"{d['moyen']} ms en moyenne, mediane {d['median']}, "
+                  f"p95 {d['p95']}, pire {d['max']} ms (n={d['n']})")
+
+    def fermer_mesures(self):
+        if self.mesures:
+            self.mesures.close()
+            self.mesures = None
 
     def depuis_thread(self, evt, cle=None):
         asyncio.run_coroutine_threadsafe(self.diffuser(evt, cle), self.boucle)
@@ -128,7 +164,7 @@ async def rejouer(pont, chemin, vitesse, attendre_scene=True):
 
 async def principal(args):
     import websockets
-    campus = Campus()
+    campus = Campus(en_direct=not args.rejeu)
     pont = Pont(campus, serveur_kafka=None if args.rejeu else args.kafka)
     pont.boucle = asyncio.get_running_loop()
     async with websockets.serve(pont.accueil, "localhost", args.port):

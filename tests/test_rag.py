@@ -97,6 +97,25 @@ evt = {"schema": "recuperation.v1", "run": "t", "t_sim": 17280,
 ok, raison = verifier(evt)
 verif("il est conforme", ok, str(raison))
 
+print("\n7. Les profils ne retrouvent pas tous le meme article (F2, A3)")
+from ephemere.agents_llm import ANGLES, requete_de
+tetes, tous = set(), set()
+groupe_de = {"pionnier": "atelier_design", "ironique": "club_humour",
+             "figure_populaire": "asso_sportive"}
+for profil in ANGLES:
+    for porte in (True, False):
+        r = base.chercher(requete_de({"profil": profil, "porte": porte}), 3,
+                          groupe_de.get(profil, "residence_a"), k=3)
+        verif(f"un passage par document ({profil}, porte={porte})",
+                 len({x["id"] for x in r}) == len(r))
+        if r:
+            tetes.add(r[0]["id"])
+        tous.update(x["id"] for x in r)
+verif("au moins trois articles differents arrivent en tete", len(tetes) >= 3,
+         f"({sorted(tetes)})")
+verif("au moins cinq documents differents retrouves en tout", len(tous) >= 5,
+         f"({sorted(tous)})")
+
 print()
 if echecs:
     print(f"{len(echecs)} verification(s) en echec : {echecs}")

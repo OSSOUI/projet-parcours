@@ -9,15 +9,18 @@ C'est aussi ici qu'est pose t_traitement (exigences C3 et C7) : le producteur
 dit QUAND l'evenement s'est produit dans le monde, le consommateur dit QUAND il
 l'a traite. L'ecart entre les deux est la latence du systeme, et elle se mesure.
 """
-import time
 from collections import Counter
+from datetime import datetime
 
 from .contrat import SENS
 
 
 class Campus:
-    def __init__(self, agents=None):
+    def __init__(self, agents=None, en_direct=True):
         self.profils = {a["id"]: a for a in (agents or [])}
+        # En rejeu, t_emission date du run d'origine : l'ecart avec
+        # t_traitement ne mesurerait que l'anciennete du fichier.
+        self.en_direct = en_direct
         self.reinitialiser(None)
 
     def reinitialiser(self, run):
@@ -28,7 +31,8 @@ class Campus:
         self.fil = []
         self.historique = []
         self.incidents = Counter()
-        self.latences_ms = []     # ecart entre production et traitement
+        self.latences_ms = []     # duree du traitement dans le pont
+        self.delais_ms = []       # t_traitement - t_emission, exigence C7
         self.vus = 0
 
     def _agent(self, aid):
@@ -50,8 +54,18 @@ class Campus:
             self.reinitialiser(cle or evt.get("run"))
         self.vus += 1
 
-        # Horodatage du traitement : la deuxieme horloge exigee par C3.
-        evt["t_traitement"] = time.strftime("%Y-%m-%dT%H:%M:%S")
+        # Horodatage du traitement : la deuxieme horloge exigee par C3, meme
+        # format et meme precision que t_emission pour pouvoir les soustraire.
+        traite = datetime.now()
+        evt["t_traitement"] = traite.isoformat(timespec="milliseconds")
+        evt["delai_ms"] = None
+        if self.en_direct and evt.get("t_emission"):
+            try:
+                emis = datetime.fromisoformat(evt["t_emission"])
+                evt["delai_ms"] = round((traite - emis).total_seconds() * 1000, 1)
+                self.delais_ms.append(evt["delai_ms"])
+            except ValueError:
+                pass
         if evt.get("t_sim") is not None:
             self.t_sim = evt["t_sim"]
             self.t_sim_lisible = evt.get("t_sim_lisible", "")
@@ -106,6 +120,7 @@ class Campus:
             "sens_dominant": dominant, "part_sens_dominant": nb / n,
             "incidents": dict(self.incidents),
             "evenements_vus": self.vus,
+            "delai_traitement_ms": resumer_delais(self.delais_ms),
         }
 
     def instantane(self):
@@ -114,3 +129,13 @@ class Campus:
                 "indicateurs": self.indicateurs(),
                 "historique": self.historique, "fil": self.fil}
 
+
+def resumer_delais(delais):
+    """Moyenne, mediane, 95e centile et pire cas du delai emission -> traitement."""
+    if not delais:
+        return None
+    tries = sorted(delais)
+    return {"n": len(tries), "moyen": round(sum(tries) / len(tries), 1),
+            "median": tries[len(tries) // 2],
+            "p95": tries[min(len(tries) - 1, int(len(tries) * 0.95))],
+            "max": tries[-1]}

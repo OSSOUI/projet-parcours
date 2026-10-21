@@ -49,8 +49,11 @@ def appliquer(commande, monde, horloge):
     elif nature == "relais_massif":
         # Le levier "vitesse d'exposition" de la fiche : tout le campus voit
         # le ruban d'un coup, sans qu'aucune decision ne soit forcee.
+        # Le curseur de lecture revient au debut : au prochain passage, chacun
+        # relit les messages qu'il avait deja vus, en plus de l'article. Le
+        # temps de port (minutes_porte) n'est pas touche.
         for a in monde.agents.values():
-            a["vu_jusqu_a"] = 0        # tout le fil redevient a lire
+            a["vu_jusqu_a"] = 0
         monde.fil.append({"agent": "_injection", "nom_auteur": "Le journal etudiant",
                           "texte": details.get("texte")
                           or "Le ruban au poignet, nouveau signe de ralliement du campus ?",

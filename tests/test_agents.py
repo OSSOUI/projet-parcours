@@ -74,6 +74,50 @@ cas = [
     ("negation correcte non signalee",
      bonne_reponse(porte=False, categorie="ringard", sens="je ne le porte pas, c'est fini",
                    raison="plus personne d'interessant ne le met"), None),
+    # Francais courant, en role : ne doit PAS etre pris pour un assistant.
+    ("'en tant que' en role non signale",
+     bonne_reponse(categorie="ironie",
+                   raison="En tant que membre du club d'humour, je le porte pour m'en moquer"),
+     None),
+    ("'je ne peux pas' en role non signale",
+     bonne_reponse(porte=False, categorie="aucun_sens",
+                   raison="je ne peux pas le mettre a l'atelier, ca gene au tour"), None),
+    ("'cependant, il' en role non signale",
+     bonne_reponse(sens="c'est notre truc, cependant, il commence a se voir partout"), None),
+    ("refus net en role non signale",
+     bonne_reponse(porte=False, categorie="aucun_sens",
+                   sens="je ne peux pas suivre tout le monde comme ca",
+                   raison="je refuse de le porter"), None),
+    # Vraies postures d'assistant : toujours reperees.
+    ("'en tant qu'assistant'",
+     bonne_reponse(raison="En tant qu'assistant, je ne porte rien"), "posture_assistant"),
+    ("'je ne peux pas donner d'avis'",
+     bonne_reponse(sens="Je ne peux pas donner d'avis sur une mode"), "posture_assistant"),
+    ("'je suis un modele de langage'",
+     bonne_reponse(publication="je suis un modele de langage"), "posture_assistant"),
+    # Cas observes dans le run d'essai du 21/10 (qwen2.5:3b).
+    ("reponse en italien",
+     bonne_reponse(porte=False, categorie="ironie",
+                   sens="Io nonne questo gesto come una risposta ironica",
+                   publication="Questa risposta nonne il rubino, ma una sfumatura di ironia",
+                   raison="Voglio contrastare la tendenza senza fare una vera protesta"),
+     "hors_langue"),
+    ("'je prends part' sans porter",
+     bonne_reponse(porte=False, categorie="suivre_la_foule",
+                   sens="Je prends part a l'engouement pour le ruban.",
+                   raison="Je veux etre vu comme partant avec la tendance."),
+     "incoherence_texte_etat"),
+    ("'je choisis de ne pas porter le ruban' coherent",
+     bonne_reponse(porte=False, categorie="aucun_sens",
+                   sens="Je choisis de ne pas porter le ruban aujourd'hui.",
+                   raison="Je refuse de porter le ruban, je prefere attendre."), None),
+    ("'je choisis de porter le ruban' coherent",
+     bonne_reponse(porte=True, categorie="tendance",
+                   sens="Je choisis de porter le ruban aujourd'hui.", raison="ca me plait"),
+     None),
+    ("faute de frappe ramenee", bonne_reponse(categorie="suivre_la_folle"), None),
+    ("vraie invention refusee", bonne_reponse(categorie="seulement_circulaire"),
+     "categorie_hors_liste"),
 ]
 for nom, reponse, attendu in cas:
     nature, _ = detecter_derive(reponse)
@@ -104,6 +148,11 @@ verifier("le prompt donne ce que l'agent voit dans son groupe",
          agent["groupe"] in c and "le portent" in c)
 verifier("le prompt ne parle pas de 'mode' dans la mise en situation",
          "mode" not in c.split("Ce que tu vois")[0].lower())
+verifier("le prompt definit chaque sens du ruban",
+         "- ironie : on le porte pour s'en moquer" in c)
+verifier("le prompt separe la lecture du signe et le geste",
+         "VEUT DIRE" in c and "que tu le portes ou non" in c)
+verifier("le systeme impose le francais", "francais" in SYSTEME)
 verifier("la categorie est normalisee avant jugement",
          detecter_derive(bonne_reponse(categorie="Tendance"))[0] is None)
 
@@ -129,6 +178,195 @@ texte = souvenirs(cible)
 verifier("l'echange du J01 figure encore dans les souvenirs injectes",
          "J01 10:00" in texte and emetteur["nom"] in texte)
 verifier("les souvenirs recents y sont aussi", "J07 09:00" in texte)
+
+print("\n6. Un echange survit a toute la duree d'un run, meme chez une pionniere (A1)")
+from ephemere.monde import memoriser
+pionniere = {"memoire": []}
+pionniere["memoire"] = memoriser(pionniere["memoire"], {
+    "genre": "echange", "t_sim": 600, "t_sim_lisible": "J01 10:00",
+    "fait": "Lea m'a dit : \"garde-le\"", "raison": ""})
+for demi_journee in range(2, 2 * 25):     # cadence 720 : deux decisions par jour
+    pionniere["memoire"] = memoriser(pionniere["memoire"], {
+        "genre": "decision", "t_sim": demi_journee * 720,
+        "t_sim_lisible": f"J{demi_journee // 2 + 1:02d}", "fait": "j'ai decide de porter",
+        "raison": ""})
+verifier("l'echange du J01 est encore en memoire au J25",
+         any(m["genre"] == "echange" for m in pionniere["memoire"]))
+verifier("il figure dans les souvenirs injectes", "J01 10:00" in souvenirs(pionniere))
+verifier("les decisions restent plafonnees",
+         sum(m["genre"] == "decision" for m in pionniere["memoire"]) <= 8)
+
+print("\n7. Le fil ne montre que les messages nouveaux, et le relais les remontre")
+from ephemere import commandes
+from ephemere.horloge import Horloge
+agents, config = population.construire("config/tessaline.json", 8, 1)
+monde = Monde(agents, config.get("perception"))
+lecteur, auteur = agents[0], agents[1]
+monde.publier(auteur["id"], "premier message", 600)
+verifier("un message publie est visible", len(monde.fil_visible(lecteur, 700)) == 1)
+verifier("un message futur est invisible (C6)", len(monde.fil_visible(lecteur, 500)) == 0)
+monde.marquer_lu(lecteur, 700)
+verifier("un message deja lu n'est plus remontre", monde.fil_visible(lecteur, 900) == [])
+monde.publier(auteur["id"], "deuxieme message", 1000)
+verifier("seul le nouveau message est remontre",
+         [m["texte"] for m in monde.fil_visible(lecteur, 1100)] == ["deuxieme message"])
+monde.marquer_lu(lecteur, 1100)
+commandes.appliquer({"nature": "relais_massif"}, monde, Horloge(1200))
+verifier("apres le relais massif, tout le fil redevient a lire",
+         len(monde.fil_visible(lecteur, 1300)) == 3)
+
+print("\n8. Le relais massif ne gonfle pas le temps de port (lassitude)")
+import simuler
+populaire = next(a for a in agents if a["profil"] == "figure_populaire")
+populaire.update(porte=True, minutes_porte=1920, derniere_decision=11520)
+h = Horloge(11520 + 960)
+commandes.appliquer({"nature": "relais_massif"}, monde, h)
+simuler.appliquer(populaire, {"porte": True, "categorie": "tendance", "sens": "x",
+                              "raison": ""}, monde, h)
+verifier("seules les 960 minutes ecoulees s'ajoutent",
+         populaire["minutes_porte"] == 1920 + 960, f"(obtenu {populaire['minutes_porte']})")
+
+print("\n9. Un temoin LLM est cloisonne comme un agent a regles (B3)")
+agents, config = population.construire("config/tessaline_cloisonne.json", 20, 3)
+monde = Monde(agents, config.get("perception"))
+temoin = next(a for a in agents if a["groupe"] != "atelier_design")
+etranger = next(a for a in agents if a["groupe"] != temoin["groupe"])
+voisin = next((a for a in agents if a["groupe"] == temoin["groupe"]
+               and a["id"] != temoin["id"]), None)
+monde.publier(etranger["id"], "message d'un autre groupe", 600)
+if voisin:
+    monde.publier(voisin["id"], "message du groupe", 600)
+client = ClientFactice([bonne_reponse()])
+DecideurLLM(client, "llm_petit").decider(temoin, monde, 700, "J01 11:40")
+c = client.derniere_consigne
+verifier("le prompt ne donne pas le compteur du campus", "etudiants sur" not in c)
+verifier("le prompt ne montre pas le fil des autres groupes",
+         "message d'un autre groupe" not in c)
+if voisin:
+    verifier("le prompt montre encore le fil du groupe", "message du groupe" in c)
+verifier("un echange adresse a un autre groupe n'arrive pas",
+         monde.adresser(etranger["id"], temoin["nom"], "salut", 700, "J01") is None)
+
+print("\n10. Le mode asynchrone tient quand les modeles reflechissent (C4)")
+import random
+import tempfile
+import types
+from ephemere.journal import Journal
+
+
+class Lent:
+    def decider(self, agent, monde, t, lisible=""):
+        return {"porte": agent["porte"], "categorie": agent["categorie"], "sens": "x",
+                "raison": "x", "publication": "", "destinataire": "", "valide": True,
+                "mesure": {"latence_s": 6.0}}
+
+
+agents, config = population.construire("config/tessaline.json", 20, 1)
+monde = Monde(agents, config.get("perception"))
+h = Horloge(0)
+try:
+    with tempfile.TemporaryDirectory() as dossier, Journal(dossier, "t", h) as journal:
+        import io
+        import contextlib
+        with contextlib.redirect_stdout(io.StringIO()):
+            simuler.tourner_asynchrone(
+                monde, {a["id"]: Lent() for a in agents}, journal, h,
+                types.SimpleNamespace(jours=3, releve_min=1440, minutes_par_seconde=5.0),
+                random.Random(1))
+    ok = True
+except ValueError as e:
+    ok = False
+verifier("trois jours avec 30 minutes de reflexion, sans recul d'horloge", ok)
+
+print("\n11. Le delai emission -> traitement est mesure (C7)")
+from datetime import datetime, timedelta
+from ephemere.campus import Campus
+emis = (datetime.now() - timedelta(milliseconds=250)).isoformat(timespec="milliseconds")
+campus = Campus()
+evt = campus.appliquer({"schema": "decision.v1", "agent": "lea", "porte": True,
+                        "t_sim": 600, "t_emission": emis}, "r")
+verifier("t_traitement est horodate a la milliseconde", len(evt["t_traitement"]) == 23)
+verifier("le delai est calcule", evt["delai_ms"] is not None and evt["delai_ms"] >= 250)
+verifier("il remonte dans les indicateurs",
+         campus.indicateurs()["delai_traitement_ms"]["n"] == 1)
+rejeu = Campus(en_direct=False)
+verifier("pas de delai en rejeu", rejeu.appliquer(
+    {"schema": "run.v1", "t_sim": 0, "t_emission": emis}, "r")["delai_ms"] is None)
+
+print("\n12. Ce que l'agent a vu est enregistre, et le futur est detecte (A3, B4, C6)")
+from ephemere import contrat
+from ephemere.agents_llm import controler_c6
+agents, config = population.construire("config/tessaline.json", 8, 1)
+monde = Monde(agents, config.get("perception"))
+lecteur, auteur = agents[0], agents[1]
+monde.publier(auteur["id"], "je l'ai vu a la cafet", 600)
+client = ClientFactice([bonne_reponse()])
+client.dernier_brut = '{"porte": true, "raison": "texte brut"}'
+d = DecideurLLM(client, "llm_petit").decider(lecteur, monde, 700, "J01 11:40")
+p = d["perception"]
+verifier("le message lu figure dans la perception",
+         [m["texte"] for m in p["messages"]] == ["je l'ai vu a la cafet"])
+verifier("la reponse brute est conservee", p["reponse_brute"] == client.dernier_brut)
+verifier("aucune violation C6 dans un contexte sain", p["violations_c6"] == [])
+evt = {"schema": "perception.v1", "run": "t", "t_sim": 700, "t_sim_lisible": "J01 11:40",
+       "t_emission": "x", "t_traitement": None, "agent": lecteur["id"],
+       "moteur": "llm_petit", **p}
+verifier("l'evenement perception.v1 est conforme", contrat.verifier(evt) == (True, None))
+futur = {"messages": [{"auteur": "lea", "t_sim": 900, "texte": "x"}],
+         "souvenirs": [{"genre": "echange", "t_sim": 2000, "fait": "x"}],
+         "documents": [{"id": "criee_enquete_ruban", "numero": 0, "jour": 9}]}
+verifier("message, souvenir et document du futur sont tous comptes",
+         len(controler_c6(futur, 700)) == 3)
+verifier("un document du jour meme n'est pas une violation",
+         controler_c6({"messages": [], "souvenirs": [],
+                       "documents": [{"id": "x", "numero": 0, "jour": 1}]}, 700) == [])
+
+client = ClientFactice([bonne_reponse(categorie="suivre_la_folle")])
+d = DecideurLLM(client, "llm_petit").decider(lecteur, monde, 700, "J01 11:40")
+verifier("une faute de frappe ramenee est notee dans la perception",
+         d["perception"].get("categorie_corrigee") == {"recu": "suivre_la_folle",
+                                                      "retenu": "suivre_la_foule"})
+
+print("\n13. L'accord se mesure meme quand 'aucun sens' domine (B1, B3)")
+from experience import accord_partage
+releve = {"repartition_sens": {"aucun_sens": 12, "tendance": 8, "ironie": 0,
+                               "cercle_creatif": 0, "suivre_la_foule": 0, "ringard": 0}}
+verifier("40 % sur 'tendance' comptent malgre 60 % de 'aucun sens'",
+         abs(accord_partage(releve) - 0.4) < 1e-9)
+
+print("\n14. Un run complet avec LLM factice ne produit aucun evenement rejete")
+import contextlib
+import io
+import tempfile
+import types
+from ephemere.horloge import Horloge
+from ephemere.journal import Journal
+
+
+class Repondeur:
+    derniere_mesure = {"latence_s": 0.2}
+    dernier_brut = "{}"
+
+    def json(self, systeme, consigne, taille):
+        return bonne_reponse(publication="on se voit a l'atelier ?")
+
+
+agents, config = population.construire("config/tessaline.json", 12, 2)
+monde = Monde(agents, config.get("perception"))
+h = Horloge(0)
+llm = DecideurLLM(Repondeur(), "llm_petit")
+with tempfile.TemporaryDirectory() as dossier:
+    with Journal(dossier, "essai", h) as journal, contextlib.redirect_stdout(io.StringIO()):
+        simuler.tourner_synchrone(
+            monde, {a["id"]: llm for a in agents}, journal, h,
+            types.SimpleNamespace(jours=3, pas_min=1440, releve_min=1440))
+        journal.ecrire("energie.v1", **simuler.Energie(False, "essai").arreter())
+        coherence = simuler._controler_coherence(journal.chemin)
+        journal.ecrire("coherence.v1", **coherence)
+        rejets = journal.nb_rejets
+verifier("aucun evenement rejete par le contrat", rejets == 0, f"({rejets} rejets)")
+verifier("chaque decision LLM a ete controlee", coherence["controles"] > 0)
+verifier("zero violation C6 sur le run", coherence["violations"] == 0)
 
 print()
 if echecs:

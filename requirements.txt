@@ -2,3 +2,5 @@
 # Ces deux paquets ne servent qu'au pont vers Godot.
 kafka-python>=2.0,<3        # publication et lecture du topic Kafka
 websockets>=12              # pont.py -> scene Godot
+# Facultatif : mesure de l'energie des runs (exigence E4)
+# codecarbon>=2.3

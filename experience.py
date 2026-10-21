@@ -10,7 +10,7 @@ l'emergence est attendue et une configuration temoin ou elle ne l'est pas, puis
 de montrer que l'indicateur les separe nettement, sur plusieurs repetitions.
 
     python3 experience.py --liste
-    python3 experience.py --plan socle --repetitions 5
+    python3 experience.py --plan socle                  # 30 graines communes
     python3 experience.py --plan temps --repetitions 5 --fournisseur ollama
 
 Chaque run est enregistre normalement dans runs/, donc rejouable et analysable
@@ -50,15 +50,34 @@ CONFIGURATIONS = {
     "llm_asynchrone": {
         "titre": "Agents LLM, mode asynchrone",
         "options": ["--mode", "asynchrone"],
-        "attendu": "emergence plus lente, ordre des prises de parole different",
+        "attendu": ("emergence plus lente qu'en synchrone : le grand modele, plus lent, "
+                    "fait parler les pionnieres et la figure populaire apres les autres"),
+    },
+    "llm_temoin_cloisonne": {
+        "titre": "Temoin LLM : groupes cloisonnes des le depart",
+        "options": ["--mode", "synchrone", "--config",
+                    os.path.join(RACINE, "config", "tessaline_cloisonne.json")],
+        "attendu": ("pas d'emergence a l'echelle du campus. Si l'accord depasse "
+                    "quand meme le seuil, il vient de la ressemblance des reponses "
+                    "d'un meme modele et non d'un contexte commun (question Q2)"),
+    },
+    "tout_grand": {
+        "titre": "Tous les agents sur le grand modele (reference E5)",
+        "options": ["--mode", "synchrone", "--tout-grand"],
+        "attendu": ("phenomene comparable a llm_synchrone (memes graines), mais "
+                    "chaque agent appelle le grand modele : plus d'appels au total, "
+                    "environ cinq fois plus au grand modele, plus de tokens"),
     },
 }
 
 PLANS = {
     "socle": ["baseline", "temoin_cloisonne"],
-    "llm": ["baseline", "llm_synchrone"],
-    "temps": ["llm_synchrone", "llm_asynchrone"],
-    "complet": ["baseline", "temoin_cloisonne", "llm_synchrone", "llm_asynchrone"],
+    "llm": ["baseline", "llm_synchrone"],                  # E1 : apport du LLM
+    "b3_llm": ["llm_synchrone", "llm_temoin_cloisonne"],   # B3 et Q2 cote LLM
+    "temps": ["llm_synchrone", "llm_asynchrone"],          # C5
+    "sobriete": ["llm_synchrone", "tout_grand"],           # E5
+    "complet": ["baseline", "temoin_cloisonne", "llm_synchrone", "llm_temoin_cloisonne",
+                "llm_asynchrone", "tout_grand"],
 }
 
 
@@ -66,7 +85,7 @@ def lancer(nom_run, options, args):
     """Lance un run et renvoie son chemin, ou None s'il a echoue."""
     commande = [sys.executable, os.path.join(RACINE, "simuler.py"),
                 "--agents", str(args.agents), "--jours", str(args.jours),
-                "--graine", str(args.graine), "--nom", nom_run] + list(options)
+                "--nom", nom_run] + list(options)
     if "--tout-regles" not in options:
         commande += ["--fournisseur", args.fournisseur, "--pause", str(args.pause)]
     t0 = time.perf_counter()
@@ -78,9 +97,21 @@ def lancer(nom_run, options, args):
     return os.path.join(RACINE, "runs", f"{nom_run}.jsonl"), duree
 
 
+def accord_partage(releve):
+    """Part du campus sur le sens le plus repandu AUTRE que "aucun sens".
+
+    On ne peut pas se contenter de part_sens_dominant : quand "aucun sens"
+    domine, un releve ou 40 % du campus s'accorde sur "tendance" etait jete
+    tout entier. Les non-porteurs restent au denominateur.
+    """
+    rep = releve["repartition_sens"]
+    n = sum(rep.values()) or 1
+    return max((c for s, c in rep.items() if s != "aucun_sens"), default=0) / n
+
+
 def mesurer(chemin):
-    """Les quatre chiffres qui resument un run, pour la table de dispersion."""
-    indicateurs, bilan = [], {}
+    """Les chiffres qui resument un run, pour la table de dispersion."""
+    indicateurs, bilan, energie, coherence = [], {}, {}, {}
     with open(chemin, encoding="utf-8") as f:
         for ligne in f:
             e = json.loads(ligne)
@@ -88,11 +119,14 @@ def mesurer(chemin):
                 indicateurs.append(e)
             elif e["schema"] == "bilan.v1":
                 bilan = e
+            elif e["schema"] == "energie.v1":
+                energie = e
+            elif e["schema"] == "coherence.v1":
+                coherence = e
     if not indicateurs:
         return None
     adoptions = [e["taux_adoption"] for e in indicateurs]
-    accords = [e["part_sens_dominant"] for e in indicateurs
-               if e["sens_dominant"] != "aucun_sens"]
+    accords = [accord_partage(e) for e in indicateurs]
     pic = max(adoptions)
     index_pic = adoptions.index(pic)
     apres = adoptions[index_pic + 1:]
@@ -105,7 +139,12 @@ def mesurer(chemin):
         # mesure vraiment l'emergence d'un contexte commun (exigence B1).
         "accord_max": max(accords) if accords else 0.0,
         "appels": bilan.get("appels", 0),
+        "appels_grand": bilan.get("par_taille", {}).get("llm_grand", {}).get("appels", 0),
+        "tokens": bilan.get("tokens_entree", 0) + bilan.get("tokens_sortie", 0),
         "incidents": bilan.get("incidents", 0),
+        "kwh": energie.get("kwh"),
+        "violations_c6": coherence.get("violations", 0),
+        "controles_c6": coherence.get("controles", 0),
     }
 
 
@@ -123,8 +162,9 @@ def main():
     p = argparse.ArgumentParser(description=__doc__,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--plan", default="socle", choices=sorted(PLANS))
-    p.add_argument("--repetitions", type=int, default=5,
-                   help="runs par configuration (le sujet en exige 5 au minimum)")
+    p.add_argument("--repetitions", type=int, default=None,
+                   help="runs par configuration : 30 par defaut sans LLM, 5 avec "
+                        "(le sujet en exige 5 au minimum)")
     p.add_argument("--agents", type=int, default=20)
     p.add_argument("--jours", type=int, default=20)
     p.add_argument("--graine", type=int, default=100, help="graine du premier run")
@@ -144,27 +184,34 @@ def main():
         return
 
     noms = PLANS[args.plan]
+    if args.repetitions is None:
+        sans_llm = all("--tout-regles" in CONFIGURATIONS[n]["options"] for n in noms)
+        args.repetitions = 30 if sans_llm else 5
+    # Les MEMES graines pour chaque configuration : run i de la baseline et
+    # run i du temoin partent de la meme population, seule la configuration
+    # change. La comparaison se fait alors graine par graine.
+    graines = [args.graine + i for i in range(args.repetitions)]
     print(f"Plan '{args.plan}' : {len(noms)} configuration(s) x {args.repetitions} "
           f"repetition(s) = {len(noms) * args.repetitions} runs")
-    print(f"{args.agents} agents, {args.jours} jours simules\n")
+    print(f"{args.agents} agents, {args.jours} jours simules, "
+          f"graines {graines[0]} a {graines[-1]} communes aux configurations\n")
 
     resultats = {}
-    graine = args.graine
     for nom in noms:
         cfg = CONFIGURATIONS[nom]
         print(f"=== {nom} : {cfg['titre']}")
         print(f"    hypothese avant mesure : {cfg['attendu']}")
         mesures = []
-        for i in range(args.repetitions):
+        for i, graine in enumerate(graines):
             nom_run = f"exp_{args.plan}_{nom}_{i + 1:02d}"
             sys.stdout.write(f"    run {i + 1}/{args.repetitions} (graine {graine})... ")
             sys.stdout.flush()
             chemin, duree = lancer(nom_run, cfg["options"] + ["--graine", str(graine)], args)
-            graine += 1
             if chemin is None:
                 continue
             m = mesurer(chemin)
             if m:
+                m["graine"] = graine
                 mesures.append(m)
                 print(f"pic {m['adoption_pic']:.0%}, accord {m['accord_max']:.0%}, "
                       f"{duree:.0f}s")
@@ -182,9 +229,24 @@ def main():
             print(f"  {nom:20s} {resumer(v)}  (n={len(v)})")
         print()
 
+    print("COUT PAR RUN, moyenne par configuration (E4, E5)")
+    for nom in noms:
+        ms = resultats.get(nom, [])
+        if not ms:
+            continue
+        kwh = [m["kwh"] for m in ms if m["kwh"] is not None]
+        print(f"  {nom:20s} {statistics.mean(m['appels'] for m in ms):7.0f} appels "
+              f"(dont {statistics.mean(m['appels_grand'] for m in ms):.0f} au grand modele), "
+              f"{statistics.mean(m['tokens'] for m in ms):8.0f} tokens, "
+              + (f"{statistics.mean(kwh) * 1000:.1f} Wh" if kwh else "energie non mesuree"))
     appels = sum(m["appels"] for ms in resultats.values() for m in ms)
     incidents = sum(m["incidents"] for ms in resultats.values() for m in ms)
-    print(f"COUT TOTAL  {appels} appels LLM, {incidents} incidents d'agent")
+    controles = sum(m["controles_c6"] for ms in resultats.values() for m in ms)
+    violations = sum(m["violations_c6"] for ms in resultats.values() for m in ms)
+    print(f"\nCOUT TOTAL  {appels} appels LLM, {incidents} incidents d'agent")
+    if controles:
+        print(f"COHERENCE TEMPORELLE (C6)  {violations} violation(s) sur "
+              f"{controles} contextes controles")
 
     # Conclusion B3 : l'indicateur separe-t-il les configurations ?
     #
@@ -219,6 +281,17 @@ def main():
         else:
             print("  => aucune separation. Le resultat est negatif et doit etre "
                   "ecrit tel quel dans le rapport.")
+
+        # Graines communes : on peut comparer run a run, a population egale.
+        a, b = noms[0], noms[1]
+        par_graine = {m["graine"]: m["accord_max"] for m in resultats.get(b, [])}
+        paires = [(m["accord_max"], par_graine[m["graine"]])
+                  for m in resultats.get(a, []) if m["graine"] in par_graine]
+        if paires:
+            plus = sum(1 for x, y in paires if x > y)
+            egal = sum(1 for x, y in paires if x == y)
+            print(f"  graine par graine : accord {a} > {b} dans {plus}/{len(paires)} "
+                  f"paires, egal dans {egal}")
 
 
 if __name__ == "__main__":

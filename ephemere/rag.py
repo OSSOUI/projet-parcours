@@ -135,9 +135,16 @@ class Base:
         notes = [(self._score(d, mots), d) for d in candidats]
         notes = [(s, d) for s, d in notes if s >= score_minimum]
         notes.sort(key=lambda sd: -sd[0])
+        # Un seul passage par document : sinon deux paragraphes du meme article
+        # occupent deux des trois places, et l'agent lit deux fois la meme source.
+        retenus, vus = [], set()
+        for s, d in notes:
+            if d.id not in vus:
+                vus.add(d.id)
+                retenus.append((s, d))
         return [{"id": d.id, "titre": d.titre, "source": d.source, "jour": d.jour,
                  "passage": d.passage, "numero": d.numero, "score": round(s, 3)}
-                for s, d in notes[:k]]
+                for s, d in retenus[:k]]
 
     def resume(self):
         fichiers = len({d.id for d in self.documents})
