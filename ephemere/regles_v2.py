@@ -126,7 +126,7 @@ class ReglesV2:
         if sens_percu is None:
             porteurs = [o for o in agent["vus_recents"] if o["porte"]]
             dehors = [o for o in porteurs if o["groupe"] != "atelier_design"]
-            if porteurs and len(dehors) > len(porteurs) / 2:
+            if r["deduction_foule"] and porteurs and len(dehors) > len(porteurs) / 2:
                 sens_percu, ids = "suivre_la_foule", [o["id"] for o in dehors]
             else:
                 sens_percu, ids = agent["sens_percu"], []

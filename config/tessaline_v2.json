@@ -32,6 +32,8 @@
     "commentaire_exposition": "agregat_v1 est reserve au test de coherence : E devient l'entree de v1 (0,4 x taux du groupe + 0,6 x taux du campus), que v2 refuse a ses agents.",
     "bruit": 0.05,
     "regle3": true,
+    "deduction_foule": true,
+    "commentaire_regles_ecrites": "regle3 et deduction_foule sont les deux regles ecrites qui alimentent P (le campus le lit comme suivre_la_foule ou ringard). Les couper mesure la part du declin que nous avons ecrite nous-memes.",
     "fenetre_jours": 3,
     "confiance_initiale": {"porteur": 0.9, "autre": 0.3},
     "confiance_apres_changement": 0.5,

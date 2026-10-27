@@ -144,6 +144,12 @@ d = ReglesV2(r, 0).decider(a, m, vu, 1440)
 verifier("rien entendu, porteurs surtout hors atelier : suivre_la_foule, source = l'observation",
          d["sens_percu"] == "suivre_la_foule"
          and d["sources"] == [o["id"] for o in vu["observations"] if o["qui"] == "c"])
+m2, a2 = trio(porte_b=False, porte_c=True)
+vu2 = m2.observer(a2, 1440)
+regles_v2.percevoir(a2, vu2, 1440, r)
+verifier("deduction_foule = faux : sens_percu inchange",
+         ReglesV2(reglage(bruit=0, deduction_foule=False), 0).decider(a2, m2, vu2, 1440)["sens_percu"]
+         == "aucun_sens")
 debut = a["vus_recents"][0]["t_sim"]
 regles_v2.percevoir(a, {"observations": [], "messages": [], "publications": []},
                     debut + (CFG["decision"]["fenetre_jours"] + 1) * 1440, r)
