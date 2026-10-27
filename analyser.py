@@ -115,6 +115,9 @@ if __name__ == "__main__":
         raise SystemExit(__doc__)
     courbes = {}
     for chemin in sys.argv[1:]:
+        # Les .direct.jsonl sont le suivi en direct (latences), pas des runs.
+        if chemin.endswith(".direct.jsonl"):
+            continue
         courbes[chemin] = analyser(chemin)
     if len(courbes) > 1:
         print("\n=== COMPARAISON, adoption par jour")
