@@ -11,7 +11,7 @@ et le rejeu (E3) casse.
 
 import difflib
 
-VERSION_CONTRAT = "1.2.0"   # 1.1 : perception, coherence, energie ; 1.2 : run.v2 (ajouts seuls)
+VERSION_CONTRAT = "1.3.0"   # 1.1 : perception, coherence, energie ; 1.2 : run.v2 ; 1.3 : population.v2 (ajouts seuls)
 
 # En-tetes de run. run.v1 ne dit pas quel modele social a tourne : il se lit
 # toujours comme "v1". run.v2 le rend obligatoire.
@@ -63,6 +63,8 @@ CORPS = {
     "run.v2": {"mode": str, "nb_agents": int, "graine": int, "jours": int,
                "config": str, "version_contrat": str, "modele_social": str},
     "population.v1": {"agents": list, "resume": dict},
+    # v2 : chaque agent porte ses traits ; graines = les cinq flux du run.
+    "population.v2": {"agents": list, "resume": dict, "graines": dict},
     "decision.v1": {"agent": str, "porte": bool, "categorie": str, "sens": str,
                     "raison": str, "moteur": str, "valide": bool},
     "publication.v1": {"agent": str, "texte": str, "portee": str,
