@@ -4,6 +4,12 @@ Modele a seuils inspire de Granovetter (1978), avec la distinction qui
 fait tout le sel d'Ephemere : un pionnier ABANDONNE quand la mode devient
 banale, alors qu'un suiveur n'adopte que lorsqu'elle l'est devenue.
 
+Le seuil seul ne fait jamais repartir un suiveur : la mode restait figee au
+plateau. Trois lassitudes rendent le declin possible :
+  pionnier          quitte au-dela de son seuil de banalite (vers 50 %) ;
+  figure populaire  quitte au bout de lassitude_minutes de port ;
+  suiveur           quitte quand plus aucun meneur ne le porte.
+
 Ces agents servent a deux choses, a ne pas confondre :
   A6  ils vivent au milieu des agents LLM, dans le meme run ;
   E1  un run ou TOUS les agents sont a regles sert de baseline.
@@ -22,8 +28,13 @@ class Regles:
             porte = percu < agent["seuil"]
             cat = "cercle_creatif" if porte else "ringard"  # le pionnier part quand c'est banal
         elif profil == "suiveur":
-            porte = percu >= agent["seuil"] or (porte and percu >= 0.2)
-            if percu >= 0.6:
+            # Sans meneur pour le porter, le ruban n'a plus de modele a copier.
+            sans_meneur = not monde.meneurs_porteurs()
+            lasse = porte and sans_meneur
+            porte = (percu >= agent["seuil"] or (porte and percu >= 0.2)) and not sans_meneur
+            if lasse:
+                cat = "ringard"
+            elif percu >= 0.6:
                 cat = "suivre_la_foule"
             else:
                 cat = "tendance" if porte else "aucun_sens"

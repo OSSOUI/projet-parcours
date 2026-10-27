@@ -131,6 +131,11 @@ class Monde:
         return (self.poids_groupe * self.taux_dans_groupe(agent["groupe"])
                 + self.poids_campus * self.taux_adoption())
 
+    def meneurs_porteurs(self):
+        """Les pionniers et la figure populaire qui portent encore le ruban."""
+        return [a["id"] for a in self.agents.values()
+                if a["porte"] and a["profil"] in ("pionnier", "figure_populaire")]
+
     def porteurs_du_groupe(self, agent):
         """Les porteurs que l'agent voit AUTOUR de lui, lui-meme exclu.
 

@@ -43,6 +43,12 @@ def fabriquer_decideurs(agents, args, config, base=None):
         # chaque agent raisonne avec le plus grand modele.
         for a in agents:
             a["moteur"] = "llm_grand"
+    if getattr(args, "meneurs_llm", False):
+        # Isole l'effet des meneurs : seuls les pionniers et la figure
+        # populaire raisonnent avec un LLM, la population suit des regles.
+        for a in agents:
+            meneur = a["profil"] in ("pionnier", "figure_populaire")
+            a["moteur"] = "llm_grand" if meneur else "regles"
     if args.tout_regles:
         for a in agents:
             a["moteur"] = "regles"
@@ -328,6 +334,8 @@ def main():
                    help="aucun agent LLM : c'est la baseline de l'exigence E1")
     p.add_argument("--tout-grand", action="store_true",
                    help="tous les agents sur le grand modele : reference de l'exigence E5")
+    p.add_argument("--meneurs-llm", action="store_true",
+                   help="seuls pionniers et figure populaire en LLM, le reste en regles")
     p.add_argument("--energie", choices=["auto", "non"], default="auto",
                    help="mesure l'energie avec CodeCarbon s'il est installe (E4)")
     p.add_argument("--corpus", default=os.path.join(RACINE, "corpus"),
@@ -361,8 +369,8 @@ def main():
         bus = Bus(args.kafka, nom_run=nom)   # echoue vite, avant tout appel LLM
         ecoute = cmd.Ecoute(args.kafka)      # injections venues de la scene (D3)
 
-    if args.tout_regles and args.tout_grand:
-        raise SystemExit("--tout-regles et --tout-grand s'excluent.")
+    if sum([args.tout_regles, args.tout_grand, args.meneurs_llm]) > 1:
+        raise SystemExit("--tout-regles, --tout-grand et --meneurs-llm s'excluent.")
     mesureur = Energie(args.energie == "auto", nom)
     args.telemetrie = Telemetrie(os.path.join(RACINE, "runs", f"{nom}.direct.jsonl"))
     t0 = time.perf_counter()
