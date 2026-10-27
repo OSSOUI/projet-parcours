@@ -11,7 +11,7 @@ et le rejeu (E3) casse.
 
 import difflib
 
-VERSION_CONTRAT = "1.4.0"   # 1.1 : perception, coherence, energie ; 1.2 : run.v2 ; 1.3 : population.v2 ; 1.4 : reseau.v1 (ajouts seuls)
+VERSION_CONTRAT = "1.5.0"   # 1.1 : perception, coherence, energie ; 1.2 : run.v2 ; 1.3 : population.v2 ; 1.4 : reseau.v1 ; 1.5 : perception.v2 (ajouts seuls)
 
 # En-tetes de run. run.v1 ne dit pas quel modele social a tourne : il se lit
 # toujours comme "v1". run.v2 le rend obligatoire.
@@ -84,6 +84,10 @@ CORPS = {
     "perception.v1": {"agent": str, "moteur": str, "messages": list, "souvenirs": list,
                       "documents": list, "vue": dict, "reponse_brute": (str, NUL),
                       "violations_c6": list},
+    # v2 : les trois canaux du monde v2, chaque element avec son id
+    # (o..., m..., p...), pour relier une decision a ce que l'agent avait vu.
+    "perception.v2": {"agent": str, "moteur": str, "observations": list, "messages": list,
+                      "publications": list, "souvenirs": list, "documents": list},
     # Controle de coherence temporelle sur tout le run (C6) : combien de
     # contextes ont ete verifies, combien contenaient une info venue du futur.
     "coherence.v1": {"controles": int, "violations": int, "details": list},
