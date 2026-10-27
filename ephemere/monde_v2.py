@@ -30,8 +30,11 @@ class AccesInterdit(RuntimeError):
 
 class MondeV2(Monde):
     def __init__(self, agents, liens, reglage, graine_dynamique, cloisonne=False,
-                 canal_public=True):
+                 canal_public=True, agregat_v1=False):
         super().__init__(agents)
+        # Reserve au test de coherence : donne a l'agent l'entree de v1 (taux du
+        # groupe et du campus), pour comparer les deux modeles a entrees egales.
+        self.agregat_v1 = agregat_v1
         self.liens = liens
         self.voisins = voisins(liens)
         self._cloisonne = cloisonne
@@ -62,16 +65,20 @@ class MondeV2(Monde):
         raise AccesInterdit("v2 : un agent ne sait pas qui sont les meneurs")
 
     # ------------------------------------------------------------- canaux
-    def publier(self, agent_id, texte, t_sim, portee="campus"):
-        """Publication sur le reseau interne. Renvoie son id, ou None si le canal est coupe."""
+    def publier(self, agent_id, texte, t_sim, portee="campus", categorie=None):
+        """Publication sur le reseau interne. Renvoie son id, ou None si le canal est coupe.
+
+        categorie : le sens que l'auteur transmet, quand il le dit (un agent a
+        regles le dit toujours). C'est ce que les autres "entendent".
+        """
         if not self.canal_public:
             return None
         pid = self._nouvel_id("p")
         self.fil.append({"id": pid, "agent": agent_id, "nom_auteur": self.agents[agent_id]["nom"],
-                         "texte": texte, "t_sim": t_sim, "portee": portee})
+                         "texte": texte, "t_sim": t_sim, "portee": portee, "categorie": categorie})
         return pid
 
-    def adresser(self, de, vers_nom, texte, t_sim, t_lisible):
+    def adresser(self, de, vers_nom, texte, t_sim, t_lisible, categorie=None):
         """Message prive a un voisin du reseau. Renvoie (destinataire, id) ou None.
 
         Comme en v1, il entre dans la memoire du destinataire comme echange,
@@ -83,7 +90,7 @@ class MondeV2(Monde):
             return None
         mid = self._nouvel_id("m")
         message = {"id": mid, "de": de, "nom_auteur": self.agents[de]["nom"],
-                   "texte": texte, "t_sim": t_sim,
+                   "texte": texte, "t_sim": t_sim, "categorie": categorie,
                    "lien": "fort" if self.voisins[de][cible["id"]] >= 1 else "faible"}
         self.boites[cible["id"]].append(message)
         cible["memoire"] = memoriser(cible.get("memoire", []), {
@@ -121,7 +128,10 @@ class MondeV2(Monde):
         if self.canal_public:
             publications = self.fil_visible(agent, t_sim, limite=self.publications_lues)
             self.marquer_lu(agent, t_sim)
-        return {"observations": observations, "messages": messages, "publications": publications}
+        vu = {"observations": observations, "messages": messages, "publications": publications}
+        if self.agregat_v1:
+            vu["agregat_v1"] = Monde.adoption_percue(self, agent)
+        return vu
 
 
 def exposition(observations):

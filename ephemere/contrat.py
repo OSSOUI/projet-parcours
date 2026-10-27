@@ -11,7 +11,7 @@ et le rejeu (E3) casse.
 
 import difflib
 
-VERSION_CONTRAT = "1.5.0"   # 1.1 : perception, coherence, energie ; 1.2 : run.v2 ; 1.3 : population.v2 ; 1.4 : reseau.v1 ; 1.5 : perception.v2 (ajouts seuls)
+VERSION_CONTRAT = "1.6.0"   # 1.1 : perception, coherence, energie ; 1.2 : run.v2 ; 1.3 : population.v2 ; 1.4 : reseau.v1 ; 1.5 : perception.v2 ; 1.6 : decision.v2, publication.v2 (ajouts seuls)
 
 # En-tetes de run. run.v1 ne dit pas quel modele social a tourne : il se lit
 # toujours comme "v1". run.v2 le rend obligatoire.
@@ -71,6 +71,14 @@ CORPS = {
                     "raison": str, "moteur": str, "valide": bool},
     "publication.v1": {"agent": str, "texte": str, "portee": str,
                        "destinataire": (str, NUL)},
+    # v2 : categorie = sens_perso ; sens_percu = ce que l'agent croit que le
+    # campus pense ; sources = ids (o, m, p) qui ont fait changer une croyance.
+    "decision.v2": {"agent": str, "porte": bool, "categorie": str, "sens": str,
+                    "sens_percu": str, "confiance": float, "sources": list,
+                    "raison": str, "moteur": str, "valide": bool},
+    # v2 : l'id que les lecteurs citeront, et le sens transmis s'il est dit.
+    "publication.v2": {"agent": str, "id": str, "texte": str, "portee": str,
+                       "destinataire": (str, NUL), "categorie": (str, NUL)},
     "indicateurs.v1": {"taux_adoption": float, "repartition_sens": dict,
                        "sens_dominant": str, "part_sens_dominant": float,
                        "porteurs": list},
@@ -143,7 +151,9 @@ def verifier(evt):
             return False, f"{champ} : {type(valeur).__name__} au lieu de {attendu}"
     if nom == "run.v2" and evt["modele_social"] not in MODELES_SOCIAUX:
         return False, f"modele_social inconnu : {evt['modele_social']!r}"
-    if nom == "decision.v1" and evt["categorie"] not in SENS:
+    if nom == "decision.v2" and evt["sens_percu"] not in SENS:
+        return False, f"sens_percu hors liste fermee : {evt['sens_percu']!r}"
+    if nom in ("decision.v1", "decision.v2") and evt["categorie"] not in SENS:
         return False, f"categorie hors liste fermee : {evt['categorie']!r}"
     if nom == "indicateurs.v1" and evt["sens_dominant"] not in SENS:
         return False, f"sens_dominant hors liste fermee : {evt['sens_dominant']!r}"

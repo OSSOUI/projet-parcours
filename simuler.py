@@ -336,8 +336,16 @@ def main():
                    help="tous les agents sur le grand modele : reference de l'exigence E5")
     p.add_argument("--meneurs-llm", action="store_true",
                    help="seuls pionniers et figure populaire en LLM, le reste en regles")
-    p.add_argument("--modele-social", choices=["v1"], default="v1",
-                   help="v1 : modele a profils, reference des runs du 21 octobre")
+    p.add_argument("--modele-social", choices=["v1", "v2"], default="v1",
+                   help="v1 : modele a profils, reference des runs du 21 octobre ; "
+                        "v2 : modele a traits, reseau et croyances (regles seules pour l'instant)")
+    p.add_argument("--cloisonne", action="store_true",
+                   help="v2 : reseau sans ponts, rien ne passe d'un groupe a l'autre")
+    p.add_argument("--canal-public-coupe", action="store_true",
+                   help="v2 : personne ne publie ni ne lit sur le reseau interne")
+    p.add_argument("--reglage", action="append", default=[], metavar="CLE=VALEUR",
+                   help="v2 : surcharge de config['decision'], ex. distinction=false, "
+                        "lassitude.actif=false, alpha=0 (valeur lue en JSON)")
     p.add_argument("--lassitude-suiveurs", action="store_true",
                    help="v1.1 : les suiveurs a regles quittent quand plus aucun meneur ne porte")
     p.add_argument("--energie", choices=["auto", "non"], default="auto",
@@ -351,6 +359,8 @@ def main():
                    help="publie aussi les evenements dans Kafka (defaut localhost:9092)")
     p.add_argument("--nom", default=None)
     args = p.parse_args()
+    if args.modele_social == "v2":
+        return executer_v2(args)
 
     rng = random.Random(args.graine)
     agents, config = population.construire(args.config, args.agents, args.graine)
@@ -465,6 +475,73 @@ class Energie:
                 "co2_kg": None if co2 is None else float(co2),
                 "portee": "machine locale",
                 "note": "inference locale comprise si le fournisseur est ollama"}
+
+
+def executer_v2(args):
+    """Un run du modele social v2. La graine est la repetition r (ephemere/graines.py)."""
+    from ephemere import boucle_v2, population_v2, reseau as reseau_v2
+    from ephemere.regles_v2 import ReglesV2
+
+    if not args.tout_regles:
+        raise SystemExit("v2 : seuls les agents a regles existent pour l'instant (--tout-regles). "
+                         "Les agents LLM v2 arrivent a l'etape 8.")
+    if args.mode != "synchrone":
+        raise SystemExit("v2 : seul le mode synchrone existe pour l'instant.")
+    if args.config == os.path.join(RACINE, "config", "tessaline.json"):
+        args.config = os.path.join(RACINE, "config", "tessaline_v2.json")
+    reglages = {}
+    for r in args.reglage:
+        cle, _, valeur = r.partition("=")
+        reglages[cle] = json.loads(valeur)
+    monde, config, graines, liens = boucle_v2.construire(
+        args.config, args.agents, args.graine, cloisonne=args.cloisonne,
+        canal_public=not args.canal_public_coupe, reglages=reglages)
+    agents = list(monde.agents.values())
+    for a in agents:
+        a["moteur"] = "regles"
+    regles = ReglesV2(config["decision"], graines["dynamique"])
+    decideurs = {a["id"]: regles for a in agents}
+    resume = population.resume(agents)
+    print(f"Tessaline v2, {resume['total']} agents, repetition r = {args.graine}")
+    print(f"  profils : {resume['par_profil']}")
+    print(f"  reseau  : {reseau_v2.resume(agents, liens)}")
+    if reglages:
+        print(f"  reglages: {reglages}")
+    print()
+
+    horloge = Horloge(0)
+    nom = args.nom or f"v2_{datetime.now():%Y%m%d_%H%M%S}"
+    mesureur = Energie(args.energie == "auto", nom)
+    t0 = time.perf_counter()
+    interrompu = False
+    with Journal(os.path.join(RACINE, "runs"), nom, horloge) as journal:
+        journal.ecrire("run.v2", mode=args.mode, nb_agents=len(agents), graine=args.graine,
+                       jours=args.jours, config=os.path.basename(args.config),
+                       version_contrat=VERSION_CONTRAT, modele_social="v2",
+                       cloisonne=args.cloisonne, canal_public=not args.canal_public_coupe,
+                       reglages=reglages, decision=config["decision"])
+        journal.ecrire("population.v2", resume=resume, graines=graines,
+                       agents=population_v2.decrire(agents))
+        journal.ecrire("reseau.v1", liens=liens, resume=reseau_v2.resume(agents, liens),
+                       cloisonne=args.cloisonne)
+        mesureur.demarrer()
+
+        def afficher(h, ind):
+            print(f"{h.lisible()}  >> adoption {ind['taux_adoption']:5.0%}   "
+                  f"sens dominant {ind['sens_dominant']:16s} {ind['part_sens_dominant']:4.0%}")
+        try:
+            boucle_v2.tourner(monde, config, decideurs, journal, horloge, args.jours, afficher)
+        except KeyboardInterrupt:
+            interrompu = True
+            print("\n!! Run arrete a la main. Les evenements deja ecrits restent valides.")
+        journal.ecrire("energie.v1", **mesureur.arreter())
+        journal.ecrire("coherence.v1", **_controler_coherence(journal.chemin))
+        journal.ecrire("bilan.v1", appels=0, tokens_entree=0, tokens_sortie=0,
+                       duree_run_s=round(time.perf_counter() - t0, 2), interrompu=interrompu,
+                       incidents=_compter_incidents(journal.chemin), par_taille={})
+        ecrits, rejets, chemin = journal.nb_ecrits, journal.nb_rejets, journal.chemin
+    print(f"\n{ecrits} evenements conformes, {rejets} rejetes")
+    print(f"Run enregistre dans {chemin}")
 
 
 def _controler_coherence(chemin):

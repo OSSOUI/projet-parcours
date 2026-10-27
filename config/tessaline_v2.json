@@ -23,6 +23,20 @@
     "commentaire": "Ce qu'un agent apprend chaque jour : le poignet de ses voisins du reseau, plus 2 a 3 personnes croisees dans son lieu (poids d'un lien faible), et les publications_lues dernieres publications non lues. Points de depart, a calibrer a l'etape 6.",
     "croises": [2, 3], "poids_croise": 0.3, "publications_lues": 5
   },
+  "decision": {
+    "commentaire": "Score des regles v2 : S = a.E + n.exp(-t/tau) - d.(alpha.R + beta.P) - L - theta + eps, porte demain si S > 0. t compte depuis que l'agent a vu le ruban (decide le 27 octobre : depuis J1, la moitie du campus adoptait au J1 sans l'avoir vu). Reference du plan factoriel (decide le 27 octobre) : couplage actif, nouveaute qui lance sans s'user, sans lassitude ; usure et lassitude sont des hypotheses concurrentes, testees comme facteurs (distinction x usure x lassitude, 8 cellules). Points de depart, a calibrer a l'etape 6.",
+    "distinction": true, "alpha": 1.0, "beta": 1.0,
+    "nouveaute": true, "nouveaute_depuis": "premiere_vue", "usure": false, "tau_jours": 5,
+    "lassitude": {"actif": false, "hausse": 0.1, "baisse": 0.05},
+    "exposition": "observations",
+    "commentaire_exposition": "agregat_v1 est reserve au test de coherence : E devient l'entree de v1 (0,4 x taux du groupe + 0,6 x taux du campus), que v2 refuse a ses agents.",
+    "bruit": 0.05,
+    "regle3": true,
+    "fenetre_jours": 3,
+    "confiance_initiale": {"porteur": 0.9, "autre": 0.3},
+    "confiance_apres_changement": 0.5,
+    "parole": {"commentaire": "Chaque jour, avec la probabilite p, un agent qui donne un sens au ruban le dit : en public avec la probabilite public, sinon a un lien fort.", "p": 0.3, "public": 0.5}
+  },
   "commentaire_moteurs": "Moteurs attribues par quota dans chaque profil, et non tires au hasard : a 20 agents, 4 agents en llm_grand, 6 en llm_petit et 10 en regles, toujours les memes, comme dans les runs LLM du 21 octobre. Les parts des suiveurs et des refractaires sont baissees par rapport a v1 pour obtenir exactement 10 agents LLM.",
   "profils": {
     "pionnier": {

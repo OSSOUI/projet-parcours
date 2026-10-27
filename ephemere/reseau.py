@@ -62,6 +62,13 @@ def construire(agents, reglage, graine, cloisonne=False):
     return sorted(liens.values(), key=lambda l: (rang[l["a"]], rang[l["b"]]))
 
 
+def complet(agents, reglage):
+    """Tout le monde relie a tout le monde par un lien fort : sert au modele v2
+    reduit, qui doit retrouver le monde v1 ou chacun voyait tout le campus."""
+    return [{"a": x["id"], "b": y["id"], "type": "fort", "poids": reglage["poids_fort"]}
+            for i, x in enumerate(agents) for y in agents[i + 1:]]
+
+
 def voisins(liens):
     """{agent: {voisin: poids}}, dans les deux sens."""
     v = defaultdict(dict)
