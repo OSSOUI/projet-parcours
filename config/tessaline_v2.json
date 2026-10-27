@@ -15,6 +15,10 @@
       "dispersion": 0.3
     }
   },
+  "reseau": {
+    "commentaire": "Liens forts dans le groupe, avec une probabilite degre_fort / (taille du groupe - 1) : le degre fort moyen reste le meme a 20, 50 et 100 agents. Chaque agent a 1 a 2 ponts faibles vers d'autres groupes. Variante cloisonnee : aucun pont. Points de depart, a calibrer a l'etape 6.",
+    "degre_fort": 2, "poids_fort": 1.0, "ponts": [1, 2], "poids_faible": 0.3
+  },
   "commentaire_moteurs": "Moteurs attribues par quota dans chaque profil, et non tires au hasard : a 20 agents, 4 agents en llm_grand, 6 en llm_petit et 10 en regles, toujours les memes, comme dans les runs LLM du 21 octobre. Les parts des suiveurs et des refractaires sont baissees par rapport a v1 pour obtenir exactement 10 agents LLM.",
   "profils": {
     "pionnier": {

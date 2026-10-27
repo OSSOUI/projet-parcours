@@ -11,7 +11,7 @@ et le rejeu (E3) casse.
 
 import difflib
 
-VERSION_CONTRAT = "1.3.0"   # 1.1 : perception, coherence, energie ; 1.2 : run.v2 ; 1.3 : population.v2 (ajouts seuls)
+VERSION_CONTRAT = "1.4.0"   # 1.1 : perception, coherence, energie ; 1.2 : run.v2 ; 1.3 : population.v2 ; 1.4 : reseau.v1 (ajouts seuls)
 
 # En-tetes de run. run.v1 ne dit pas quel modele social a tourne : il se lit
 # toujours comme "v1". run.v2 le rend obligatoire.
@@ -65,6 +65,8 @@ CORPS = {
     "population.v1": {"agents": list, "resume": dict},
     # v2 : chaque agent porte ses traits ; graines = les cinq flux du run.
     "population.v2": {"agents": list, "resume": dict, "graines": dict},
+    # Emis une fois au depart d'un run v2 : le reseau entier, pour le rejeu et Godot.
+    "reseau.v1": {"liens": list, "resume": dict, "cloisonne": bool},
     "decision.v1": {"agent": str, "porte": bool, "categorie": str, "sens": str,
                     "raison": str, "moteur": str, "valide": bool},
     "publication.v1": {"agent": str, "texte": str, "portee": str,
