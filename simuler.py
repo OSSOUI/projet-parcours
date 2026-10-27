@@ -25,7 +25,7 @@ from ephemere.contrat import VERSION_CONTRAT
 from ephemere.horloge import MINUTES_PAR_JOUR, Echeancier, Horloge
 from ephemere.journal import Journal
 from ephemere.monde import Monde, memoriser
-from ephemere.regles import Regles
+from ephemere.regles_v1 import Regles
 
 RACINE = os.path.dirname(os.path.abspath(__file__))
 
@@ -37,7 +37,7 @@ def fabriquer_decideurs(agents, args, config, base=None):
     cohabitent dans le meme run : c'est A6. Deux tailles de modele sont
     reellement appelees : c'est A5.
     """
-    regles = Regles()
+    regles = Regles(lassitude_suiveurs=getattr(args, "lassitude_suiveurs", False))
     if getattr(args, "tout_grand", False):
         # Reference de l'exigence E5 : meme population, meme graine, mais
         # chaque agent raisonne avec le plus grand modele.
@@ -336,6 +336,10 @@ def main():
                    help="tous les agents sur le grand modele : reference de l'exigence E5")
     p.add_argument("--meneurs-llm", action="store_true",
                    help="seuls pionniers et figure populaire en LLM, le reste en regles")
+    p.add_argument("--modele-social", choices=["v1"], default="v1",
+                   help="v1 : modele a profils, reference des runs du 21 octobre")
+    p.add_argument("--lassitude-suiveurs", action="store_true",
+                   help="v1.1 : les suiveurs a regles quittent quand plus aucun meneur ne porte")
     p.add_argument("--energie", choices=["auto", "non"], default="auto",
                    help="mesure l'energie avec CodeCarbon s'il est installe (E4)")
     p.add_argument("--corpus", default=os.path.join(RACINE, "corpus"),
@@ -376,10 +380,11 @@ def main():
     t0 = time.perf_counter()
     interrompu = False
     with Journal(os.path.join(RACINE, "runs"), nom, horloge, bus=bus) as journal:
-        journal.ecrire("run.v1", mode=args.mode, nb_agents=len(agents),
+        journal.ecrire("run.v2", mode=args.mode, nb_agents=len(agents),
                        graine=args.graine, jours=args.jours,
                        config=os.path.basename(args.config),
-                       version_contrat=VERSION_CONTRAT)
+                       version_contrat=VERSION_CONTRAT,
+                       modele_social="v1.1" if args.lassitude_suiveurs else "v1")
         # Qui habite ce monde. Publie dans le flux pour que tout consommateur
         # puisse afficher des noms et des groupes sans fichier annexe.
         journal.ecrire("population.v1", resume=resume, agents=[

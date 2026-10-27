@@ -11,7 +11,19 @@ et le rejeu (E3) casse.
 
 import difflib
 
-VERSION_CONTRAT = "1.1.0"   # 1.1 : perception, coherence, energie (ajouts seuls)
+VERSION_CONTRAT = "1.2.0"   # 1.1 : perception, coherence, energie ; 1.2 : run.v2 (ajouts seuls)
+
+# En-tetes de run. run.v1 ne dit pas quel modele social a tourne : il se lit
+# toujours comme "v1". run.v2 le rend obligatoire.
+SCHEMAS_RUN = ("run.v1", "run.v2")
+MODELES_SOCIAUX = ("v1", "v1.1", "v2")
+
+
+def modele_social(entete):
+    """Modele social d'un run, d'apres son en-tete run.v1 ou run.v2."""
+    if entete.get("schema") == "run.v1":
+        return "v1"
+    return entete.get("modele_social")
 
 # Les six sens possibles du ruban. Liste fermee : c'est ce qui rend
 # l'emergence d'un sens partage mesurable (exigence B1).
@@ -46,6 +58,10 @@ ENVELOPPE = {
 CORPS = {
     "run.v1": {"mode": str, "nb_agents": int, "graine": int, "jours": int,
                "config": str, "version_contrat": str},
+    # v2 : le modele social devient obligatoire. Un run sans lui serait
+    # indiscernable d'un autre ; c'est ce que v2 interdit.
+    "run.v2": {"mode": str, "nb_agents": int, "graine": int, "jours": int,
+               "config": str, "version_contrat": str, "modele_social": str},
     "population.v1": {"agents": list, "resume": dict},
     "decision.v1": {"agent": str, "porte": bool, "categorie": str, "sens": str,
                     "raison": str, "moteur": str, "valide": bool},
@@ -117,6 +133,8 @@ def verifier(evt):
             evt[champ] = valeur
         if not isinstance(valeur, attendu):
             return False, f"{champ} : {type(valeur).__name__} au lieu de {attendu}"
+    if nom == "run.v2" and evt["modele_social"] not in MODELES_SOCIAUX:
+        return False, f"modele_social inconnu : {evt['modele_social']!r}"
     if nom == "decision.v1" and evt["categorie"] not in SENS:
         return False, f"categorie hors liste fermee : {evt['categorie']!r}"
     if nom == "indicateurs.v1" and evt["sens_dominant"] not in SENS:

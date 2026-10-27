@@ -18,7 +18,7 @@ def lire(chemin):
 
 def analyser(chemin):
     evs = lire(chemin)
-    meta = next((e for e in evs if e["schema"] == "run.v1"), {})
+    meta = next((e for e in evs if e["schema"] in ("run.v1", "run.v2")), {})
     dec = [e for e in evs if e["schema"] == "decision.v1"]
     inc = [e for e in evs if e["schema"] == "incident.v1"]
     ind = [e for e in evs if e["schema"] == "indicateurs.v1"]
@@ -28,7 +28,8 @@ def analyser(chemin):
 
     print(f"\n=== {chemin}")
     print(f"{meta.get('mode', '?')}, {meta.get('nb_agents', '?')} agents, "
-          f"{meta.get('jours', '?')} jours, graine {meta.get('graine', '?')}")
+          f"{meta.get('jours', '?')} jours, graine {meta.get('graine', '?')}, "
+          f"modele social {meta.get('modele_social', 'v1')}")
 
     if ind:
         pics = max(ind, key=lambda e: e["taux_adoption"])

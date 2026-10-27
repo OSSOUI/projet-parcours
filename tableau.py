@@ -53,7 +53,7 @@ def lire_run(chemin):
     """Resume d'un run pour le tableau, ou None s'il n'est pas termine."""
     with open(chemin, encoding="utf-8") as f:
         evs = [json.loads(ligne) for ligne in f if ligne.strip()]
-    meta = next((e for e in evs if e["schema"] == "run.v1"), None)
+    meta = next((e for e in evs if e["schema"] in ("run.v1", "run.v2")), None)
     bilan = next((e for e in evs if e["schema"] == "bilan.v1"), None)
     if meta is None or bilan is None:
         return None

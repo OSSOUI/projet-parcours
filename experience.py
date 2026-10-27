@@ -49,7 +49,7 @@ CONFIGURATIONS = {
     },
     "llm_meneurs": {
         "titre": "Seuls les meneurs en LLM, le reste en regles",
-        "options": ["--mode", "synchrone", "--meneurs-llm"],
+        "options": ["--mode", "synchrone", "--meneurs-llm", "--lassitude-suiveurs"],
         "attendu": ("si l'emergence egale celle de llm_synchrone, ce sont les "
                     "meneurs LLM qui la portent, et non les LLM de la population"),
     },

@@ -116,7 +116,7 @@ def etat(nom):
     par = defaultdict(list)
     for e in evs:
         par[e["schema"]].append(e)
-    meta = (par["run.v1"] or [{}])[0]
+    meta = (par["run.v2"] or par["run.v1"] or [{}])[0]
     bilan = (par["bilan.v1"] or [None])[0]
     pop = (par["population.v1"] or [{"agents": []}])[0]["agents"]
     jours = meta.get("jours") or 1

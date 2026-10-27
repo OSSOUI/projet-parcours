@@ -12,7 +12,7 @@ l'a traite. L'ecart entre les deux est la latence du systeme, et elle se mesure.
 from collections import Counter
 from datetime import datetime
 
-from .contrat import SENS
+from .contrat import SCHEMAS_RUN, SENS
 
 
 class Campus:
@@ -50,7 +50,7 @@ class Campus:
     def appliquer(self, evt, cle=None):
         """Integre un evenement et renvoie l'etat a diffuser."""
         schema = evt.get("schema", "")
-        if schema == "run.v1" or (cle and cle != self.run):
+        if schema in SCHEMAS_RUN or (cle and cle != self.run):
             self.reinitialiser(cle or evt.get("run"))
         self.vus += 1
 
