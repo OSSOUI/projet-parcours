@@ -13,6 +13,10 @@ on rejoue un run enregistre et la scene se comporte exactement pareil.
 
 Il remonte aussi les demandes d'injection de la scene vers le topic des
 commandes, ce qui permet a l'observateur de bousculer le monde (exigence D3).
+
+En rejeu, la scene pilote la lecture : pause, reprise, et saut a un jour. Pour
+sauter, le pont reconstruit l'etat depuis le debut du fichier jusqu'a ce jour :
+l'etat ne vient toujours que des evenements, jamais d'un calcul a part.
 """
 import argparse
 import asyncio
@@ -26,6 +30,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from ephemere.bus import TOPIC
 from ephemere.campus import Campus, resumer_delais
+from ephemere.horloge import MINUTES_PAR_JOUR
 
 RACINE = os.path.dirname(os.path.abspath(__file__))
 
@@ -41,15 +46,16 @@ class Pont:
         self.producteur_commandes = None
         self.mesures = None       # runs/<run>.traitement.jsonl, exigence C7
         self.run_mesure = None
+        self.rejeu = None         # en rejeu : evenements, position, pause
 
     # ------------------------------------------------------------ sortie
     async def accueil(self, ws):
         self.clients.add(ws)
         print(f"[pont] scene connectee ({len(self.clients)} client(s))")
         try:
-            await ws.send(json.dumps(self.campus.instantane(), ensure_ascii=False))
+            await ws.send(json.dumps(self.etat(), ensure_ascii=False))
             async for message in ws:
-                await self.recevoir(message)
+                await self.recevoir(message, ws)
         except Exception:
             pass
         finally:
@@ -61,7 +67,7 @@ class Pont:
         t0 = time.perf_counter()
         self.campus.appliquer(evt, cle)
         charge = json.dumps({"type": "evenement", "evenement": evt,
-                             "etat": self.campus.instantane()}, ensure_ascii=False)
+                             "etat": self.etat()}, ensure_ascii=False)
         self.campus.latences_ms.append((time.perf_counter() - t0) * 1000)
         self.noter_delai(evt)
         if self.clients:
@@ -71,6 +77,29 @@ class Pont:
             print(f"[pont] {evt.get('t_sim_lisible', ''):10s} adoption "
                   f"{i['taux_adoption']:4.0%}  sens dominant {i['sens_dominant']:16s} "
                   f"{i['part_sens_dominant']:4.0%}")
+
+    def etat(self):
+        """L'instantane du campus, plus la position de lecture en rejeu."""
+        etat = self.campus.instantane()
+        if self.rejeu:
+            etat["rejeu"] = {"jour": self.campus.t_sim // MINUTES_PAR_JOUR,
+                             "jours": self.rejeu["jours"], "pause": self.rejeu["pause"]}
+        return etat
+
+    async def positionner(self, jour):
+        """Saut a la fin d'un jour : l'etat est reconstruit depuis le debut."""
+        import websockets
+        r = self.rejeu
+        jour = max(0, min(int(jour), r["jours"]))
+        limite = jour * MINUTES_PAR_JOUR
+        self.campus = Campus(en_direct=False)
+        i = 0
+        while i < len(r["evenements"]) and r["evenements"][i].get("t_sim", 0) <= limite:
+            self.campus.appliquer(dict(r["evenements"][i]), r["cle"])
+            i += 1
+        r["i"] = i
+        if self.clients:
+            websockets.broadcast(self.clients, json.dumps(self.etat(), ensure_ascii=False))
 
     def noter_delai(self, evt):
         """Enregistre le delai emission -> traitement de chaque evenement (C7).
@@ -107,11 +136,31 @@ class Pont:
         asyncio.run_coroutine_threadsafe(self.diffuser(evt, cle), self.boucle)
 
     # ------------------------------------------------------------ entree
-    async def recevoir(self, message):
+    async def accuser(self, ws, nature, ok, texte):
+        """Dit a la scene ce qu'il est advenu de sa demande, pour qu'elle l'affiche."""
+        try:
+            await ws.send(json.dumps({"type": "accuse", "nature": nature, "ok": ok,
+                                      "texte": texte}, ensure_ascii=False))
+        except Exception:
+            pass
+
+    async def recevoir(self, message, ws=None):
         """Une demande venue de la scene : injection d'un evenement (D3)."""
         try:
             demande = json.loads(message)
         except ValueError:
+            return
+        if demande.get("type") == "rejeu" and self.rejeu:
+            action = demande.get("action")
+            if action == "pause":
+                self.rejeu["pause"] = True
+            elif action == "lecture":
+                self.rejeu["pause"] = False
+            elif action == "aller_a":
+                self.rejeu["pause"] = True
+                await self.positionner(demande.get("jour", 0))
+                return
+            await self.accuser(ws, "rejeu", True, "en pause" if self.rejeu["pause"] else "lecture")
             return
         if demande.get("type") != "injection":
             return
@@ -119,15 +168,28 @@ class Pont:
                     "details": demande.get("details", {}),
                     "source": "scene_godot"}
         print(f"[pont] injection demandee : {commande['nature']} {commande['details']}")
+        nature = commande["nature"]
         if not self.serveur_kafka:
             print("[pont] sans Kafka, l'injection ne peut pas atteindre la simulation")
+            await self.accuser(ws, nature, False, "rejeu : un run enregistre ne se bouscule pas")
             return
-        if self.producteur_commandes is None:
-            from ephemere.bus import connecter
-            self.producteur_commandes = connecter(self.serveur_kafka)
-        self.producteur_commandes.send(TOPIC_COMMANDES, key="scene",
-                                       value=commande)
-        self.producteur_commandes.flush(timeout=5)
+        if self.campus.modele_social == "v2":
+            # Les evenements du modele v2 arrivent a l'etape 7 de la migration.
+            print("[pont] injection ignoree : le modele v2 ne lit pas encore les commandes")
+            await self.accuser(ws, nature, False, "modele v2 : injections prevues a l'etape 7")
+            return
+        try:
+            if self.producteur_commandes is None:
+                from ephemere.bus import connecter
+                self.producteur_commandes = connecter(self.serveur_kafka)
+            self.producteur_commandes.send(TOPIC_COMMANDES, key="scene",
+                                           value=commande)
+            self.producteur_commandes.flush(timeout=5)
+        except Exception as e:
+            print(f"[pont] injection non publiee : {e}")
+            await self.accuser(ws, nature, False, "Kafka injoignable")
+            return
+        await self.accuser(ws, nature, True, f"envoyee a {self.campus.t_sim_lisible}")
 
 
 def lire_kafka(pont, serveur, depuis_debut):
@@ -151,15 +213,25 @@ async def rejouer(pont, chemin, vitesse, attendre_scene=True):
         await asyncio.sleep(0.5)
     cle = os.path.basename(chemin).rsplit(".", 1)[0]
     with open(chemin, encoding="utf-8") as f:
-        for ligne in f:
-            if ligne.strip():
-                evt = json.loads(ligne)
-                await pont.diffuser(evt, cle)
-                await asyncio.sleep(vitesse * (6 if evt.get("schema") == "indicateurs.v1" else 1))
-    lat = pont.campus.latences_ms
-    if lat:
-        print(f"\n[pont] rejeu termine. Traitement : "
-              f"{sum(lat)/len(lat):.2f} ms en moyenne, {max(lat):.2f} ms au pire")
+        evenements = [json.loads(l) for l in f if l.strip()]
+    r = pont.rejeu = {"cle": cle, "evenements": evenements, "i": 0, "pause": False,
+                      "jours": max(e.get("t_sim", 0) for e in evenements) // MINUTES_PAR_JOUR}
+    fini = False
+    while True:
+        if r["pause"] or r["i"] >= len(evenements):
+            if r["i"] >= len(evenements) and not fini:
+                fini = True
+                lat = pont.campus.latences_ms
+                if lat:
+                    print(f"\n[pont] rejeu termine. Traitement : "
+                          f"{sum(lat)/len(lat):.2f} ms en moyenne, {max(lat):.2f} ms au pire")
+            await asyncio.sleep(0.05)
+            continue
+        fini = False
+        evt = dict(evenements[r["i"]])
+        r["i"] += 1
+        await pont.diffuser(evt, cle)
+        await asyncio.sleep(vitesse * (6 if evt.get("schema") == "indicateurs.v1" else 1))
 
 
 async def principal(args):
