@@ -175,6 +175,24 @@ verifier("la source est le porteur repoussoir vu",
          d["sources"] == [o["id"] for o in vu["observations"] if o["qui"] == "c"])
 verifier("regle3 = faux : le sens ne change pas", abandon(False)[0]["categorie"] == "aucun_sens")
 
+# Distinction venue de P seul (aucun porteur repoussoir) : la regle 3 doit citer
+# ce qui fonde la croyance "le campus le lit comme ringard", meme etablie la veille.
+m, a = trio(appartenance=1.0, nouveaute=0.0, seuil=0.6, distinction=1.0)
+a["porte"] = True
+a["confiance"] = 1.0   # garde son propre sens : seule la regle 3 peut le changer
+rr = reglage(bruit=0, alpha=0.0, **{"lassitude.actif": False})
+_, mid = m.adresser("b", "A", "c'est depasse", 1400, "J01 23:20", categorie="ringard")
+vu = m.observer(a, 1440)
+regles_v2.percevoir(a, vu, 1440, rr)
+regles_v2.appliquer(a, {**ReglesV2(rr, 0).decider(a, m, vu, 1440), "porte": True}, rr)
+verifier("la croyance percue vient du message", a["sens_percu"] == "ringard" and mid in a["sources_percu"])
+vu = m.observer(a, 1440 + 5 * 1440)
+regles_v2.percevoir(a, vu, 1440 + 5 * 1440, rr)
+d = ReglesV2(rr, 0).decider(a, m, vu, 1440 + 5 * 1440)
+verifier("abandon par P seul, message sorti de la fenetre : ringard, et la source est le message",
+         not d["porte"] and d["categorie"] == "ringard" and d["sources"] == [mid],
+         (d["porte"], d["categorie"], d["sources"], d["termes"]))
+
 print("\nRuns entiers")
 
 

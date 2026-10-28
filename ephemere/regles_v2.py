@@ -48,6 +48,7 @@ def initialiser(agent, reglage):
         "confiance": reglage["confiance_initiale"]["porteur" if porteur else "autre"],
         "lassitude": 0.0,
         "premiere_vue": 0 if porteur else None,
+        "sources_percu": [],
         "vus_recents": [],
         "entendus": [],
     })
@@ -132,6 +133,9 @@ class ReglesV2:
                 sens_percu, ids = agent["sens_percu"], []
         if sens_percu != agent["sens_percu"]:
             sources += ids
+        # Ce qui fonde la croyance percue aujourd'hui : les ids qui l'appuient
+        # dans la fenetre, sinon ceux qui l'avaient etablie un jour precedent.
+        soutien_percu = list(ids) or agent.get("sources_percu", [])
 
         sens_perso, confiance = agent["sens_perso"], agent["confiance"]
         forts = [e for e in agent["entendus"] if e["canal"] == "fort"]
@@ -140,10 +144,12 @@ class ReglesV2:
             sens_perso, confiance = entendu, r["confiance_apres_changement"]
             sources += ids
         # Regle 3 : il portait, il arrete, et sans le cout de distinction il aurait garde.
+        # Elle cite ce qui a fait la distinction : les porteurs repoussoirs (R) et,
+        # si P joue, ce qui fonde sa croyance que le campus rejette le ruban.
         if r["regle3"] and agent["porte"] and not porte and sans_distinction > 0:
             if sens_perso != "ringard":
                 sens_perso = "ringard"
-                sources += t["_repoussoirs"] or ids
+                sources += t["_repoussoirs"] + (soutien_percu if t["P"] else [])
         sources = list(dict.fromkeys(sources))
 
         publication, destinataire = "", ""
@@ -157,6 +163,7 @@ class ReglesV2:
         termes = {k: round(v, 4) for k, v in t.items() if not k.startswith("_")}
         return {"porte": bool(porte), "categorie": sens_perso, "sens": SENS[sens_perso],
                 "sens_percu": sens_percu, "confiance": round(confiance, 3), "sources": sources,
+                "sources_percu": soutien_percu,
                 "raison": f"score {S:+.3f}", "termes": {**termes, "S": round(S, 4)},
                 "publication": publication, "destinataire": destinataire,
                 "categorie_message": sens_perso if publication else None,
@@ -175,4 +182,5 @@ def appliquer(agent, d, reglage):
     agent["categorie"] = agent["sens_perso"] = d["categorie"]
     agent["sens"] = d["sens"]
     agent["sens_percu"] = d["sens_percu"]
+    agent["sources_percu"] = d.get("sources_percu", agent.get("sources_percu", []))
     agent["confiance"] = d["confiance"]
