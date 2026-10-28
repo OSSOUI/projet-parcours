@@ -467,6 +467,21 @@ L'accord mesuré est la part du campus sur le sens le plus répandu **autre que
 « aucun sens »**, avec les non-porteurs au dénominateur. Quand « aucun sens »
 domine, le relevé n'est donc plus jeté.
 
+## Suivi en direct et tableau de bord : une seule page
+
+`direct.py` et `tableau.py` produisent la **même page** (`vues.py`), avec deux
+onglets : **Suivre un run** et **Comparer les runs**. Les mêmes informations
+se trouvent aux deux endroits ; seule la source change :
+
+| | `python3 direct.py` | `python3 tableau.py` |
+|---|---|---|
+| Page | servie sur http://localhost:8770 | écrite dans `runs/tableau.html` |
+| Données | relues à chaque rafraîchissement | figées au moment de l'export |
+| Usage | pendant un run, ou à côté d'une série | à envoyer, à ouvrir sans serveur |
+
+Le bouton « Ouvrir dans « Suivre un run » » de l'onglet de comparaison ouvre le
+run choisi dans l'autre onglet.
+
 ## Suivi en direct
 
 ```bash
@@ -515,6 +530,8 @@ open runs/tableau.html
 ```
 
 Le script produit une page HTML autonome, sans dépendance et sans accès réseau.
+C'est la page de `direct.py`, données figées : l'onglet **Suivre un run**
+montre aussi chaque run, terminé ou non, comme en direct.
 La scène Godot montre **un** run en direct ; ce tableau **compare** les runs
 entre eux après coup, série par série et configuration par configuration :
 
@@ -630,6 +647,7 @@ Ephemere/
   analyser.py           chiffres d'un run, pour le rapport
   tableau.py            tableau de bord HTML : métriques, vitesses, agents
   direct.py             suivi en direct d'un run : agents et performances
+  vues.py               page commune à direct.py et tableau.py
   docker-compose.yml    Kafka ; profil colibri : GLM-5.2, Ollama, simulation
   Dockerfile            image de la simulation
   godot/main.gd         la scène du campus
