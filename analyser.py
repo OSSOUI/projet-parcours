@@ -2,13 +2,23 @@
 
     python3 analyser.py runs/synchrone_xxx.jsonl
     python3 analyser.py runs/baseline.jsonl runs/synchrone_xxx.jsonl
+    python3 analyser.py --echantillon-f2 runs/synchrone_xxx.jsonl
 
 Sort les chiffres a mettre dans le rapport : courbe d'adoption, part du sens
-dominant, taux de sortie de role par moteur (A4 et A5), cout (E4).
+dominant, taux de sortie de role par moteur (A4 et A5), cout (E4), puis les
+mesures sur les agents LLM (ephemere/mesures_llm.py) : fiabilite par profil
+(A4), fidelite au profil (A3), memoire et echanges (A1, A2), sens (B1, B3),
+temps (C5, C7). --echantillon-f2 ecrit en plus runs/<run>.f2.csv : 30
+decisions avec ce que la recherche a retrouve, a juger a la main (F2).
 """
 import collections
 import json
+import os
 import sys
+
+from ephemere import mesures_llm as M
+
+RACINE = os.path.dirname(os.path.abspath(__file__))
 
 
 def lire(chemin):
@@ -108,18 +118,101 @@ def analyser(chemin):
         for t, c in sorted(bilan.get("par_taille", {}).items()):
             print(f"  {t:12s} {c['modele']:24s} {c['appels']:4d} appels, "
                   f"latence moyenne {c['latence_moy_s']}s")
+    mesures(chemin, evs)
     return ind
 
 
+def _pct(x):
+    return "  n/a" if x is None else f"{x:5.1%}"
+
+
+def mesures(chemin, evs):
+    """Les mesures sur les agents LLM, et la tracabilite des sources en v2."""
+    llm = any(d.get("moteur") in M.MOTEURS_LLM for d in evs if d["schema"].startswith("decision."))
+    src = M.sources_valides(evs)
+    if src["changements"]:
+        print(f"\nSOURCES (B1, v2)  {src['justifies']} / {src['changements']} changements de sens "
+              f"citent une source vue ({_pct(src['part'])})")
+    if not llm:
+        return
+    print("\nFIABILITE PAR PROFIL (A4)")
+    for (moteur, profil), f in M.fiabilite(evs).items():
+        natures = ", ".join(f"{n} {c}" for n, c in sorted(f["natures"].items()))
+        print(f"  {moteur:10s} {profil:17s} {f['incidents']:3d} / {f['decisions']:4d} = "
+              f"{_pct(f['taux'])}  {natures}")
+
+    print("\nFIDELITE AU PROFIL (A3)  abandons parmi les porteurs, par adoption percue")
+    fid = M.fidelite(evs)
+    tranches = sorted({k[2] for k in fid})
+    print("  " + " " * 29 + "".join(f"{M.libelle_tranche(t):>14s}" for t in tranches))
+    for moteur, profil in sorted({(k[0], k[1]) for k in fid}):
+        cases = []
+        for t in tranches:
+            f = fid.get((moteur, profil, t))
+            cases.append(f"{f['abandons']:>4d}/{f['porteurs']:<4d}{f['taux']:4.0%}" if f else " " * 14)
+        print(f"  {moteur:10s} {profil:17s}  " + "".join(f"{c:>14s}" for c in cases))
+
+    mem = M.memoire(evs)
+    print(f"\nMEMOIRE (A1)  {mem['avec_souvenir_ancien']} / {mem['decisions']} decisions LLM "
+          f"avaient un souvenir de plus de {M.VIEUX_JOURS} jours dans leur prompt "
+          f"({_pct(mem['part'])}). Disponible, pas cite : la v1 ne cite pas ses souvenirs.")
+    ech = M.echanges(evs)
+    a, s = ech["avec_message"], ech["sans_message"]
+    print(f"ECHANGES (A2)  change de sens apres un message prive : {a['changements']}/{a['decisions']} "
+          f"({_pct(a['taux'])}) ; sans message prive : {s['changements']}/{s['decisions']} "
+          f"({_pct(s['taux'])})")
+
+    div = M.diversite(evs)
+    dup = M.quasi_identiques(evs)
+    rec = M.recouvrement_corpus(evs, os.path.join(RACINE, "corpus"))
+    print("\nSENS (B1, B3)")
+    if div:
+        print(f"  diversite des sens chez les LLM (entropie, 0 = tous pareils, 1 = six sens egaux) : "
+              f"moyenne {div['moyenne']:.2f}, fin {div['fin']:.2f}, "
+              f"{div['sens_distincts_fin']} sens distincts a la fin")
+    print(f"  messages quasi identiques a celui d'un autre agent : {dup['quasi_identiques']} / "
+          f"{dup['messages']} ({_pct(dup['part'])})")
+    if rec["textes"]:
+        print(f"  recouvrement avec le corpus (4-grammes) : moyenne {rec['moyenne']:.1%}, "
+              f"max {rec['max']:.0%}, {rec['recites']} texte(s) recite(s) a plus de "
+              f"{M.SEUIL_RECITE:.0%}")
+
+    tel_chemin = chemin[:-len(".jsonl")] + ".direct.jsonl"
+    tel = M.lire_jsonl(tel_chemin) if os.path.exists(tel_chemin) else []
+    t = M.temps(evs, tel)
+    print("\nTEMPS (C5, E4)")
+    for modele, l in t["latences"].items():
+        print(f"  {modele:16s} {l['appels']:4d} appels, latence moyenne {l['moyenne']:.2f}s, "
+              f"p95 {l['p95']:.2f}s, attente de quota {l['attente_s']}s")
+    if not t["latences"]:
+        print("  pas de telemetrie (.direct.jsonl) : latences du bilan seulement")
+    if t["decisions_par_agent_jour"]:
+        print(f"  decisions par agent LLM et par jour simule : {t['decisions_par_agent_jour']:.2f} "
+              f"en moyenne, {t['decisions_par_agent_jour_max']} au plus")
+    trait = chemin[:-len(".jsonl")] + ".traitement.jsonl"
+    if os.path.exists(trait):
+        d = sorted(x["delai_ms"] for x in M.lire_jsonl(trait) if x.get("delai_ms") is not None)
+        if d:
+            print(f"  delai emission -> traitement (C7) : moyenne {sum(d) / len(d):.1f} ms, "
+                  f"p95 {d[min(len(d) - 1, int(len(d) * 0.95))]} ms, pire {d[-1]} ms (n={len(d)})")
+
+
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
+    args = [a for a in sys.argv[1:] if a != "--echantillon-f2"]
+    if not args:
         raise SystemExit(__doc__)
     courbes = {}
-    for chemin in sys.argv[1:]:
-        # Les .direct.jsonl sont le suivi en direct (latences), pas des runs.
-        if chemin.endswith(".direct.jsonl"):
+    for chemin in args:
+        # Les .direct.jsonl (suivi en direct) et .traitement.jsonl (delais du
+        # pont) accompagnent un run, ce ne sont pas des runs.
+        if chemin.endswith((".direct.jsonl", ".traitement.jsonl", ".rejets.jsonl")):
             continue
         courbes[chemin] = analyser(chemin)
+        if "--echantillon-f2" in sys.argv:
+            lignes = M.echantillon_f2(lire(chemin), os.path.join(RACINE, "corpus"))
+            sortie = chemin[:-len(".jsonl")] + ".f2.csv"
+            M.ecrire_csv(lignes, sortie)
+            print(f"\nECHANTILLON F2  {len(lignes)} decisions a juger a la main : {sortie}")
     if len(courbes) > 1:
         print("\n=== COMPARAISON, adoption par jour")
         noms = list(courbes)
