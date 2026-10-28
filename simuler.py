@@ -66,12 +66,13 @@ def fabriquer_decideurs(agents, args, config, base=None):
         client = ClientLLM(args.fournisseur, modeles, pause=args.pause,
                            attente_max=args.attente_max)
         for taille in tailles:
-            moteurs[taille] = DecideurLLM(client, taille, base=base, k=args.passages)
+            moteurs[taille] = DecideurLLM(client, taille, base=base, k=args.passages,
+                                          structure=getattr(args, "sortie_structuree", False))
             print(f"  {taille:10s} -> {modeles[taille]}")
     return {a["id"]: moteurs[a["moteur"]] for a in agents}, client
 
 
-def enregistrer(journal, monde, agent, d, horloge):
+def enregistrer(journal, monde, agent, d, horloge, dialogue=None):
     """Ecrit la decision, l'incident eventuel et la parole de l'agent."""
     journal.ecrire("decision.v1", agent=agent["id"], porte=d["porte"],
                    categorie=d["categorie"], sens=d["sens"], raison=d["raison"],
@@ -104,6 +105,8 @@ def enregistrer(journal, monde, agent, d, horloge):
     if cible:
         journal.ecrire("publication.v1", agent=agent["id"], texte=texte,
                        portee="personne", destinataire=cible)
+        if dialogue:
+            dialogue.noter(monde, agent["id"], cible, texte, horloge.minutes)
     else:
         # Destinataire inconnu ou absent : le message part sur le reseau public.
         monde.publier(agent["id"], texte, horloge.minutes)
@@ -253,9 +256,13 @@ def tourner_synchrone(monde, decideurs, journal, horloge, args, ecoute=None):
             decisions.append((agent, d))
             tracer(horloge, agent, d)
         # Simultaneite : on n'applique qu'apres avoir interroge tout le monde.
+        dialogue = getattr(args, "dialogue", None)
         for agent, d in decisions:
-            enregistrer(journal, monde, agent, d, horloge)
+            enregistrer(journal, monde, agent, d, horloge, dialogue)
             appliquer(agent, d, monde, horloge)
+        if dialogue:
+            # Apres les decisions du pas : chacun parle depuis son choix du jour.
+            dialogue.mener(journal, monde, horloge)
         if horloge.minutes % args.releve_min == 0:
             relever(monde, journal, horloge)
 
@@ -302,8 +309,11 @@ def tourner_asynchrone(monde, decideurs, journal, horloge, args, rng, ecoute=Non
                 echeancier.planifier(t_sim + reflexion, agent_id)
                 continue
         tracer(horloge, agent, d)
-        enregistrer(journal, monde, agent, d, horloge)
+        dialogue = getattr(args, "dialogue", None)
+        enregistrer(journal, monde, agent, d, horloge, dialogue)
         appliquer(agent, d, monde, horloge)
+        if dialogue:
+            dialogue.mener(journal, monde, horloge)
         echeancier.planifier(horloge.minutes + agent["cadence_min"]
                              + rng.randint(-120, 120), agent_id)
 
@@ -348,6 +358,14 @@ def main():
                         "lassitude.actif=false, alpha=0 (valeur lue en JSON)")
     p.add_argument("--lassitude-suiveurs", action="store_true",
                    help="v1.1 : les suiveurs a regles quittent quand plus aucun meneur ne porte")
+    p.add_argument("--sortie-structuree", action="store_true",
+                   help="schema JSON impose au modele (Ollama le respecte a la generation) "
+                        "puis verifie : moins de reponses inexploitables (A4)")
+    p.add_argument("--conversation", type=int, default=0, metavar="N",
+                   help="A2 : au plus N conversations privees par jour entre agents LLM ; "
+                        "chaque conversation coute --repliques - 1 appels de plus")
+    p.add_argument("--repliques", type=int, default=3,
+                   help="repliques par conversation, message d'ouverture compris")
     p.add_argument("--energie", choices=["auto", "non"], default="auto",
                    help="mesure l'energie avec CodeCarbon s'il est installe (E4)")
     p.add_argument("--corpus", default=os.path.join(RACINE, "corpus"),
@@ -372,6 +390,13 @@ def main():
     base = Base(args.corpus)
     print(f"  corpus  : {base.resume()}")
     decideurs, client = fabriquer_decideurs(agents, args, config, base=base)
+    if args.conversation and client:
+        from ephemere.dialogue import Dialogue
+        args.dialogue = Dialogue(decideurs, args.conversation, args.repliques)
+        print(f"  conversations : {args.conversation} par jour au plus, "
+              f"{args.repliques} repliques chacune")
+    if args.sortie_structuree and client:
+        print("  sortie structuree : schema JSON impose et verifie")
     print()
     monde = Monde(agents, config.get("perception"))
     horloge = Horloge(0)
@@ -394,7 +419,10 @@ def main():
                        graine=args.graine, jours=args.jours,
                        config=os.path.basename(args.config),
                        version_contrat=VERSION_CONTRAT,
-                       modele_social="v1.1" if args.lassitude_suiveurs else "v1")
+                       modele_social="v1.1" if args.lassitude_suiveurs else "v1",
+                       sortie_structuree=bool(args.sortie_structuree and client),
+                       conversation={"par_jour": args.conversation if client else 0,
+                                     "repliques": args.repliques})
         # Qui habite ce monde. Publie dans le flux pour que tout consommateur
         # puisse afficher des noms et des groupes sans fichier annexe.
         journal.ecrire("population.v1", resume=resume, agents=[

@@ -69,6 +69,97 @@ veux le mettre, alors "porte" vaut true. Si tu ecris que tu le refuses, alors
 N'utilise aucune phrase de cette consigne dans tes reponses : ecris les tiennes.
 Reponds uniquement par ton objet JSON, sans aucun texte avant ni apres."""
 
+# Sortie structuree (option --sortie-structuree) : le schema est donne au
+# fournisseur, qui contraint la generation (Ollama le fait), puis la reponse
+# est verifiee contre le MEME schema par valider(), en bibliotheque standard :
+# le moteur ne depend d'aucun paquet (ni pydantic, ni LangChain).
+CHAMPS_TEXTE = ("sens", "publication", "destinataire", "raison")
+SCHEMA_DECISION = {
+    "type": "object",
+    "properties": {"porte": {"type": "boolean"},
+                   "categorie": {"type": "string", "enum": list(SENS)},
+                   **{c: {"type": "string"} for c in CHAMPS_TEXTE}},
+    "required": ["porte", "categorie", *CHAMPS_TEXTE],
+    "additionalProperties": False,
+}
+SCHEMA_REPLIQUE = {
+    "type": "object",
+    "properties": {"texte": {"type": "string"},
+                   "categorie": {"type": "string", "enum": list(SENS)}},
+    "required": ["texte", "categorie"],
+    "additionalProperties": False,
+}
+_TYPES = {"object": dict, "string": str, "boolean": bool}
+
+
+def valider(reponse, schema):
+    """Ecarts entre une reponse et un schema (le sous-ensemble utilise ici).
+
+    Renvoie la liste des ecarts, vide si la reponse est conforme.
+    """
+    if not isinstance(reponse, dict):
+        return [f"pas un objet : {type(reponse).__name__}"]
+    ecarts = [f"champ absent : {c}" for c in schema["required"] if c not in reponse]
+    if schema.get("additionalProperties") is False:
+        ecarts += [f"champ en trop : {c}" for c in reponse
+                   if c not in schema["properties"] and not c.startswith("_")]
+    for champ, regle in schema["properties"].items():
+        if champ not in reponse:
+            continue
+        v = reponse[champ]
+        if not isinstance(v, _TYPES[regle["type"]]):
+            ecarts.append(f"{champ} : {type(v).__name__} au lieu de {regle['type']}")
+        elif "enum" in regle and v not in regle["enum"]:
+            ecarts.append(f"{champ} : {v!r} hors liste")
+    return ecarts
+
+
+REPLIQUE = """Tu es {nom}, {profil} du groupe {groupe}. {personnalite}
+
+Nous sommes {date}. Aujourd'hui, tu {etat} le ruban, et pour toi il veut dire :
+{sens}
+
+{autre} te parle du ruban, en prive. Votre conversation jusqu'ici :
+{echanges}
+
+Reponds-lui, avec tes mots, en une ou deux phrases. Tu peux etre d'accord,
+pas d'accord, changer d'avis ou non : c'est ton personnage qui decide.
+
+Reponds par un objet JSON avec exactement ces deux champs :
+
+"texte" : ta replique a {autre}.
+
+"categorie" : ce que le ruban VEUT DIRE pour toi a la fin de cet echange.
+Une seule valeur, copiee exactement depuis cette liste :
+{categories}
+
+Reponds uniquement par ton objet JSON, sans aucun texte avant ni apres."""
+
+
+def derive_replique(reponse):
+    """Comme detecter_derive, pour une replique : (nature, details) ou (None, None)."""
+    if isinstance(reponse, dict) and "categorie" in reponse:
+        reponse["categorie"] = normaliser_categorie(reponse["categorie"])
+    if reponse is None:
+        return "appel_echoue", {}
+    if not isinstance(reponse, dict):
+        return "json_illisible", {"type": type(reponse).__name__}
+    if reponse.get("categorie") not in SENS:
+        return "categorie_hors_liste", {"recu": repr(reponse.get("categorie"))[:80]}
+    texte = str(reponse.get("texte", "")).strip()
+    if not texte:
+        return "replique_vide", {}
+    for motif in _MARQUEURS:
+        trouve = motif.search(texte)
+        if trouve:
+            return "posture_assistant", {"marqueur": trouve.group(0)[:60]}
+    for motif in _FUITES:
+        trouve = motif.search(texte)
+        if trouve:
+            return "fuite_de_consigne", {"extrait": trouve.group(0)[:60]}
+    return None, None
+
+
 # Tournures typiques d'un modele qui repond en assistant au lieu d'incarner
 # un etudiant. Liste a assumer et a citer dans le rapport : elle est lexicale,
 # donc faillible, et c'est une limite a discuter en soutenance.
@@ -255,11 +346,12 @@ def requete_de(agent):
 class DecideurLLM:
     """Un moteur par taille de modele : llm_grand ou llm_petit (exigence A5)."""
 
-    def __init__(self, client, taille, base=None, k=3):
+    def __init__(self, client, taille, base=None, k=3, structure=False):
         self.client = client
         self.taille = taille
         self.base = base      # base de connaissances, exigence F1
         self.k = k
+        self.structure = structure   # sortie structuree : schema JSON impose et verifie
 
     def _situation(self, agent):
         """Ce que l'agent sait de SA propre histoire avec le ruban.
@@ -341,11 +433,16 @@ class DecideurLLM:
     def decider(self, agent, monde, t_sim, horloge_lisible=""):
         requete, documents = self._recuperer(agent, t_sim)
         consigne, perception = self._consigne(agent, monde, t_sim, horloge_lisible, documents)
-        reponse = self.client.json(SYSTEME, consigne, self.taille)
+        reponse = self.client.json(SYSTEME, consigne, self.taille,
+                                   **({"schema": SCHEMA_DECISION} if self.structure else {}))
         mesure = dict(self.client.derniere_mesure)
         brut = getattr(self.client, "dernier_brut", None)
         perception["reponse_brute"] = None if brut is None else str(brut)[:4000]
         nature, details = detecter_derive(reponse)
+        if nature is None and self.structure:
+            ecarts = valider(reponse, SCHEMA_DECISION)
+            if ecarts:
+                nature, details = "schema_non_respecte", {"ecarts": ecarts[:5]}
         if isinstance(reponse, dict) and "_categorie_brute" in reponse:
             # Champ facultatif de perception.v1 : faute de frappe ramenee.
             perception["categorie_corrigee"] = {"recu": str(reponse.pop("_categorie_brute"))[:80],
@@ -372,3 +469,28 @@ class DecideurLLM:
                 "valide": True, "moteur": self.taille, "mesure": mesure,
                 "perception": perception,
                 "recuperation": {"requete": requete, "resultats": documents}}
+
+    def repondre(self, agent, autre, echanges, horloge_lisible=""):
+        """Une replique de conversation privee (A2). Renvoie un dict :
+        texte, categorie, valide, incident, mesure."""
+        consigne = REPLIQUE.format(
+            nom=agent["nom"], profil=agent["profil"].replace("_", " "), groupe=agent["groupe"],
+            personnalite=agent.get("personnalite", ""), date=horloge_lisible,
+            etat="portes" if agent["porte"] else "ne portes pas",
+            sens=agent.get("sens") or SENS[agent["categorie"]], autre=autre["nom"],
+            echanges="\n".join(f"- {qui} : {texte}" for qui, texte in echanges),
+            categories="\n".join(f"- {cle} : {texte}" for cle, texte in SENS.items()),
+        )
+        reponse = self.client.json(SYSTEME, consigne, self.taille,
+                                   **({"schema": SCHEMA_REPLIQUE} if self.structure else {}))
+        mesure = dict(self.client.derniere_mesure)
+        nature, details = derive_replique(reponse)
+        if nature is None and self.structure:
+            ecarts = valider(reponse, SCHEMA_REPLIQUE)
+            if ecarts:
+                nature, details = "schema_non_respecte", {"ecarts": ecarts[:5]}
+        if nature:
+            return {"texte": "", "categorie": None, "valide": False,
+                    "incident": {"nature": nature, "details": details}, "mesure": mesure}
+        return {"texte": str(reponse["texte"]).strip()[:280], "categorie": reponse["categorie"],
+                "valide": True, "incident": None, "mesure": mesure}

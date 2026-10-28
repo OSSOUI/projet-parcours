@@ -162,6 +162,15 @@ def mesures(chemin, evs):
           f"({_pct(a['taux'])}) ; sans message prive : {s['changements']}/{s['decisions']} "
           f"({_pct(s['taux'])})")
 
+    conv = M.conversations(evs)
+    if conv:
+        print(f"CONVERSATIONS (A2)  {conv['conversations']} conversations, "
+              f"{conv['repliques_valides']}/{conv['repliques']} repliques valides ; "
+              f"sens qui bouge pendant l'echange : {conv['bouge_pendant']}/{conv['participants']} "
+              f"({_pct(conv['part_bouge_pendant'])}), a la decision suivante : "
+              f"{conv['bouge_apres']}/{conv['suivis']} ({_pct(conv['part_bouge_apres'])})"
+              + (f" ; incidents {conv['incidents']}" if conv["incidents"] else ""))
+
     div = M.diversite(evs)
     dup = M.quasi_identiques(evs)
     rec = M.recouvrement_corpus(evs, os.path.join(RACINE, "corpus"))

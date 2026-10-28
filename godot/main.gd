@@ -278,13 +278,14 @@ func _recevoir(brut: String) -> void:
 
 func _animer(evt: Dictionary) -> void:
 	var schema: String = evt.get("schema", "")
-	if schema == "publication.v1" or schema == "publication.v2":
+	if schema == "publication.v1" or schema == "publication.v2" or schema == "replique.v1":
 		var de: String = evt.get("agent", "")
 		if not positions.has(de):
 			return
 		var couleur: Color = COULEURS.get(str(evt.get("categorie", "")), DOUX)
 		var vers := _id_de(str(evt.get("destinataire", "")))
-		if evt.get("portee", "campus") == "personne" and vers != "":
+		var prive: bool = schema == "replique.v1" or evt.get("portee", "campus") == "personne"
+		if prive and vers != "":
 			vols.append({"de": de, "vers": vers, "couleur": couleur, "reste": DUREE_VOL})
 			vue3d.animer_message(de, vers, couleur)
 		else:

@@ -11,7 +11,8 @@ Six familles, chacune rattachee a son exigence du sujet :
                       souvenirs : on mesure ce qui lui etait DISPONIBLE, pas
                       ce qu'il a utilise. La citation arrive avec le LLM v2.
   echanges       A2   probabilite de changer de sens dans les 24 h qui suivent
-                      un message prive recu, comparee a celle sans message
+                      un message prive ou une replique recus, comparee a celle
+                      sans ; conversations() suit chaque dialogue (--conversation)
   sens           B1, B3
                       changements de sens justifies par une source vue (v2
                       seulement), diversite des sens chez les seuls LLM,
@@ -93,6 +94,8 @@ def fiabilite(evs):
             decisions[(d["moteur"], pop.get(d["agent"], {}).get("profil", "?"))] += 1
     incidents = collections.defaultdict(collections.Counter)
     for i in _par(evs, "incident.v1"):
+        if "conversation" in (i.get("details") or {}):
+            continue    # incident d'une replique : compte dans conversations()
         a = pop.get(i.get("agent"), {})
         if a.get("moteur") in MOTEURS_LLM:
             incidents[(a["moteur"], a.get("profil", "?"))][i["nature"]] += 1
@@ -177,7 +180,9 @@ def echanges(evs, moteurs=MOTEURS_LLM):
     nom_vers_id = {str(a.get("nom", "")).lower(): i for i, a in pop.items()}
     recus = collections.defaultdict(list)    # agent -> instants des messages prives recus
     for p in evs:
-        if p.get("schema") in ("publication.v1", "publication.v2") and p.get("portee") == "personne":
+        if p.get("schema") == "replique.v1" and p.get("valide"):
+            recus[p["destinataire"]].append(p["t_sim"])
+        elif p.get("schema") in ("publication.v1", "publication.v2") and p.get("portee") == "personne":
             dest = str(p.get("destinataire") or "")
             dest = dest if dest in pop else nom_vers_id.get(dest.lower())
             if dest:
@@ -192,6 +197,55 @@ def echanges(evs, moteurs=MOTEURS_LLM):
     return {("avec_message" if k else "sans_message"):
             {"changements": c, "decisions": n, "taux": c / n if n else None}
             for k, (c, n) in groupes.items()}
+
+
+def conversations(evs):
+    """Les conversations privees (option --conversation) : combien, et ce
+    qu'elles changent.
+
+    Pour chaque conversation, on compare le sens de chaque participant juste
+    avant (sa derniere decision), pendant (sa derniere replique) et apres (sa
+    decision suivante). "Bouge pendant" : sa replique donne un autre sens que
+    sa decision d'avant. "Bouge apres" : sa decision suivante aussi.
+    """
+    repliques = _par(evs, "replique.v1")
+    if not repliques:
+        return None
+    par_conv = collections.defaultdict(list)
+    for r in repliques:
+        par_conv[r["conversation"]].append(r)
+    decisions = collections.defaultdict(list)
+    for d in sorted(_decisions(evs), key=lambda e: e["t_sim"]):
+        decisions[d["agent"]].append(d)
+    def avant(agent, t):
+        prec = [d for d in decisions[agent] if d["t_sim"] <= t]
+        return prec[-1]["categorie"] if prec else None
+    def apres(agent, t):
+        suiv = [d for d in decisions[agent] if d["t_sim"] > t]
+        return suiv[0]["categorie"] if suiv else None
+    pendant = bouge_pendant = bouge_apres = suivis = 0
+    for conv in par_conv.values():
+        t = conv[0]["t_sim"]
+        derniere = {}
+        for r in conv:
+            if r["valide"]:
+                derniere[r["agent"]] = r["categorie"]
+        for agent, cat in derniere.items():
+            a, b = avant(agent, t), apres(agent, t)
+            pendant += 1
+            bouge_pendant += a is not None and cat != a
+            if b is not None:
+                suivis += 1
+                bouge_apres += a is not None and b != a
+    incidents = collections.Counter(i["nature"] for i in _par(evs, "incident.v1")
+                                    if "conversation" in (i.get("details") or {}))
+    return {"conversations": len(par_conv), "repliques": len(repliques),
+            "repliques_valides": sum(r["valide"] for r in repliques),
+            "participants": pendant,
+            "bouge_pendant": bouge_pendant, "part_bouge_pendant": bouge_pendant / pendant if pendant else None,
+            "suivis": suivis, "bouge_apres": bouge_apres,
+            "part_bouge_apres": bouge_apres / suivis if suivis else None,
+            "incidents": dict(incidents)}
 
 
 # ------------------------------------------------------------------ B1, B3

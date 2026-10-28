@@ -184,6 +184,32 @@ ce curseur à zéro : au passage suivant, chacun relit tout le fil en plus de
 l'article. Elle ne touche pas au temps de port, qui se compte depuis la
 décision précédente.
 
+### Conversations (`--conversation N`, `ephemere/dialogue.py`)
+
+Sans cette option, un agent publie et un autre lit, sans jamais répondre. Avec
+elle, un message privé entre deux agents LLM ouvre une **conversation** : le
+destinataire répond, puis l'auteur répond à son tour (`--repliques 3` par
+défaut, message d'ouverture compris). Chaque réplique est un événement
+`replique.v1`, entre dans la mémoire de celui à qui elle s'adresse, et dit ce
+que le ruban veut dire pour celui qui parle à ce moment de l'échange.
+
+La croyance de l'agent change à sa **décision suivante**, qui lit l'échange
+dans sa mémoire : une seule décision par agent et par jour, comme sans
+conversation. `analyser.py` compare, pour chaque participant, le sens avant,
+pendant (sa dernière réplique) et après (sa décision suivante). Au plus N
+conversations par jour, chacune coûte `repliques - 1` appels de plus. Un agent
+à règles ne converse pas.
+
+### Sortie structurée (`--sortie-structuree`)
+
+Le schéma JSON de la réponse est envoyé au modèle (Ollama contraint alors la
+génération elle-même), puis la réponse est vérifiée contre ce même schéma par
+`valider()`, en bibliothèque standard : ni pydantic ni LangChain. Une réponse
+hors schéma devient un incident `schema_non_respecte`. Les deux options sont
+coupées par défaut : les runs `exp_*` restent comparables, et leur effet se
+mesure (incidents A4, changements de sens A2) en les activant sur les mêmes
+graines.
+
 ### Détection des dérives (A4)
 
 La fiche du sujet prévient : un LLM aligné sur la sécurité répond volontiers

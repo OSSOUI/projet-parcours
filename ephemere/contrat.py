@@ -11,7 +11,7 @@ et le rejeu (E3) casse.
 
 import difflib
 
-VERSION_CONTRAT = "1.6.0"   # 1.1 : perception, coherence, energie ; 1.2 : run.v2 ; 1.3 : population.v2 ; 1.4 : reseau.v1 ; 1.5 : perception.v2 ; 1.6 : decision.v2, publication.v2 (ajouts seuls)
+VERSION_CONTRAT = "1.7.0"   # 1.1 : perception, coherence, energie ; 1.2 : run.v2 ; 1.3 : population.v2 ; 1.4 : reseau.v1 ; 1.5 : perception.v2 ; 1.6 : decision.v2, publication.v2 ; 1.7 : replique.v1 (ajouts seuls)
 
 # En-tetes de run. run.v1 ne dit pas quel modele social a tourne : il se lit
 # toujours comme "v1". run.v2 le rend obligatoire.
@@ -83,6 +83,12 @@ CORPS = {
                        "sens_dominant": str, "part_sens_dominant": float,
                        "porteurs": list},
     "injection.v1": {"nature": str, "details": dict, "source": str},
+    # Une replique d'une conversation privee entre deux agents LLM (A2). La
+    # premiere replique est le message prive (publication.v1, portee
+    # "personne") ; les suivantes sont ici, tour 2, 3... categorie : ce que le
+    # ruban veut dire pour celui qui parle, a ce moment de l'echange.
+    "replique.v1": {"conversation": str, "tour": int, "agent": str, "destinataire": str,
+                    "texte": str, "categorie": (str, NUL), "moteur": str, "valide": bool},
     "recuperation.v1": {"agent": str, "requete": str, "resultats": list,
                         "nb_resultats": int, "corpus": dict},
     "incident.v1": {"agent": (str, NUL), "nature": str, "details": dict},
@@ -154,6 +160,8 @@ def verifier(evt):
     if nom == "decision.v2" and evt["sens_percu"] not in SENS:
         return False, f"sens_percu hors liste fermee : {evt['sens_percu']!r}"
     if nom in ("decision.v1", "decision.v2") and evt["categorie"] not in SENS:
+        return False, f"categorie hors liste fermee : {evt['categorie']!r}"
+    if nom == "replique.v1" and evt["categorie"] is not None and evt["categorie"] not in SENS:
         return False, f"categorie hors liste fermee : {evt['categorie']!r}"
     if nom == "indicateurs.v1" and evt["sens_dominant"] not in SENS:
         return False, f"sens_dominant hors liste fermee : {evt['sens_dominant']!r}"

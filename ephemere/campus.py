@@ -147,6 +147,19 @@ class Campus:
             if evt.get("id"):
                 ou = "lui a écrit" if evt.get("portee") == "personne" else "a publié"
                 self._retenir(evt["id"], f"{a['nom']} {ou} : \"{evt['texte']}\"")
+        elif schema == "replique.v1" and evt.get("valide"):
+            # Conversation privee (A2) : au fil comme un message prive, et dans
+            # la memoire du destinataire pour l'inspection (D2).
+            a = self._agent(evt["agent"])
+            dest = evt["destinataire"]
+            self._au_fil({"auteur": a["nom"], "texte": evt["texte"], "portee": "personne",
+                          "destinataire": self._nom(dest), "categorie": evt.get("categorie"),
+                          "t_sim_lisible": evt.get("t_sim_lisible", "")})
+            d = self._agent(dest)
+            d["memoire"] = (d["memoire"] + [{
+                "t_sim_lisible": evt.get("t_sim_lisible", ""),
+                "fait": f"{a['nom']} m'a répondu : \"{evt['texte']}\"", "raison": "",
+            }])[-8:]
         elif schema == "injection.v1":
             self.injections.append({"t_sim": evt.get("t_sim", self.t_sim),
                                     "t_sim_lisible": evt.get("t_sim_lisible", ""),
