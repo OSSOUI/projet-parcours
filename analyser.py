@@ -40,6 +40,10 @@ def analyser(chemin):
     print(f"{meta.get('mode', '?')}, {meta.get('nb_agents', '?')} agents, "
           f"{meta.get('jours', '?')} jours, graine {meta.get('graine', '?')}, "
           f"modele social {meta.get('modele_social', 'v1')}")
+    if any(e["schema"] == "recuperation.v1" for e in evs):
+        # Les runs d'avant le 28 octobre n'ecrivent pas leur corpus : c'etait corpus/.
+        corpus = meta.get("corpus", "corpus")
+        print(f"corpus {corpus} ({'neutre' if corpus == 'corpus_neutre' else 'complet'})")
 
     if ind:
         pics = max(ind, key=lambda e: e["taux_adoption"])

@@ -420,6 +420,7 @@ def main():
                        config=os.path.basename(args.config),
                        version_contrat=VERSION_CONTRAT,
                        modele_social="v1.1" if args.lassitude_suiveurs else "v1",
+                       corpus=os.path.basename(os.path.normpath(args.corpus)),
                        sortie_structuree=bool(args.sortie_structuree and client),
                        conversation={"par_jour": args.conversation if client else 0,
                                      "repliques": args.repliques})
