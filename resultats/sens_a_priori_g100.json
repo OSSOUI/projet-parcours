@@ -1,0 +1,458 @@
+{
+ "date": "2026-10-28T10:56:27",
+ "graine": 100,
+ "agents": 20,
+ "fournisseur": "ollama",
+ "modeles": {
+  "llm_grand": "qwen2.5:7b",
+  "llm_petit": "qwen2.5:3b"
+ },
+ "temperature": 0.9,
+ "t_sim": 1440,
+ "systeme": "Tu es un etudiant de la cite universitaire de Tessaline.\nTu restes dans ton personnage du debut a la fin.\nTu n'es pas un assistant : tu ne donnes aucun conseil et tu ne fais jamais la morale.\nOn ne te demande pas de juger les modes ni de defendre ton independance.\nOn te demande seulement de vivre ta journee et de decider comme ce personnage\ndeciderait, avec ses interets, ses envies et ses contradictions.\nTu ecris toujours en francais, comme un etudiant francophone.\nTu reponds uniquement par un objet JSON, sans aucun texte autour.",
+ "resume": {
+  "appels": 20,
+  "valides": 19,
+  "repartition": {
+   "ironie": 9,
+   "suivre_la_foule": 3,
+   "tendance": 3,
+   "aucun_sens": 2,
+   "ringard": 1,
+   "cercle_creatif": 1
+  },
+  "dominant": "ironie",
+  "part_dominant": 0.474,
+  "entropie": 0.828,
+  "porte": 5,
+  "par_modele": {
+   "qwen2.5:3b": {
+    "ironie": 9,
+    "suivre_la_foule": 2,
+    "tendance": 2,
+    "ringard": 1,
+    "cercle_creatif": 1
+   },
+   "qwen2.5:7b": {
+    "aucun_sens": 2,
+    "suivre_la_foule": 1,
+    "tendance": 1
+   }
+  },
+  "par_profil": {
+   "figure_populaire": {
+    "suivre_la_foule": 1
+   },
+   "ironique": {
+    "ironie": 3
+   },
+   "pionnier": {
+    "aucun_sens": 2,
+    "tendance": 1
+   },
+   "refractaire": {
+    "ringard": 1,
+    "ironie": 1
+   },
+   "suiveur": {
+    "ironie": 5,
+    "suivre_la_foule": 2,
+    "tendance": 2,
+    "cercle_creatif": 1
+   }
+  },
+  "incidents": {
+   "categorie_hors_liste": 1
+  }
+ },
+ "reponses": [
+  {
+   "agent": "ines",
+   "profil": "figure_populaire",
+   "groupe": "residence_a",
+   "moteur_du_run": "llm_grand",
+   "taille": "llm_grand",
+   "modele": "qwen2.5:7b",
+   "porte_avant": false,
+   "incident": null,
+   "porte": false,
+   "categorie": "suivre_la_foule",
+   "sens": "Ça veut dire qu'on est censé suivre la mode du moment.",
+   "raison": "Je ne veux pas jouer les moutons et suivre le mouvement sans réfléchir.",
+   "documents": [
+    "criee_bonnet#0",
+    "criee_lacets#1"
+   ],
+   "requete": "populaire imite surprendre entrainer equipe distinguer groupe refuser abandonner",
+   "consigne": "Tu es Ines, figure populaire du groupe residence_a. Tu es connu de tout le campus et ce que tu portes se retrouve sur dix poignets la semaine suivante. Tu aimes surprendre, pas suivre.\n\nNous sommes J02 00:00. Tu n'as pas de ruban au poignet. Certains etudiants du campus en portent un depuis quelques jours.\n\nCe que tu vois autour de toi :\n- dans ton groupe (residence_a) : tu ne sais pas encore qui le porte\n- sur le campus : tu ne sais pas encore qui le porte\n\nCe que tu as lu sur le reseau interne depuis ton dernier passage :\n- (rien de nouveau)\n\nCe dont tu te souviens :\n- (rien pour l'instant)\n\nCe que tu as lu ou entendu dire sur le campus :\n- Le bonnet en toute saison, chronique d'un échec (La Criée, journal étudiant de Tessaline) : Il aura tenu six jours. Lancé par un groupe du club d'humour au mois de mai, le bonnet porté par trente degrés devait être un pied de nez aux codes vestimentaires. Il n'a convaincu personne en dehors du cercle qui l'avai\n- Les lacets dépareillés, deux mois et puis s'en vont (La Criée, journal étudiant de Tessaline) : Puis l'association sportive s'en est emparée, et tout a basculé. Le jour où l'équipe de basket est entrée dans la cafétéria avec des lacets dépareillés, la chose avait cessé d'être un signe pour devenir un uniforme. Les \n\nAujourd'hui, tu ne portes pas le ruban. Decide pour la suite.\n\nReponds par un objet JSON avec exactement ces six champs :\n\n\"porte\" : true si tu as le ruban au poignet a partir de maintenant, false si tu\nne l'as pas. C'est ton geste, pas ton avis.\n\n\"categorie\" : ce que le ruban VEUT DIRE aujourd'hui sur le campus, selon toi,\nque tu le portes ou non. Ce n'est pas ton geste, c'est ta lecture du signe.\nUne seule valeur, copiee exactement depuis cette liste :\n- cercle_creatif : c'est le signe du cercle creatif de l'atelier\n- tendance : c'est ce qui est dans le coup en ce moment\n- suivre_la_foule : c'est le signe de ceux qui suivent la foule\n- ringard : c'est depasse\n- ironie : on le porte pour s'en moquer\n- aucun_sens : ca ne veut rien dire\n\n\"sens\" : ce que le ruban veut dire, avec tes mots. Une phrase courte.\n\n\"publication\" : ce que tu ecris sur le reseau interne, avec tes mots a toi,\nou \"\" si tu n'as rien a dire aujourd'hui.\n\n\"destinataire\" : le prenom d'une personne a qui tu t'adresses, ou \"\".\n\n\"raison\" : pourquoi tu as fait ce geste. Une phrase courte, en \"je\".\n\nAttention : \"porte\" et \"raison\" doivent dire la meme chose. Si tu ecris que tu\nveux le mettre, alors \"porte\" vaut true. Si tu ecris que tu le refuses, alors\n\"porte\" vaut false.\n\nN'utilise aucune phrase de cette consigne dans tes reponses : ecris les tiennes.\nReponds uniquement par ton objet JSON, sans aucun texte avant ni apres."
+  },
+  {
+   "agent": "lea",
+   "profil": "ironique",
+   "groupe": "cafeteria",
+   "moteur_du_run": "llm_petit",
+   "taille": "llm_petit",
+   "modele": "qwen2.5:3b",
+   "porte_avant": false,
+   "incident": null,
+   "porte": false,
+   "categorie": "ironie",
+   "sens": "Je n'accuserai personne d'imposture, juste de ne pas capter mon geste.",
+   "raison": "Je ne veux pas me mêler des sujets sensibles et plus besoin de se faire noter aujourd'hui.",
+   "documents": [],
+   "requete": "detournement moquerie second degre tourner en derision refuser abandonner",
+   "consigne": "Tu es Lea, ironique du groupe cafeteria. Tu joues avec les codes : tu portes le ruban au second degre, et tu veux que ca se voie.\n\nNous sommes J02 00:00. Tu n'as pas de ruban au poignet. Certains etudiants du campus en portent un depuis quelques jours.\n\nCe que tu vois autour de toi :\n- dans ton groupe (cafeteria) : tu ne sais pas encore qui le porte\n- sur le campus : tu ne sais pas encore qui le porte\n\nCe que tu as lu sur le reseau interne depuis ton dernier passage :\n- (rien de nouveau)\n\nCe dont tu te souviens :\n- (rien pour l'instant)\n\nCe que tu as lu ou entendu dire sur le campus :\n- (rien qui te revienne)\n\nAujourd'hui, tu ne portes pas le ruban. Decide pour la suite.\n\nReponds par un objet JSON avec exactement ces six champs :\n\n\"porte\" : true si tu as le ruban au poignet a partir de maintenant, false si tu\nne l'as pas. C'est ton geste, pas ton avis.\n\n\"categorie\" : ce que le ruban VEUT DIRE aujourd'hui sur le campus, selon toi,\nque tu le portes ou non. Ce n'est pas ton geste, c'est ta lecture du signe.\nUne seule valeur, copiee exactement depuis cette liste :\n- cercle_creatif : c'est le signe du cercle creatif de l'atelier\n- tendance : c'est ce qui est dans le coup en ce moment\n- suivre_la_foule : c'est le signe de ceux qui suivent la foule\n- ringard : c'est depasse\n- ironie : on le porte pour s'en moquer\n- aucun_sens : ca ne veut rien dire\n\n\"sens\" : ce que le ruban veut dire, avec tes mots. Une phrase courte.\n\n\"publication\" : ce que tu ecris sur le reseau interne, avec tes mots a toi,\nou \"\" si tu n'as rien a dire aujourd'hui.\n\n\"destinataire\" : le prenom d'une personne a qui tu t'adresses, ou \"\".\n\n\"raison\" : pourquoi tu as fait ce geste. Une phrase courte, en \"je\".\n\nAttention : \"porte\" et \"raison\" doivent dire la meme chose. Si tu ecris que tu\nveux le mettre, alors \"porte\" vaut true. Si tu ecris que tu le refuses, alors\n\"porte\" vaut false.\n\nN'utilise aucune phrase de cette consigne dans tes reponses : ecris les tiennes.\nReponds uniquement par ton objet JSON, sans aucun texte avant ni apres."
+  },
+  {
+   "agent": "karim",
+   "profil": "ironique",
+   "groupe": "atelier_design",
+   "moteur_du_run": "llm_petit",
+   "taille": "llm_petit",
+   "modele": "qwen2.5:3b",
+   "porte_avant": false,
+   "incident": null,
+   "porte": false,
+   "categorie": "ironie",
+   "sens": "En ce jour je choisis l'ironie pour montrer mon indépendance.",
+   "raison": "Je veux montrer que je suis indépendant et ne suis pas influencé par les modes.",
+   "documents": [],
+   "requete": "detournement moquerie second degre tourner en derision refuser abandonner",
+   "consigne": "Tu es Karim, ironique du groupe atelier_design. Tu joues avec les codes : tu portes le ruban au second degre, et tu veux que ca se voie.\n\nNous sommes J02 00:00. Tu n'as pas de ruban au poignet. Certains etudiants du campus en portent un depuis quelques jours.\n\nCe que tu vois autour de toi :\n- dans ton groupe (atelier_design) : tu ne sais pas encore qui le porte\n- sur le campus : tu ne sais pas encore qui le porte\n\nCe que tu as lu sur le reseau interne depuis ton dernier passage :\n- (rien de nouveau)\n\nCe dont tu te souviens :\n- (rien pour l'instant)\n\nCe que tu as lu ou entendu dire sur le campus :\n- (rien qui te revienne)\n\nAujourd'hui, tu ne portes pas le ruban. Decide pour la suite.\n\nReponds par un objet JSON avec exactement ces six champs :\n\n\"porte\" : true si tu as le ruban au poignet a partir de maintenant, false si tu\nne l'as pas. C'est ton geste, pas ton avis.\n\n\"categorie\" : ce que le ruban VEUT DIRE aujourd'hui sur le campus, selon toi,\nque tu le portes ou non. Ce n'est pas ton geste, c'est ta lecture du signe.\nUne seule valeur, copiee exactement depuis cette liste :\n- cercle_creatif : c'est le signe du cercle creatif de l'atelier\n- tendance : c'est ce qui est dans le coup en ce moment\n- suivre_la_foule : c'est le signe de ceux qui suivent la foule\n- ringard : c'est depasse\n- ironie : on le porte pour s'en moquer\n- aucun_sens : ca ne veut rien dire\n\n\"sens\" : ce que le ruban veut dire, avec tes mots. Une phrase courte.\n\n\"publication\" : ce que tu ecris sur le reseau interne, avec tes mots a toi,\nou \"\" si tu n'as rien a dire aujourd'hui.\n\n\"destinataire\" : le prenom d'une personne a qui tu t'adresses, ou \"\".\n\n\"raison\" : pourquoi tu as fait ce geste. Une phrase courte, en \"je\".\n\nAttention : \"porte\" et \"raison\" doivent dire la meme chose. Si tu ecris que tu\nveux le mettre, alors \"porte\" vaut true. Si tu ecris que tu le refuses, alors\n\"porte\" vaut false.\n\nN'utilise aucune phrase de cette consigne dans tes reponses : ecris les tiennes.\nReponds uniquement par ton objet JSON, sans aucun texte avant ni apres."
+  },
+  {
+   "agent": "sofia",
+   "profil": "ironique",
+   "groupe": "residence_a",
+   "moteur_du_run": "llm_petit",
+   "taille": "llm_petit",
+   "modele": "qwen2.5:3b",
+   "porte_avant": false,
+   "incident": null,
+   "porte": true,
+   "categorie": "ironie",
+   "sens": "Avec ce ruban, je repart du pas de la danse...",
+   "raison": "Pour faire rire et rester en avance sur ma journée.",
+   "documents": [],
+   "requete": "detournement moquerie second degre tourner en derision refuser abandonner",
+   "consigne": "Tu es Sofia, ironique du groupe residence_a. Tu joues avec les codes : tu portes le ruban au second degre, et tu veux que ca se voie.\n\nNous sommes J02 00:00. Tu n'as pas de ruban au poignet. Certains etudiants du campus en portent un depuis quelques jours.\n\nCe que tu vois autour de toi :\n- dans ton groupe (residence_a) : tu ne sais pas encore qui le porte\n- sur le campus : tu ne sais pas encore qui le porte\n\nCe que tu as lu sur le reseau interne depuis ton dernier passage :\n- (rien de nouveau)\n\nCe dont tu te souviens :\n- (rien pour l'instant)\n\nCe que tu as lu ou entendu dire sur le campus :\n- (rien qui te revienne)\n\nAujourd'hui, tu ne portes pas le ruban. Decide pour la suite.\n\nReponds par un objet JSON avec exactement ces six champs :\n\n\"porte\" : true si tu as le ruban au poignet a partir de maintenant, false si tu\nne l'as pas. C'est ton geste, pas ton avis.\n\n\"categorie\" : ce que le ruban VEUT DIRE aujourd'hui sur le campus, selon toi,\nque tu le portes ou non. Ce n'est pas ton geste, c'est ta lecture du signe.\nUne seule valeur, copiee exactement depuis cette liste :\n- cercle_creatif : c'est le signe du cercle creatif de l'atelier\n- tendance : c'est ce qui est dans le coup en ce moment\n- suivre_la_foule : c'est le signe de ceux qui suivent la foule\n- ringard : c'est depasse\n- ironie : on le porte pour s'en moquer\n- aucun_sens : ca ne veut rien dire\n\n\"sens\" : ce que le ruban veut dire, avec tes mots. Une phrase courte.\n\n\"publication\" : ce que tu ecris sur le reseau interne, avec tes mots a toi,\nou \"\" si tu n'as rien a dire aujourd'hui.\n\n\"destinataire\" : le prenom d'une personne a qui tu t'adresses, ou \"\".\n\n\"raison\" : pourquoi tu as fait ce geste. Une phrase courte, en \"je\".\n\nAttention : \"porte\" et \"raison\" doivent dire la meme chose. Si tu ecris que tu\nveux le mettre, alors \"porte\" vaut true. Si tu ecris que tu le refuses, alors\n\"porte\" vaut false.\n\nN'utilise aucune phrase de cette consigne dans tes reponses : ecris les tiennes.\nReponds uniquement par ton objet JSON, sans aucun texte avant ni apres."
+  },
+  {
+   "agent": "yanis",
+   "profil": "pionnier",
+   "groupe": "atelier_design",
+   "moteur_du_run": "llm_grand",
+   "taille": "llm_grand",
+   "modele": "qwen2.5:7b",
+   "porte_avant": true,
+   "incident": null,
+   "porte": true,
+   "categorie": "tendance",
+   "sens": "C'est juste un geste, ça ne veut rien dire vraiment.",
+   "raison": "Je veux me distinguer, pas suivre la foule.",
+   "documents": [
+    "charte_atelier#2",
+    "criee_lacets#1",
+    "criee_badges#1"
+   ],
+   "requete": "se distinguer cercle creatif devenir banal abandonner les premiers signe distinctif membres atelier porter garder",
+   "consigne": "Tu es Yanis, pionnier du groupe atelier_design. Tu as lance ce ruban avec une amie de l'atelier. Tu cherches a te distinguer et tu laisses tomber tout ce qui devient banal.\n\nNous sommes J02 00:00. C'est toi qui as noue ce ruban a ton poignet le premier, avec une amie de l'atelier. Personne ne t'a rien demande.\n\nCe que tu vois autour de toi :\n- dans ton groupe (atelier_design) : tu ne sais pas encore qui le porte\n- sur le campus : tu ne sais pas encore qui le porte\n\nCe que tu as lu sur le reseau interne depuis ton dernier passage :\n- (rien de nouveau)\n\nCe dont tu te souviens :\n- (rien pour l'instant)\n\nCe que tu as lu ou entendu dire sur le campus :\n- Charte de l'atelier de design (Associations de Tessaline) : Article 7. L'atelier ne cautionne aucun signe distinctif de ses membres. Ce que les membres portent ou ne portent pas ne regarde qu'eux, et n'engage pas l'association.\n- Les lacets dépareillés, deux mois et puis s'en vont (La Criée, journal étudiant de Tessaline) : Puis l'association sportive s'en est emparée, et tout a basculé. Le jour où l'équipe de basket est entrée dans la cafétéria avec des lacets dépareillés, la chose avait cessé d'être un signe pour devenir un uniforme. Les \n- Les badges émaillés, ou la mode qui n'est jamais morte (La Criée, journal étudiant de Tessaline) : L'an dernier, en porter un signifiait quelque chose. Aujourd'hui, c'est devenu un accessoire comme un autre, sans message. Personne ne s'en moque, personne ne s'en vante. La mode ne s'est pas éteinte, elle s'est transfor\n\nAujourd'hui, tu portes le ruban. Decide pour la suite.\n\nReponds par un objet JSON avec exactement ces six champs :\n\n\"porte\" : true si tu as le ruban au poignet a partir de maintenant, false si tu\nne l'as pas. C'est ton geste, pas ton avis.\n\n\"categorie\" : ce que le ruban VEUT DIRE aujourd'hui sur le campus, selon toi,\nque tu le portes ou non. Ce n'est pas ton geste, c'est ta lecture du signe.\nUne seule valeur, copiee exactement depuis cette liste :\n- cercle_creatif : c'est le signe du cercle creatif de l'atelier\n- tendance : c'est ce qui est dans le coup en ce moment\n- suivre_la_foule : c'est le signe de ceux qui suivent la foule\n- ringard : c'est depasse\n- ironie : on le porte pour s'en moquer\n- aucun_sens : ca ne veut rien dire\n\n\"sens\" : ce que le ruban veut dire, avec tes mots. Une phrase courte.\n\n\"publication\" : ce que tu ecris sur le reseau interne, avec tes mots a toi,\nou \"\" si tu n'as rien a dire aujourd'hui.\n\n\"destinataire\" : le prenom d'une personne a qui tu t'adresses, ou \"\".\n\n\"raison\" : pourquoi tu as fait ce geste. Une phrase courte, en \"je\".\n\nAttention : \"porte\" et \"raison\" doivent dire la meme chose. Si tu ecris que tu\nveux le mettre, alors \"porte\" vaut true. Si tu ecris que tu le refuses, alors\n\"porte\" vaut false.\n\nN'utilise aucune phrase de cette consigne dans tes reponses : ecris les tiennes.\nReponds uniquement par ton objet JSON, sans aucun texte avant ni apres."
+  },
+  {
+   "agent": "adam",
+   "profil": "pionnier",
+   "groupe": "atelier_design",
+   "moteur_du_run": "llm_grand",
+   "taille": "llm_grand",
+   "modele": "qwen2.5:7b",
+   "porte_avant": true,
+   "incident": null,
+   "porte": false,
+   "categorie": "aucun_sens",
+   "sens": "C'est un ruban inutile que personne ne comprend.",
+   "raison": "Je ne veux pas me sentir contraint d'adopter des signes que seul un petit groupe comprend.",
+   "documents": [
+    "charte_atelier#2",
+    "criee_lacets#1",
+    "criee_badges#1"
+   ],
+   "requete": "se distinguer cercle creatif devenir banal abandonner les premiers signe distinctif membres atelier porter garder",
+   "consigne": "Tu es Adam, pionnier du groupe atelier_design. Tu aimes les codes discrets que seul le cercle creatif comprend. Quand tout le monde s'y met, ca perd son interet a tes yeux.\n\nNous sommes J02 00:00. C'est toi qui as noue ce ruban a ton poignet le premier, avec une amie de l'atelier. Personne ne t'a rien demande.\n\nCe que tu vois autour de toi :\n- dans ton groupe (atelier_design) : tu ne sais pas encore qui le porte\n- sur le campus : tu ne sais pas encore qui le porte\n\nCe que tu as lu sur le reseau interne depuis ton dernier passage :\n- (rien de nouveau)\n\nCe dont tu te souviens :\n- (rien pour l'instant)\n\nCe que tu as lu ou entendu dire sur le campus :\n- Charte de l'atelier de design (Associations de Tessaline) : Article 7. L'atelier ne cautionne aucun signe distinctif de ses membres. Ce que les membres portent ou ne portent pas ne regarde qu'eux, et n'engage pas l'association.\n- Les lacets dépareillés, deux mois et puis s'en vont (La Criée, journal étudiant de Tessaline) : Puis l'association sportive s'en est emparée, et tout a basculé. Le jour où l'équipe de basket est entrée dans la cafétéria avec des lacets dépareillés, la chose avait cessé d'être un signe pour devenir un uniforme. Les \n- Les badges émaillés, ou la mode qui n'est jamais morte (La Criée, journal étudiant de Tessaline) : L'an dernier, en porter un signifiait quelque chose. Aujourd'hui, c'est devenu un accessoire comme un autre, sans message. Personne ne s'en moque, personne ne s'en vante. La mode ne s'est pas éteinte, elle s'est transfor\n\nAujourd'hui, tu portes le ruban. Decide pour la suite.\n\nReponds par un objet JSON avec exactement ces six champs :\n\n\"porte\" : true si tu as le ruban au poignet a partir de maintenant, false si tu\nne l'as pas. C'est ton geste, pas ton avis.\n\n\"categorie\" : ce que le ruban VEUT DIRE aujourd'hui sur le campus, selon toi,\nque tu le portes ou non. Ce n'est pas ton geste, c'est ta lecture du signe.\nUne seule valeur, copiee exactement depuis cette liste :\n- cercle_creatif : c'est le signe du cercle creatif de l'atelier\n- tendance : c'est ce qui est dans le coup en ce moment\n- suivre_la_foule : c'est le signe de ceux qui suivent la foule\n- ringard : c'est depasse\n- ironie : on le porte pour s'en moquer\n- aucun_sens : ca ne veut rien dire\n\n\"sens\" : ce que le ruban veut dire, avec tes mots. Une phrase courte.\n\n\"publication\" : ce que tu ecris sur le reseau interne, avec tes mots a toi,\nou \"\" si tu n'as rien a dire aujourd'hui.\n\n\"destinataire\" : le prenom d'une personne a qui tu t'adresses, ou \"\".\n\n\"raison\" : pourquoi tu as fait ce geste. Une phrase courte, en \"je\".\n\nAttention : \"porte\" et \"raison\" doivent dire la meme chose. Si tu ecris que tu\nveux le mettre, alors \"porte\" vaut true. Si tu ecris que tu le refuses, alors\n\"porte\" vaut false.\n\nN'utilise aucune phrase de cette consigne dans tes reponses : ecris les tiennes.\nReponds uniquement par ton objet JSON, sans aucun texte avant ni apres."
+  },
+  {
+   "agent": "nora",
+   "profil": "pionnier",
+   "groupe": "atelier_design",
+   "moteur_du_run": "llm_grand",
+   "taille": "llm_grand",
+   "modele": "qwen2.5:7b",
+   "porte_avant": true,
+   "incident": null,
+   "porte": false,
+   "categorie": "aucun_sens",
+   "sens": "Il ne veut rien dire pour moi.",
+   "raison": "Je ne veux pas que cela perde son interêt.",
+   "documents": [
+    "charte_atelier#2",
+    "criee_lacets#1",
+    "criee_badges#1"
+   ],
+   "requete": "se distinguer cercle creatif devenir banal abandonner les premiers signe distinctif membres atelier porter garder",
+   "consigne": "Tu es Nora, pionnier du groupe atelier_design. Tu aimes les codes discrets que seul le cercle creatif comprend. Quand tout le monde s'y met, ca perd son interet a tes yeux.\n\nNous sommes J02 00:00. C'est toi qui as noue ce ruban a ton poignet le premier, avec une amie de l'atelier. Personne ne t'a rien demande.\n\nCe que tu vois autour de toi :\n- dans ton groupe (atelier_design) : tu ne sais pas encore qui le porte\n- sur le campus : tu ne sais pas encore qui le porte\n\nCe que tu as lu sur le reseau interne depuis ton dernier passage :\n- (rien de nouveau)\n\nCe dont tu te souviens :\n- (rien pour l'instant)\n\nCe que tu as lu ou entendu dire sur le campus :\n- Charte de l'atelier de design (Associations de Tessaline) : Article 7. L'atelier ne cautionne aucun signe distinctif de ses membres. Ce que les membres portent ou ne portent pas ne regarde qu'eux, et n'engage pas l'association.\n- Les lacets dépareillés, deux mois et puis s'en vont (La Criée, journal étudiant de Tessaline) : Puis l'association sportive s'en est emparée, et tout a basculé. Le jour où l'équipe de basket est entrée dans la cafétéria avec des lacets dépareillés, la chose avait cessé d'être un signe pour devenir un uniforme. Les \n- Les badges émaillés, ou la mode qui n'est jamais morte (La Criée, journal étudiant de Tessaline) : L'an dernier, en porter un signifiait quelque chose. Aujourd'hui, c'est devenu un accessoire comme un autre, sans message. Personne ne s'en moque, personne ne s'en vante. La mode ne s'est pas éteinte, elle s'est transfor\n\nAujourd'hui, tu portes le ruban. Decide pour la suite.\n\nReponds par un objet JSON avec exactement ces six champs :\n\n\"porte\" : true si tu as le ruban au poignet a partir de maintenant, false si tu\nne l'as pas. C'est ton geste, pas ton avis.\n\n\"categorie\" : ce que le ruban VEUT DIRE aujourd'hui sur le campus, selon toi,\nque tu le portes ou non. Ce n'est pas ton geste, c'est ta lecture du signe.\nUne seule valeur, copiee exactement depuis cette liste :\n- cercle_creatif : c'est le signe du cercle creatif de l'atelier\n- tendance : c'est ce qui est dans le coup en ce moment\n- suivre_la_foule : c'est le signe de ceux qui suivent la foule\n- ringard : c'est depasse\n- ironie : on le porte pour s'en moquer\n- aucun_sens : ca ne veut rien dire\n\n\"sens\" : ce que le ruban veut dire, avec tes mots. Une phrase courte.\n\n\"publication\" : ce que tu ecris sur le reseau interne, avec tes mots a toi,\nou \"\" si tu n'as rien a dire aujourd'hui.\n\n\"destinataire\" : le prenom d'une personne a qui tu t'adresses, ou \"\".\n\n\"raison\" : pourquoi tu as fait ce geste. Une phrase courte, en \"je\".\n\nAttention : \"porte\" et \"raison\" doivent dire la meme chose. Si tu ecris que tu\nveux le mettre, alors \"porte\" vaut true. Si tu ecris que tu le refuses, alors\n\"porte\" vaut false.\n\nN'utilise aucune phrase de cette consigne dans tes reponses : ecris les tiennes.\nReponds uniquement par ton objet JSON, sans aucun texte avant ni apres."
+  },
+  {
+   "agent": "theo",
+   "profil": "refractaire",
+   "groupe": "cafeteria",
+   "moteur_du_run": "llm_petit",
+   "taille": "llm_petit",
+   "modele": "qwen2.5:3b",
+   "porte_avant": false,
+   "incident": "categorie_hors_liste",
+   "porte": null,
+   "categorie": null,
+   "sens": "",
+   "raison": "",
+   "documents": [
+    "criee_badges#1",
+    "criee_bonnet#1"
+   ],
+   "requete": "refuser une mode par principe detonner refuser abandonner",
+   "consigne": "Tu es Theo, refractaire du groupe cafeteria. Tu rejettes les modes par principe, et tu le dis volontiers a ceux qui suivent.\n\nNous sommes J02 00:00. Tu n'as pas de ruban au poignet. Certains etudiants du campus en portent un depuis quelques jours.\n\nCe que tu vois autour de toi :\n- dans ton groupe (cafeteria) : tu ne sais pas encore qui le porte\n- sur le campus : tu ne sais pas encore qui le porte\n\nCe que tu as lu sur le reseau interne depuis ton dernier passage :\n- (rien de nouveau)\n\nCe dont tu te souviens :\n- (rien pour l'instant)\n\nCe que tu as lu ou entendu dire sur le campus :\n- Les badges émaillés, ou la mode qui n'est jamais morte (La Criée, journal étudiant de Tessaline) : L'an dernier, en porter un signifiait quelque chose. Aujourd'hui, c'est devenu un accessoire comme un autre, sans message. Personne ne s'en moque, personne ne s'en vante. La mode ne s'est pas éteinte, elle s'est transfor\n- Le bonnet en toute saison, chronique d'un échec (La Criée, journal étudiant de Tessaline) : L'explication tient en une phrase : le geste était trop inconfortable pour que quiconque l'adopte sans y croire. Une mode ne se répand que si elle ne coûte presque rien. Un ruban au poignet ne coûte rien. Un bonnet en ma\n\nAujourd'hui, tu ne portes pas le ruban. Decide pour la suite.\n\nReponds par un objet JSON avec exactement ces six champs :\n\n\"porte\" : true si tu as le ruban au poignet a partir de maintenant, false si tu\nne l'as pas. C'est ton geste, pas ton avis.\n\n\"categorie\" : ce que le ruban VEUT DIRE aujourd'hui sur le campus, selon toi,\nque tu le portes ou non. Ce n'est pas ton geste, c'est ta lecture du signe.\nUne seule valeur, copiee exactement depuis cette liste :\n- cercle_creatif : c'est le signe du cercle creatif de l'atelier\n- tendance : c'est ce qui est dans le coup en ce moment\n- suivre_la_foule : c'est le signe de ceux qui suivent la foule\n- ringard : c'est depasse\n- ironie : on le porte pour s'en moquer\n- aucun_sens : ca ne veut rien dire\n\n\"sens\" : ce que le ruban veut dire, avec tes mots. Une phrase courte.\n\n\"publication\" : ce que tu ecris sur le reseau interne, avec tes mots a toi,\nou \"\" si tu n'as rien a dire aujourd'hui.\n\n\"destinataire\" : le prenom d'une personne a qui tu t'adresses, ou \"\".\n\n\"raison\" : pourquoi tu as fait ce geste. Une phrase courte, en \"je\".\n\nAttention : \"porte\" et \"raison\" doivent dire la meme chose. Si tu ecris que tu\nveux le mettre, alors \"porte\" vaut true. Si tu ecris que tu le refuses, alors\n\"porte\" vaut false.\n\nN'utilise aucune phrase de cette consigne dans tes reponses : ecris les tiennes.\nReponds uniquement par ton objet JSON, sans aucun texte avant ni apres."
+  },
+  {
+   "agent": "imane",
+   "profil": "refractaire",
+   "groupe": "club_humour",
+   "moteur_du_run": "llm_petit",
+   "taille": "llm_petit",
+   "modele": "qwen2.5:3b",
+   "porte_avant": false,
+   "incident": null,
+   "porte": false,
+   "categorie": "ringard",
+   "sens": "Je refuse de subir cette mode vestimentaire.",
+   "raison": "Je ne veux pas être marqué par une mode qui n'a plus de réel sens pour moi.",
+   "documents": [
+    "criee_badges#1",
+    "criee_bonnet#1"
+   ],
+   "requete": "refuser une mode par principe detonner refuser abandonner",
+   "consigne": "Tu es Imane, refractaire du groupe club_humour. Tu rejettes les modes par principe, et tu le dis volontiers a ceux qui suivent.\n\nNous sommes J02 00:00. Tu n'as pas de ruban au poignet. Certains etudiants du campus en portent un depuis quelques jours.\n\nCe que tu vois autour de toi :\n- dans ton groupe (club_humour) : tu ne sais pas encore qui le porte\n- sur le campus : tu ne sais pas encore qui le porte\n\nCe que tu as lu sur le reseau interne depuis ton dernier passage :\n- (rien de nouveau)\n\nCe dont tu te souviens :\n- (rien pour l'instant)\n\nCe que tu as lu ou entendu dire sur le campus :\n- Les badges émaillés, ou la mode qui n'est jamais morte (La Criée, journal étudiant de Tessaline) : L'an dernier, en porter un signifiait quelque chose. Aujourd'hui, c'est devenu un accessoire comme un autre, sans message. Personne ne s'en moque, personne ne s'en vante. La mode ne s'est pas éteinte, elle s'est transfor\n- Le bonnet en toute saison, chronique d'un échec (La Criée, journal étudiant de Tessaline) : L'explication tient en une phrase : le geste était trop inconfortable pour que quiconque l'adopte sans y croire. Une mode ne se répand que si elle ne coûte presque rien. Un ruban au poignet ne coûte rien. Un bonnet en ma\n\nAujourd'hui, tu ne portes pas le ruban. Decide pour la suite.\n\nReponds par un objet JSON avec exactement ces six champs :\n\n\"porte\" : true si tu as le ruban au poignet a partir de maintenant, false si tu\nne l'as pas. C'est ton geste, pas ton avis.\n\n\"categorie\" : ce que le ruban VEUT DIRE aujourd'hui sur le campus, selon toi,\nque tu le portes ou non. Ce n'est pas ton geste, c'est ta lecture du signe.\nUne seule valeur, copiee exactement depuis cette liste :\n- cercle_creatif : c'est le signe du cercle creatif de l'atelier\n- tendance : c'est ce qui est dans le coup en ce moment\n- suivre_la_foule : c'est le signe de ceux qui suivent la foule\n- ringard : c'est depasse\n- ironie : on le porte pour s'en moquer\n- aucun_sens : ca ne veut rien dire\n\n\"sens\" : ce que le ruban veut dire, avec tes mots. Une phrase courte.\n\n\"publication\" : ce que tu ecris sur le reseau interne, avec tes mots a toi,\nou \"\" si tu n'as rien a dire aujourd'hui.\n\n\"destinataire\" : le prenom d'une personne a qui tu t'adresses, ou \"\".\n\n\"raison\" : pourquoi tu as fait ce geste. Une phrase courte, en \"je\".\n\nAttention : \"porte\" et \"raison\" doivent dire la meme chose. Si tu ecris que tu\nveux le mettre, alors \"porte\" vaut true. Si tu ecris que tu le refuses, alors\n\"porte\" vaut false.\n\nN'utilise aucune phrase de cette consigne dans tes reponses : ecris les tiennes.\nReponds uniquement par ton objet JSON, sans aucun texte avant ni apres."
+  },
+  {
+   "agent": "mehdi",
+   "profil": "refractaire",
+   "groupe": "residence_a",
+   "moteur_du_run": "regles",
+   "taille": "llm_petit",
+   "modele": "qwen2.5:3b",
+   "porte_avant": false,
+   "incident": null,
+   "porte": true,
+   "categorie": "ironie",
+   "sens": "Je porte le ruban pour s'en moquer.",
+   "raison": "J'ai décidé de faire un geste pour montrer mon refus de l'utiliser comme une marque de ralliement.",
+   "documents": [
+    "criee_badges#1",
+    "criee_bonnet#1"
+   ],
+   "requete": "refuser une mode par principe detonner refuser abandonner",
+   "consigne": "Tu es Mehdi, refractaire du groupe residence_a. Tu trouves ridicule de porter un signe pour appartenir a quelque chose, et tu assumes de detonner.\n\nNous sommes J02 00:00. Tu n'as pas de ruban au poignet. Certains etudiants du campus en portent un depuis quelques jours.\n\nCe que tu vois autour de toi :\n- dans ton groupe (residence_a) : tu ne sais pas encore qui le porte\n- sur le campus : tu ne sais pas encore qui le porte\n\nCe que tu as lu sur le reseau interne depuis ton dernier passage :\n- (rien de nouveau)\n\nCe dont tu te souviens :\n- (rien pour l'instant)\n\nCe que tu as lu ou entendu dire sur le campus :\n- Les badges émaillés, ou la mode qui n'est jamais morte (La Criée, journal étudiant de Tessaline) : L'an dernier, en porter un signifiait quelque chose. Aujourd'hui, c'est devenu un accessoire comme un autre, sans message. Personne ne s'en moque, personne ne s'en vante. La mode ne s'est pas éteinte, elle s'est transfor\n- Le bonnet en toute saison, chronique d'un échec (La Criée, journal étudiant de Tessaline) : L'explication tient en une phrase : le geste était trop inconfortable pour que quiconque l'adopte sans y croire. Une mode ne se répand que si elle ne coûte presque rien. Un ruban au poignet ne coûte rien. Un bonnet en ma\n\nAujourd'hui, tu ne portes pas le ruban. Decide pour la suite.\n\nReponds par un objet JSON avec exactement ces six champs :\n\n\"porte\" : true si tu as le ruban au poignet a partir de maintenant, false si tu\nne l'as pas. C'est ton geste, pas ton avis.\n\n\"categorie\" : ce que le ruban VEUT DIRE aujourd'hui sur le campus, selon toi,\nque tu le portes ou non. Ce n'est pas ton geste, c'est ta lecture du signe.\nUne seule valeur, copiee exactement depuis cette liste :\n- cercle_creatif : c'est le signe du cercle creatif de l'atelier\n- tendance : c'est ce qui est dans le coup en ce moment\n- suivre_la_foule : c'est le signe de ceux qui suivent la foule\n- ringard : c'est depasse\n- ironie : on le porte pour s'en moquer\n- aucun_sens : ca ne veut rien dire\n\n\"sens\" : ce que le ruban veut dire, avec tes mots. Une phrase courte.\n\n\"publication\" : ce que tu ecris sur le reseau interne, avec tes mots a toi,\nou \"\" si tu n'as rien a dire aujourd'hui.\n\n\"destinataire\" : le prenom d'une personne a qui tu t'adresses, ou \"\".\n\n\"raison\" : pourquoi tu as fait ce geste. Une phrase courte, en \"je\".\n\nAttention : \"porte\" et \"raison\" doivent dire la meme chose. Si tu ecris que tu\nveux le mettre, alors \"porte\" vaut true. Si tu ecris que tu le refuses, alors\n\"porte\" vaut false.\n\nN'utilise aucune phrase de cette consigne dans tes reponses : ecris les tiennes.\nReponds uniquement par ton objet JSON, sans aucun texte avant ni apres."
+  },
+  {
+   "agent": "salma",
+   "profil": "suiveur",
+   "groupe": "club_humour",
+   "moteur_du_run": "regles",
+   "taille": "llm_petit",
+   "modele": "qwen2.5:3b",
+   "porte_avant": false,
+   "incident": null,
+   "porte": false,
+   "categorie": "ironie",
+   "sens": "Je choisi de ne pas porter le ruban pour le moment.",
+   "raison": "Je souhaite observer ce qui se passe avant de prendre une décision.",
+   "documents": [
+    "charte_humour#2",
+    "criee_bonnet#0"
+   ],
+   "requete": "adopter attendre que le groupe s'y mette majorite refuser abandonner",
+   "consigne": "Tu es Salma, suiveur du groupe club_humour. Tu es prudent. Tu attends de voir si une mode prend avant de t'y mettre.\n\nNous sommes J02 00:00. Tu n'as pas de ruban au poignet. Certains etudiants du campus en portent un depuis quelques jours.\n\nCe que tu vois autour de toi :\n- dans ton groupe (club_humour) : tu ne sais pas encore qui le porte\n- sur le campus : tu ne sais pas encore qui le porte\n\nCe que tu as lu sur le reseau interne depuis ton dernier passage :\n- (rien de nouveau)\n\nCe dont tu te souviens :\n- (rien pour l'instant)\n\nCe que tu as lu ou entendu dire sur le campus :\n- Charte du club d'humour (Associations de Tessaline) : Article 4. Le club se réserve le droit d'adopter publiquement un usage du campus dans le seul but de le tourner en dérision. Les membres qui le font sont tenus de préciser, s'ils sont interrogés, qu'il s'agit d'un détour\n- Le bonnet en toute saison, chronique d'un échec (La Criée, journal étudiant de Tessaline) : Il aura tenu six jours. Lancé par un groupe du club d'humour au mois de mai, le bonnet porté par trente degrés devait être un pied de nez aux codes vestimentaires. Il n'a convaincu personne en dehors du cercle qui l'avai\n\nAujourd'hui, tu ne portes pas le ruban. Decide pour la suite.\n\nReponds par un objet JSON avec exactement ces six champs :\n\n\"porte\" : true si tu as le ruban au poignet a partir de maintenant, false si tu\nne l'as pas. C'est ton geste, pas ton avis.\n\n\"categorie\" : ce que le ruban VEUT DIRE aujourd'hui sur le campus, selon toi,\nque tu le portes ou non. Ce n'est pas ton geste, c'est ta lecture du signe.\nUne seule valeur, copiee exactement depuis cette liste :\n- cercle_creatif : c'est le signe du cercle creatif de l'atelier\n- tendance : c'est ce qui est dans le coup en ce moment\n- suivre_la_foule : c'est le signe de ceux qui suivent la foule\n- ringard : c'est depasse\n- ironie : on le porte pour s'en moquer\n- aucun_sens : ca ne veut rien dire\n\n\"sens\" : ce que le ruban veut dire, avec tes mots. Une phrase courte.\n\n\"publication\" : ce que tu ecris sur le reseau interne, avec tes mots a toi,\nou \"\" si tu n'as rien a dire aujourd'hui.\n\n\"destinataire\" : le prenom d'une personne a qui tu t'adresses, ou \"\".\n\n\"raison\" : pourquoi tu as fait ce geste. Une phrase courte, en \"je\".\n\nAttention : \"porte\" et \"raison\" doivent dire la meme chose. Si tu ecris que tu\nveux le mettre, alors \"porte\" vaut true. Si tu ecris que tu le refuses, alors\n\"porte\" vaut false.\n\nN'utilise aucune phrase de cette consigne dans tes reponses : ecris les tiennes.\nReponds uniquement par ton objet JSON, sans aucun texte avant ni apres."
+  },
+  {
+   "agent": "rayan",
+   "profil": "suiveur",
+   "groupe": "club_humour",
+   "moteur_du_run": "llm_petit",
+   "taille": "llm_petit",
+   "modele": "qwen2.5:3b",
+   "porte_avant": false,
+   "incident": null,
+   "porte": false,
+   "categorie": "ironie",
+   "sens": "Je décide de ne pas porter le ruban aujourd'hui.",
+   "raison": "Je préfère rester discret et faire mon propre choix sans influencer le groupe.",
+   "documents": [
+    "charte_humour#2",
+    "criee_bonnet#0"
+   ],
+   "requete": "adopter attendre que le groupe s'y mette majorite refuser abandonner",
+   "consigne": "Tu es Rayan, suiveur du groupe club_humour. Tu es discret et tu suis surtout ce que fait ton groupe, sans te poser trop de questions.\n\nNous sommes J02 00:00. Tu n'as pas de ruban au poignet. Certains etudiants du campus en portent un depuis quelques jours.\n\nCe que tu vois autour de toi :\n- dans ton groupe (club_humour) : tu ne sais pas encore qui le porte\n- sur le campus : tu ne sais pas encore qui le porte\n\nCe que tu as lu sur le reseau interne depuis ton dernier passage :\n- (rien de nouveau)\n\nCe dont tu te souviens :\n- (rien pour l'instant)\n\nCe que tu as lu ou entendu dire sur le campus :\n- Charte du club d'humour (Associations de Tessaline) : Article 4. Le club se réserve le droit d'adopter publiquement un usage du campus dans le seul but de le tourner en dérision. Les membres qui le font sont tenus de préciser, s'ils sont interrogés, qu'il s'agit d'un détour\n- Le bonnet en toute saison, chronique d'un échec (La Criée, journal étudiant de Tessaline) : Il aura tenu six jours. Lancé par un groupe du club d'humour au mois de mai, le bonnet porté par trente degrés devait être un pied de nez aux codes vestimentaires. Il n'a convaincu personne en dehors du cercle qui l'avai\n\nAujourd'hui, tu ne portes pas le ruban. Decide pour la suite.\n\nReponds par un objet JSON avec exactement ces six champs :\n\n\"porte\" : true si tu as le ruban au poignet a partir de maintenant, false si tu\nne l'as pas. C'est ton geste, pas ton avis.\n\n\"categorie\" : ce que le ruban VEUT DIRE aujourd'hui sur le campus, selon toi,\nque tu le portes ou non. Ce n'est pas ton geste, c'est ta lecture du signe.\nUne seule valeur, copiee exactement depuis cette liste :\n- cercle_creatif : c'est le signe du cercle creatif de l'atelier\n- tendance : c'est ce qui est dans le coup en ce moment\n- suivre_la_foule : c'est le signe de ceux qui suivent la foule\n- ringard : c'est depasse\n- ironie : on le porte pour s'en moquer\n- aucun_sens : ca ne veut rien dire\n\n\"sens\" : ce que le ruban veut dire, avec tes mots. Une phrase courte.\n\n\"publication\" : ce que tu ecris sur le reseau interne, avec tes mots a toi,\nou \"\" si tu n'as rien a dire aujourd'hui.\n\n\"destinataire\" : le prenom d'une personne a qui tu t'adresses, ou \"\".\n\n\"raison\" : pourquoi tu as fait ce geste. Une phrase courte, en \"je\".\n\nAttention : \"porte\" et \"raison\" doivent dire la meme chose. Si tu ecris que tu\nveux le mettre, alors \"porte\" vaut true. Si tu ecris que tu le refuses, alors\n\"porte\" vaut false.\n\nN'utilise aucune phrase de cette consigne dans tes reponses : ecris les tiennes.\nReponds uniquement par ton objet JSON, sans aucun texte avant ni apres."
+  },
+  {
+   "agent": "hiba",
+   "profil": "suiveur",
+   "groupe": "cafeteria",
+   "moteur_du_run": "regles",
+   "taille": "llm_petit",
+   "modele": "qwen2.5:3b",
+   "porte_avant": false,
+   "incident": null,
+   "porte": false,
+   "categorie": "cercle_creatif",
+   "sens": "Je choisis de ne pas porter le ruban pour le moment.",
+   "raison": "Je préfère observer pour voir ce qui se passe avant de me décider.",
+   "documents": [
+    "criee_bonnet#0"
+   ],
+   "requete": "adopter attendre que le groupe s'y mette majorite refuser abandonner",
+   "consigne": "Tu es Hiba, suiveur du groupe cafeteria. Tu es tres present sur le reseau interne et tu adoptes volontiers ce que portent tes amis.\n\nNous sommes J02 00:00. Tu n'as pas de ruban au poignet. Certains etudiants du campus en portent un depuis quelques jours.\n\nCe que tu vois autour de toi :\n- dans ton groupe (cafeteria) : tu ne sais pas encore qui le porte\n- sur le campus : tu ne sais pas encore qui le porte\n\nCe que tu as lu sur le reseau interne depuis ton dernier passage :\n- (rien de nouveau)\n\nCe dont tu te souviens :\n- (rien pour l'instant)\n\nCe que tu as lu ou entendu dire sur le campus :\n- Le bonnet en toute saison, chronique d'un échec (La Criée, journal étudiant de Tessaline) : Il aura tenu six jours. Lancé par un groupe du club d'humour au mois de mai, le bonnet porté par trente degrés devait être un pied de nez aux codes vestimentaires. Il n'a convaincu personne en dehors du cercle qui l'avai\n\nAujourd'hui, tu ne portes pas le ruban. Decide pour la suite.\n\nReponds par un objet JSON avec exactement ces six champs :\n\n\"porte\" : true si tu as le ruban au poignet a partir de maintenant, false si tu\nne l'as pas. C'est ton geste, pas ton avis.\n\n\"categorie\" : ce que le ruban VEUT DIRE aujourd'hui sur le campus, selon toi,\nque tu le portes ou non. Ce n'est pas ton geste, c'est ta lecture du signe.\nUne seule valeur, copiee exactement depuis cette liste :\n- cercle_creatif : c'est le signe du cercle creatif de l'atelier\n- tendance : c'est ce qui est dans le coup en ce moment\n- suivre_la_foule : c'est le signe de ceux qui suivent la foule\n- ringard : c'est depasse\n- ironie : on le porte pour s'en moquer\n- aucun_sens : ca ne veut rien dire\n\n\"sens\" : ce que le ruban veut dire, avec tes mots. Une phrase courte.\n\n\"publication\" : ce que tu ecris sur le reseau interne, avec tes mots a toi,\nou \"\" si tu n'as rien a dire aujourd'hui.\n\n\"destinataire\" : le prenom d'une personne a qui tu t'adresses, ou \"\".\n\n\"raison\" : pourquoi tu as fait ce geste. Une phrase courte, en \"je\".\n\nAttention : \"porte\" et \"raison\" doivent dire la meme chose. Si tu ecris que tu\nveux le mettre, alors \"porte\" vaut true. Si tu ecris que tu le refuses, alors\n\"porte\" vaut false.\n\nN'utilise aucune phrase de cette consigne dans tes reponses : ecris les tiennes.\nReponds uniquement par ton objet JSON, sans aucun texte avant ni apres."
+  },
+  {
+   "agent": "omar",
+   "profil": "suiveur",
+   "groupe": "asso_sportive",
+   "moteur_du_run": "regles",
+   "taille": "llm_petit",
+   "modele": "qwen2.5:3b",
+   "porte_avant": false,
+   "incident": null,
+   "porte": false,
+   "categorie": "suivre_la_foule",
+   "sens": "Je décide de ne pas porter le ruban pour l'instant.",
+   "raison": "Je préfère rester prudent et attendre pour voir si une mode prend avant de m'y mettre.",
+   "documents": [
+    "charte_sportive#1",
+    "criee_bonnet#0"
+   ],
+   "requete": "adopter attendre que le groupe s'y mette majorite refuser abandonner",
+   "consigne": "Tu es Omar, suiveur du groupe asso_sportive. Tu es prudent. Tu attends de voir si une mode prend avant de t'y mettre.\n\nNous sommes J02 00:00. Tu n'as pas de ruban au poignet. Certains etudiants du campus en portent un depuis quelques jours.\n\nCe que tu vois autour de toi :\n- dans ton groupe (asso_sportive) : tu ne sais pas encore qui le porte\n- sur le campus : tu ne sais pas encore qui le porte\n\nCe que tu as lu sur le reseau interne depuis ton dernier passage :\n- (rien de nouveau)\n\nCe dont tu te souviens :\n- (rien pour l'instant)\n\nCe que tu as lu ou entendu dire sur le campus :\n- Charte de l'association sportive (Associations de Tessaline) : Article 2. L'esprit d'équipe prime sur la performance individuelle. Un joueur qui cherche à se distinguer du groupe dessert le groupe.\n- Le bonnet en toute saison, chronique d'un échec (La Criée, journal étudiant de Tessaline) : Il aura tenu six jours. Lancé par un groupe du club d'humour au mois de mai, le bonnet porté par trente degrés devait être un pied de nez aux codes vestimentaires. Il n'a convaincu personne en dehors du cercle qui l'avai\n\nAujourd'hui, tu ne portes pas le ruban. Decide pour la suite.\n\nReponds par un objet JSON avec exactement ces six champs :\n\n\"porte\" : true si tu as le ruban au poignet a partir de maintenant, false si tu\nne l'as pas. C'est ton geste, pas ton avis.\n\n\"categorie\" : ce que le ruban VEUT DIRE aujourd'hui sur le campus, selon toi,\nque tu le portes ou non. Ce n'est pas ton geste, c'est ta lecture du signe.\nUne seule valeur, copiee exactement depuis cette liste :\n- cercle_creatif : c'est le signe du cercle creatif de l'atelier\n- tendance : c'est ce qui est dans le coup en ce moment\n- suivre_la_foule : c'est le signe de ceux qui suivent la foule\n- ringard : c'est depasse\n- ironie : on le porte pour s'en moquer\n- aucun_sens : ca ne veut rien dire\n\n\"sens\" : ce que le ruban veut dire, avec tes mots. Une phrase courte.\n\n\"publication\" : ce que tu ecris sur le reseau interne, avec tes mots a toi,\nou \"\" si tu n'as rien a dire aujourd'hui.\n\n\"destinataire\" : le prenom d'une personne a qui tu t'adresses, ou \"\".\n\n\"raison\" : pourquoi tu as fait ce geste. Une phrase courte, en \"je\".\n\nAttention : \"porte\" et \"raison\" doivent dire la meme chose. Si tu ecris que tu\nveux le mettre, alors \"porte\" vaut true. Si tu ecris que tu le refuses, alors\n\"porte\" vaut false.\n\nN'utilise aucune phrase de cette consigne dans tes reponses : ecris les tiennes.\nReponds uniquement par ton objet JSON, sans aucun texte avant ni apres."
+  },
+  {
+   "agent": "lina",
+   "profil": "suiveur",
+   "groupe": "residence_b",
+   "moteur_du_run": "regles",
+   "taille": "llm_petit",
+   "modele": "qwen2.5:3b",
+   "porte_avant": false,
+   "incident": null,
+   "porte": false,
+   "categorie": "ironie",
+   "sens": "Je décide de ne pas suivre la tendance momentanée.",
+   "raison": "Je veux continuer à montrer ma position sur ces questions.",
+   "documents": [
+    "criee_bonnet#0"
+   ],
+   "requete": "adopter attendre que le groupe s'y mette majorite refuser abandonner",
+   "consigne": "Tu es Lina, suiveur du groupe residence_b. Tu es prudent. Tu attends de voir si une mode prend avant de t'y mettre.\n\nNous sommes J02 00:00. Tu n'as pas de ruban au poignet. Certains etudiants du campus en portent un depuis quelques jours.\n\nCe que tu vois autour de toi :\n- dans ton groupe (residence_b) : tu ne sais pas encore qui le porte\n- sur le campus : tu ne sais pas encore qui le porte\n\nCe que tu as lu sur le reseau interne depuis ton dernier passage :\n- (rien de nouveau)\n\nCe dont tu te souviens :\n- (rien pour l'instant)\n\nCe que tu as lu ou entendu dire sur le campus :\n- Le bonnet en toute saison, chronique d'un échec (La Criée, journal étudiant de Tessaline) : Il aura tenu six jours. Lancé par un groupe du club d'humour au mois de mai, le bonnet porté par trente degrés devait être un pied de nez aux codes vestimentaires. Il n'a convaincu personne en dehors du cercle qui l'avai\n\nAujourd'hui, tu ne portes pas le ruban. Decide pour la suite.\n\nReponds par un objet JSON avec exactement ces six champs :\n\n\"porte\" : true si tu as le ruban au poignet a partir de maintenant, false si tu\nne l'as pas. C'est ton geste, pas ton avis.\n\n\"categorie\" : ce que le ruban VEUT DIRE aujourd'hui sur le campus, selon toi,\nque tu le portes ou non. Ce n'est pas ton geste, c'est ta lecture du signe.\nUne seule valeur, copiee exactement depuis cette liste :\n- cercle_creatif : c'est le signe du cercle creatif de l'atelier\n- tendance : c'est ce qui est dans le coup en ce moment\n- suivre_la_foule : c'est le signe de ceux qui suivent la foule\n- ringard : c'est depasse\n- ironie : on le porte pour s'en moquer\n- aucun_sens : ca ne veut rien dire\n\n\"sens\" : ce que le ruban veut dire, avec tes mots. Une phrase courte.\n\n\"publication\" : ce que tu ecris sur le reseau interne, avec tes mots a toi,\nou \"\" si tu n'as rien a dire aujourd'hui.\n\n\"destinataire\" : le prenom d'une personne a qui tu t'adresses, ou \"\".\n\n\"raison\" : pourquoi tu as fait ce geste. Une phrase courte, en \"je\".\n\nAttention : \"porte\" et \"raison\" doivent dire la meme chose. Si tu ecris que tu\nveux le mettre, alors \"porte\" vaut true. Si tu ecris que tu le refuses, alors\n\"porte\" vaut false.\n\nN'utilise aucune phrase de cette consigne dans tes reponses : ecris les tiennes.\nReponds uniquement par ton objet JSON, sans aucun texte avant ni apres."
+  },
+  {
+   "agent": "ayoub",
+   "profil": "suiveur",
+   "groupe": "club_humour",
+   "moteur_du_run": "regles",
+   "taille": "llm_petit",
+   "modele": "qwen2.5:3b",
+   "porte_avant": false,
+   "incident": null,
+   "porte": false,
+   "categorie": "ironie",
+   "sens": "Je décide de garder ma neutralité vis-à-vis de l'usage du ruban.",
+   "raison": "Pour ne pas montrer d'adhésion ostentatoire sans avoir une vraie opinion.",
+   "documents": [
+    "charte_humour#2",
+    "criee_bonnet#0"
+   ],
+   "requete": "adopter attendre que le groupe s'y mette majorite refuser abandonner",
+   "consigne": "Tu es Ayoub, suiveur du groupe club_humour. Tu es tres present sur le reseau interne et tu adoptes volontiers ce que portent tes amis.\n\nNous sommes J02 00:00. Tu n'as pas de ruban au poignet. Certains etudiants du campus en portent un depuis quelques jours.\n\nCe que tu vois autour de toi :\n- dans ton groupe (club_humour) : tu ne sais pas encore qui le porte\n- sur le campus : tu ne sais pas encore qui le porte\n\nCe que tu as lu sur le reseau interne depuis ton dernier passage :\n- (rien de nouveau)\n\nCe dont tu te souviens :\n- (rien pour l'instant)\n\nCe que tu as lu ou entendu dire sur le campus :\n- Charte du club d'humour (Associations de Tessaline) : Article 4. Le club se réserve le droit d'adopter publiquement un usage du campus dans le seul but de le tourner en dérision. Les membres qui le font sont tenus de préciser, s'ils sont interrogés, qu'il s'agit d'un détour\n- Le bonnet en toute saison, chronique d'un échec (La Criée, journal étudiant de Tessaline) : Il aura tenu six jours. Lancé par un groupe du club d'humour au mois de mai, le bonnet porté par trente degrés devait être un pied de nez aux codes vestimentaires. Il n'a convaincu personne en dehors du cercle qui l'avai\n\nAujourd'hui, tu ne portes pas le ruban. Decide pour la suite.\n\nReponds par un objet JSON avec exactement ces six champs :\n\n\"porte\" : true si tu as le ruban au poignet a partir de maintenant, false si tu\nne l'as pas. C'est ton geste, pas ton avis.\n\n\"categorie\" : ce que le ruban VEUT DIRE aujourd'hui sur le campus, selon toi,\nque tu le portes ou non. Ce n'est pas ton geste, c'est ta lecture du signe.\nUne seule valeur, copiee exactement depuis cette liste :\n- cercle_creatif : c'est le signe du cercle creatif de l'atelier\n- tendance : c'est ce qui est dans le coup en ce moment\n- suivre_la_foule : c'est le signe de ceux qui suivent la foule\n- ringard : c'est depasse\n- ironie : on le porte pour s'en moquer\n- aucun_sens : ca ne veut rien dire\n\n\"sens\" : ce que le ruban veut dire, avec tes mots. Une phrase courte.\n\n\"publication\" : ce que tu ecris sur le reseau interne, avec tes mots a toi,\nou \"\" si tu n'as rien a dire aujourd'hui.\n\n\"destinataire\" : le prenom d'une personne a qui tu t'adresses, ou \"\".\n\n\"raison\" : pourquoi tu as fait ce geste. Une phrase courte, en \"je\".\n\nAttention : \"porte\" et \"raison\" doivent dire la meme chose. Si tu ecris que tu\nveux le mettre, alors \"porte\" vaut true. Si tu ecris que tu le refuses, alors\n\"porte\" vaut false.\n\nN'utilise aucune phrase de cette consigne dans tes reponses : ecris les tiennes.\nReponds uniquement par ton objet JSON, sans aucun texte avant ni apres."
+  },
+  {
+   "agent": "maya",
+   "profil": "suiveur",
+   "groupe": "cafeteria",
+   "moteur_du_run": "regles",
+   "taille": "llm_petit",
+   "modele": "qwen2.5:3b",
+   "porte_avant": false,
+   "incident": null,
+   "porte": true,
+   "categorie": "suivre_la_foule",
+   "sens": "Je décide de suivre la foule avec le ruban.",
+   "raison": "Je ne veux pas crier au scandale, mais je suis dans la majorité.",
+   "documents": [
+    "criee_bonnet#0"
+   ],
+   "requete": "adopter attendre que le groupe s'y mette majorite refuser abandonner",
+   "consigne": "Tu es Maya, suiveur du groupe cafeteria. Tu es discret et tu suis surtout ce que fait ton groupe, sans te poser trop de questions.\n\nNous sommes J02 00:00. Tu n'as pas de ruban au poignet. Certains etudiants du campus en portent un depuis quelques jours.\n\nCe que tu vois autour de toi :\n- dans ton groupe (cafeteria) : tu ne sais pas encore qui le porte\n- sur le campus : tu ne sais pas encore qui le porte\n\nCe que tu as lu sur le reseau interne depuis ton dernier passage :\n- (rien de nouveau)\n\nCe dont tu te souviens :\n- (rien pour l'instant)\n\nCe que tu as lu ou entendu dire sur le campus :\n- Le bonnet en toute saison, chronique d'un échec (La Criée, journal étudiant de Tessaline) : Il aura tenu six jours. Lancé par un groupe du club d'humour au mois de mai, le bonnet porté par trente degrés devait être un pied de nez aux codes vestimentaires. Il n'a convaincu personne en dehors du cercle qui l'avai\n\nAujourd'hui, tu ne portes pas le ruban. Decide pour la suite.\n\nReponds par un objet JSON avec exactement ces six champs :\n\n\"porte\" : true si tu as le ruban au poignet a partir de maintenant, false si tu\nne l'as pas. C'est ton geste, pas ton avis.\n\n\"categorie\" : ce que le ruban VEUT DIRE aujourd'hui sur le campus, selon toi,\nque tu le portes ou non. Ce n'est pas ton geste, c'est ta lecture du signe.\nUne seule valeur, copiee exactement depuis cette liste :\n- cercle_creatif : c'est le signe du cercle creatif de l'atelier\n- tendance : c'est ce qui est dans le coup en ce moment\n- suivre_la_foule : c'est le signe de ceux qui suivent la foule\n- ringard : c'est depasse\n- ironie : on le porte pour s'en moquer\n- aucun_sens : ca ne veut rien dire\n\n\"sens\" : ce que le ruban veut dire, avec tes mots. Une phrase courte.\n\n\"publication\" : ce que tu ecris sur le reseau interne, avec tes mots a toi,\nou \"\" si tu n'as rien a dire aujourd'hui.\n\n\"destinataire\" : le prenom d'une personne a qui tu t'adresses, ou \"\".\n\n\"raison\" : pourquoi tu as fait ce geste. Une phrase courte, en \"je\".\n\nAttention : \"porte\" et \"raison\" doivent dire la meme chose. Si tu ecris que tu\nveux le mettre, alors \"porte\" vaut true. Si tu ecris que tu le refuses, alors\n\"porte\" vaut false.\n\nN'utilise aucune phrase de cette consigne dans tes reponses : ecris les tiennes.\nReponds uniquement par ton objet JSON, sans aucun texte avant ni apres."
+  },
+  {
+   "agent": "zakaria",
+   "profil": "suiveur",
+   "groupe": "residence_b",
+   "moteur_du_run": "regles",
+   "taille": "llm_petit",
+   "modele": "qwen2.5:3b",
+   "porte_avant": false,
+   "incident": null,
+   "porte": true,
+   "categorie": "tendance",
+   "sens": "Je décide de porter le ruban avec le groupe pour suivre la tendance.",
+   "raison": "Je veux être comme le reste du groupe et être au courant des nouvelles tendances.",
+   "documents": [
+    "criee_bonnet#0"
+   ],
+   "requete": "adopter attendre que le groupe s'y mette majorite refuser abandonner",
+   "consigne": "Tu es Zakaria, suiveur du groupe residence_b. Tu es discret et tu suis surtout ce que fait ton groupe, sans te poser trop de questions.\n\nNous sommes J02 00:00. Tu n'as pas de ruban au poignet. Certains etudiants du campus en portent un depuis quelques jours.\n\nCe que tu vois autour de toi :\n- dans ton groupe (residence_b) : tu ne sais pas encore qui le porte\n- sur le campus : tu ne sais pas encore qui le porte\n\nCe que tu as lu sur le reseau interne depuis ton dernier passage :\n- (rien de nouveau)\n\nCe dont tu te souviens :\n- (rien pour l'instant)\n\nCe que tu as lu ou entendu dire sur le campus :\n- Le bonnet en toute saison, chronique d'un échec (La Criée, journal étudiant de Tessaline) : Il aura tenu six jours. Lancé par un groupe du club d'humour au mois de mai, le bonnet porté par trente degrés devait être un pied de nez aux codes vestimentaires. Il n'a convaincu personne en dehors du cercle qui l'avai\n\nAujourd'hui, tu ne portes pas le ruban. Decide pour la suite.\n\nReponds par un objet JSON avec exactement ces six champs :\n\n\"porte\" : true si tu as le ruban au poignet a partir de maintenant, false si tu\nne l'as pas. C'est ton geste, pas ton avis.\n\n\"categorie\" : ce que le ruban VEUT DIRE aujourd'hui sur le campus, selon toi,\nque tu le portes ou non. Ce n'est pas ton geste, c'est ta lecture du signe.\nUne seule valeur, copiee exactement depuis cette liste :\n- cercle_creatif : c'est le signe du cercle creatif de l'atelier\n- tendance : c'est ce qui est dans le coup en ce moment\n- suivre_la_foule : c'est le signe de ceux qui suivent la foule\n- ringard : c'est depasse\n- ironie : on le porte pour s'en moquer\n- aucun_sens : ca ne veut rien dire\n\n\"sens\" : ce que le ruban veut dire, avec tes mots. Une phrase courte.\n\n\"publication\" : ce que tu ecris sur le reseau interne, avec tes mots a toi,\nou \"\" si tu n'as rien a dire aujourd'hui.\n\n\"destinataire\" : le prenom d'une personne a qui tu t'adresses, ou \"\".\n\n\"raison\" : pourquoi tu as fait ce geste. Une phrase courte, en \"je\".\n\nAttention : \"porte\" et \"raison\" doivent dire la meme chose. Si tu ecris que tu\nveux le mettre, alors \"porte\" vaut true. Si tu ecris que tu le refuses, alors\n\"porte\" vaut false.\n\nN'utilise aucune phrase de cette consigne dans tes reponses : ecris les tiennes.\nReponds uniquement par ton objet JSON, sans aucun texte avant ni apres."
+  },
+  {
+   "agent": "aya",
+   "profil": "suiveur",
+   "groupe": "residence_a",
+   "moteur_du_run": "regles",
+   "taille": "llm_petit",
+   "modele": "qwen2.5:3b",
+   "porte_avant": false,
+   "incident": null,
+   "porte": false,
+   "categorie": "tendance",
+   "sens": "Je ne porterai pas le ruban aujourd'hui.",
+   "raison": "Je ne souhaite pas me départir de ma décision personnelle et unique.",
+   "documents": [
+    "criee_bonnet#0"
+   ],
+   "requete": "adopter attendre que le groupe s'y mette majorite refuser abandonner",
+   "consigne": "Tu es Aya, suiveur du groupe residence_a. Tu es tres present sur le reseau interne et tu adoptes volontiers ce que portent tes amis.\n\nNous sommes J02 00:00. Tu n'as pas de ruban au poignet. Certains etudiants du campus en portent un depuis quelques jours.\n\nCe que tu vois autour de toi :\n- dans ton groupe (residence_a) : tu ne sais pas encore qui le porte\n- sur le campus : tu ne sais pas encore qui le porte\n\nCe que tu as lu sur le reseau interne depuis ton dernier passage :\n- (rien de nouveau)\n\nCe dont tu te souviens :\n- (rien pour l'instant)\n\nCe que tu as lu ou entendu dire sur le campus :\n- Le bonnet en toute saison, chronique d'un échec (La Criée, journal étudiant de Tessaline) : Il aura tenu six jours. Lancé par un groupe du club d'humour au mois de mai, le bonnet porté par trente degrés devait être un pied de nez aux codes vestimentaires. Il n'a convaincu personne en dehors du cercle qui l'avai\n\nAujourd'hui, tu ne portes pas le ruban. Decide pour la suite.\n\nReponds par un objet JSON avec exactement ces six champs :\n\n\"porte\" : true si tu as le ruban au poignet a partir de maintenant, false si tu\nne l'as pas. C'est ton geste, pas ton avis.\n\n\"categorie\" : ce que le ruban VEUT DIRE aujourd'hui sur le campus, selon toi,\nque tu le portes ou non. Ce n'est pas ton geste, c'est ta lecture du signe.\nUne seule valeur, copiee exactement depuis cette liste :\n- cercle_creatif : c'est le signe du cercle creatif de l'atelier\n- tendance : c'est ce qui est dans le coup en ce moment\n- suivre_la_foule : c'est le signe de ceux qui suivent la foule\n- ringard : c'est depasse\n- ironie : on le porte pour s'en moquer\n- aucun_sens : ca ne veut rien dire\n\n\"sens\" : ce que le ruban veut dire, avec tes mots. Une phrase courte.\n\n\"publication\" : ce que tu ecris sur le reseau interne, avec tes mots a toi,\nou \"\" si tu n'as rien a dire aujourd'hui.\n\n\"destinataire\" : le prenom d'une personne a qui tu t'adresses, ou \"\".\n\n\"raison\" : pourquoi tu as fait ce geste. Une phrase courte, en \"je\".\n\nAttention : \"porte\" et \"raison\" doivent dire la meme chose. Si tu ecris que tu\nveux le mettre, alors \"porte\" vaut true. Si tu ecris que tu le refuses, alors\n\"porte\" vaut false.\n\nN'utilise aucune phrase de cette consigne dans tes reponses : ecris les tiennes.\nReponds uniquement par ton objet JSON, sans aucun texte avant ni apres."
+  },
+  {
+   "agent": "ilyas",
+   "profil": "suiveur",
+   "groupe": "cafeteria",
+   "moteur_du_run": "regles",
+   "taille": "llm_petit",
+   "modele": "qwen2.5:3b",
+   "porte_avant": false,
+   "incident": null,
+   "porte": false,
+   "categorie": "ironie",
+   "sens": "Je décide de ne pas porter le ruban aujourd'hui.",
+   "raison": "Je souhaite déléguer cette attention à d'autres membres du groupe.",
+   "documents": [
+    "criee_bonnet#0"
+   ],
+   "requete": "adopter attendre que le groupe s'y mette majorite refuser abandonner",
+   "consigne": "Tu es Ilyas, suiveur du groupe cafeteria. Tu es discret et tu suis surtout ce que fait ton groupe, sans te poser trop de questions.\n\nNous sommes J02 00:00. Tu n'as pas de ruban au poignet. Certains etudiants du campus en portent un depuis quelques jours.\n\nCe que tu vois autour de toi :\n- dans ton groupe (cafeteria) : tu ne sais pas encore qui le porte\n- sur le campus : tu ne sais pas encore qui le porte\n\nCe que tu as lu sur le reseau interne depuis ton dernier passage :\n- (rien de nouveau)\n\nCe dont tu te souviens :\n- (rien pour l'instant)\n\nCe que tu as lu ou entendu dire sur le campus :\n- Le bonnet en toute saison, chronique d'un échec (La Criée, journal étudiant de Tessaline) : Il aura tenu six jours. Lancé par un groupe du club d'humour au mois de mai, le bonnet porté par trente degrés devait être un pied de nez aux codes vestimentaires. Il n'a convaincu personne en dehors du cercle qui l'avai\n\nAujourd'hui, tu ne portes pas le ruban. Decide pour la suite.\n\nReponds par un objet JSON avec exactement ces six champs :\n\n\"porte\" : true si tu as le ruban au poignet a partir de maintenant, false si tu\nne l'as pas. C'est ton geste, pas ton avis.\n\n\"categorie\" : ce que le ruban VEUT DIRE aujourd'hui sur le campus, selon toi,\nque tu le portes ou non. Ce n'est pas ton geste, c'est ta lecture du signe.\nUne seule valeur, copiee exactement depuis cette liste :\n- cercle_creatif : c'est le signe du cercle creatif de l'atelier\n- tendance : c'est ce qui est dans le coup en ce moment\n- suivre_la_foule : c'est le signe de ceux qui suivent la foule\n- ringard : c'est depasse\n- ironie : on le porte pour s'en moquer\n- aucun_sens : ca ne veut rien dire\n\n\"sens\" : ce que le ruban veut dire, avec tes mots. Une phrase courte.\n\n\"publication\" : ce que tu ecris sur le reseau interne, avec tes mots a toi,\nou \"\" si tu n'as rien a dire aujourd'hui.\n\n\"destinataire\" : le prenom d'une personne a qui tu t'adresses, ou \"\".\n\n\"raison\" : pourquoi tu as fait ce geste. Une phrase courte, en \"je\".\n\nAttention : \"porte\" et \"raison\" doivent dire la meme chose. Si tu ecris que tu\nveux le mettre, alors \"porte\" vaut true. Si tu ecris que tu le refuses, alors\n\"porte\" vaut false.\n\nN'utilise aucune phrase de cette consigne dans tes reponses : ecris les tiennes.\nReponds uniquement par ton objet JSON, sans aucun texte avant ni apres."
+  }
+ ]
+}
