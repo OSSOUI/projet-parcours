@@ -1,0 +1,72 @@
+{
+  "monde": "Tessaline",
+  "modele_social": "v2",
+  "base": "tessaline.json",
+  "commentaire": "Population du modele social v2. Les profils ne decrivent plus un comportement : ils fixent la distribution des traits et le moteur (exigence A5). Les groupes, horaires et modeles viennent de base. Les valeurs sont des points de depart, a calibrer a l'etape 6 et a figer ensuite.",
+  "cadence_min": 1440,
+  "commentaire_cadence": "Une decision par jour pour tous : en v1 la cadence dependait du profil, ce qui ecrivait une difference de comportement dans l'etiquette. L'heure de reveil reste individuelle, pour l'asynchrone.",
+  "traits": {
+    "commentaire": "appartenance, distinction et nouveaute suivent une loi Beta(moyenne x concentration, (1 - moyenne) x concentration) : la moyenne depend du profil, mais tout le segment [0, 1] reste possible, si bien qu'un suiveur peut tirer une forte distinction. seuil reste un intervalle uniforme, comme en v1, pour rester comparable a l'ancienne baseline.",
+    "concentration": 6,
+    "affinites": {
+      "commentaire": "Une valeur de -1 a +1 par groupe, tiree selon une loi normale bornee : + groupe auquel on veut ressembler, - groupe dont on veut se distinguer.",
+      "propre_groupe": 0.5,
+      "autres": 0.0,
+      "dispersion": 0.3
+    }
+  },
+  "reseau": {
+    "commentaire": "Liens forts dans le groupe, avec une probabilite degre_fort / (taille du groupe - 1) : le degre fort moyen reste le meme a 20, 50 et 100 agents. Chaque agent a 1 a 2 ponts faibles vers d'autres groupes. Variante cloisonnee : aucun pont. Points de depart, a calibrer a l'etape 6.",
+    "degre_fort": 2, "poids_fort": 1.0, "ponts": [1, 2], "poids_faible": 0.3
+  },
+  "observation": {
+    "commentaire": "Ce qu'un agent apprend chaque jour : le poignet de ses voisins du reseau, plus 2 a 3 personnes croisees dans son lieu (poids d'un lien faible), et les publications_lues dernieres publications non lues. Points de depart, a calibrer a l'etape 6.",
+    "croises": [2, 3], "poids_croise": 0.3, "publications_lues": 5
+  },
+  "decision": {
+    "commentaire": "Score des regles v2 : S = a.E + n.exp(-t/tau) - d.(alpha.R + beta.P) - L - theta + eps, porte demain si S > 0. t compte depuis que l'agent a vu le ruban (decide le 27 octobre : depuis J1, la moitie du campus adoptait au J1 sans l'avoir vu). Reference du plan factoriel (decide le 27 octobre) : couplage actif, nouveaute qui lance sans s'user, sans lassitude ; usure et lassitude sont des hypotheses concurrentes, testees comme facteurs (distinction x usure x lassitude, 8 cellules). Points de depart, a calibrer a l'etape 6.",
+    "distinction": true, "alpha": 1.0, "beta": 1.0,
+    "nouveaute": true, "nouveaute_depuis": "premiere_vue", "usure": false, "tau_jours": 5,
+    "lassitude": {"actif": false, "hausse": 0.1, "baisse": 0.05},
+    "exposition": "observations",
+    "commentaire_exposition": "agregat_v1 est reserve au test de coherence : E devient l'entree de v1 (0,4 x taux du groupe + 0,6 x taux du campus), que v2 refuse a ses agents.",
+    "bruit": 0.05,
+    "regle3": true,
+    "deduction_foule": true,
+    "commentaire_regles_ecrites": "regle3 et deduction_foule sont les deux regles ecrites qui alimentent P (le campus le lit comme suivre_la_foule ou ringard). Les couper mesure la part du declin que nous avons ecrite nous-memes.",
+    "fenetre_jours": 3,
+    "confiance_initiale": {"porteur": 0.9, "autre": 0.3},
+    "confiance_apres_changement": 0.5,
+    "parole": {"commentaire": "Chaque jour, avec la probabilite p, un agent qui donne un sens au ruban le dit : en public avec la probabilite public, sinon a un lien fort.", "p": 0.3, "public": 0.5}
+  },
+  "commentaire_moteurs": "Moteurs attribues par quota dans chaque profil, et non tires au hasard : a 20 agents, 4 agents en llm_grand, 6 en llm_petit et 10 en regles, toujours les memes, comme dans les runs LLM du 21 octobre. Les parts des suiveurs et des refractaires sont baissees par rapport a v1 pour obtenir exactement 10 agents LLM.",
+  "profils": {
+    "pionnier": {
+      "part": 0.1, "minimum": 2, "groupe": "atelier_design", "porte_au_depart": true,
+      "moteurs": {"llm_grand": 1.0},
+      "appartenance": 0.3, "distinction": 0.75, "nouveaute": 0.8, "seuil": [0.4, 0.6],
+      "affinites": {"autres": -0.1}
+    },
+    "figure_populaire": {
+      "part": 0.05, "minimum": 1,
+      "moteurs": {"llm_grand": 1.0},
+      "appartenance": 0.6, "distinction": 0.4, "nouveaute": 0.6, "seuil": [0.05, 0.15]
+    },
+    "suiveur": {
+      "part": 0.55, "minimum": 3,
+      "moteurs": {"llm_petit": 0.2, "regles": 0.8},
+      "appartenance": 0.7, "distinction": 0.25, "nouveaute": 0.4, "seuil": [0.05, 0.45]
+    },
+    "refractaire": {
+      "part": 0.15, "minimum": 1,
+      "moteurs": {"llm_petit": 0.34, "regles": 0.66},
+      "appartenance": 0.3, "distinction": 0.6, "nouveaute": 0.15, "seuil": [0.9, 1.0],
+      "affinites": {"autres": -0.2}
+    },
+    "ironique": {
+      "part": 0.15, "minimum": 1,
+      "moteurs": {"llm_petit": 1.0},
+      "appartenance": 0.4, "distinction": 0.6, "nouveaute": 0.5, "seuil": [0.4, 0.65]
+    }
+  }
+}

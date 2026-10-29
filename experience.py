@@ -47,6 +47,12 @@ CONFIGURATIONS = {
         "options": ["--mode", "synchrone"],
         "attendu": "emergence puis declin",
     },
+    "llm_meneurs": {
+        "titre": "Seuls les meneurs en LLM, le reste en regles",
+        "options": ["--mode", "synchrone", "--meneurs-llm", "--lassitude-suiveurs"],
+        "attendu": ("si l'emergence egale celle de llm_synchrone, ce sont les "
+                    "meneurs LLM qui la portent, et non les LLM de la population"),
+    },
     "llm_asynchrone": {
         "titre": "Agents LLM, mode asynchrone",
         "options": ["--mode", "asynchrone"],
@@ -74,6 +80,7 @@ PLANS = {
     "socle": ["baseline", "temoin_cloisonne"],
     "llm": ["baseline", "llm_synchrone"],                  # E1 : apport du LLM
     "b3_llm": ["llm_synchrone", "llm_temoin_cloisonne"],   # B3 et Q2 cote LLM
+    "meneurs": ["baseline", "llm_meneurs", "llm_synchrone"],  # effet des meneurs LLM
     "temps": ["llm_synchrone", "llm_asynchrone"],          # C5
     "sobriete": ["llm_synchrone", "tout_grand"],           # E5
     "complet": ["baseline", "temoin_cloisonne", "llm_synchrone", "llm_temoin_cloisonne",

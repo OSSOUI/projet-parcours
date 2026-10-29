@@ -11,7 +11,19 @@ et le rejeu (E3) casse.
 
 import difflib
 
-VERSION_CONTRAT = "1.1.0"   # 1.1 : perception, coherence, energie (ajouts seuls)
+VERSION_CONTRAT = "1.7.0"   # 1.1 : perception, coherence, energie ; 1.2 : run.v2 ; 1.3 : population.v2 ; 1.4 : reseau.v1 ; 1.5 : perception.v2 ; 1.6 : decision.v2, publication.v2 ; 1.7 : replique.v1 (ajouts seuls)
+
+# En-tetes de run. run.v1 ne dit pas quel modele social a tourne : il se lit
+# toujours comme "v1". run.v2 le rend obligatoire.
+SCHEMAS_RUN = ("run.v1", "run.v2")
+MODELES_SOCIAUX = ("v1", "v1.1", "v2")
+
+
+def modele_social(entete):
+    """Modele social d'un run, d'apres son en-tete run.v1 ou run.v2."""
+    if entete.get("schema") == "run.v1":
+        return "v1"
+    return entete.get("modele_social")
 
 # Les six sens possibles du ruban. Liste fermee : c'est ce qui rend
 # l'emergence d'un sens partage mesurable (exigence B1).
@@ -46,15 +58,37 @@ ENVELOPPE = {
 CORPS = {
     "run.v1": {"mode": str, "nb_agents": int, "graine": int, "jours": int,
                "config": str, "version_contrat": str},
+    # v2 : le modele social devient obligatoire. Un run sans lui serait
+    # indiscernable d'un autre ; c'est ce que v2 interdit.
+    "run.v2": {"mode": str, "nb_agents": int, "graine": int, "jours": int,
+               "config": str, "version_contrat": str, "modele_social": str},
     "population.v1": {"agents": list, "resume": dict},
+    # v2 : chaque agent porte ses traits ; graines = les cinq flux du run.
+    "population.v2": {"agents": list, "resume": dict, "graines": dict},
+    # Emis une fois au depart d'un run v2 : le reseau entier, pour le rejeu et Godot.
+    "reseau.v1": {"liens": list, "resume": dict, "cloisonne": bool},
     "decision.v1": {"agent": str, "porte": bool, "categorie": str, "sens": str,
                     "raison": str, "moteur": str, "valide": bool},
     "publication.v1": {"agent": str, "texte": str, "portee": str,
                        "destinataire": (str, NUL)},
+    # v2 : categorie = sens_perso ; sens_percu = ce que l'agent croit que le
+    # campus pense ; sources = ids (o, m, p) qui ont fait changer une croyance.
+    "decision.v2": {"agent": str, "porte": bool, "categorie": str, "sens": str,
+                    "sens_percu": str, "confiance": float, "sources": list,
+                    "raison": str, "moteur": str, "valide": bool},
+    # v2 : l'id que les lecteurs citeront, et le sens transmis s'il est dit.
+    "publication.v2": {"agent": str, "id": str, "texte": str, "portee": str,
+                       "destinataire": (str, NUL), "categorie": (str, NUL)},
     "indicateurs.v1": {"taux_adoption": float, "repartition_sens": dict,
                        "sens_dominant": str, "part_sens_dominant": float,
                        "porteurs": list},
     "injection.v1": {"nature": str, "details": dict, "source": str},
+    # Une replique d'une conversation privee entre deux agents LLM (A2). La
+    # premiere replique est le message prive (publication.v1, portee
+    # "personne") ; les suivantes sont ici, tour 2, 3... categorie : ce que le
+    # ruban veut dire pour celui qui parle, a ce moment de l'echange.
+    "replique.v1": {"conversation": str, "tour": int, "agent": str, "destinataire": str,
+                    "texte": str, "categorie": (str, NUL), "moteur": str, "valide": bool},
     "recuperation.v1": {"agent": str, "requete": str, "resultats": list,
                         "nb_resultats": int, "corpus": dict},
     "incident.v1": {"agent": (str, NUL), "nature": str, "details": dict},
@@ -64,6 +98,10 @@ CORPS = {
     "perception.v1": {"agent": str, "moteur": str, "messages": list, "souvenirs": list,
                       "documents": list, "vue": dict, "reponse_brute": (str, NUL),
                       "violations_c6": list},
+    # v2 : les trois canaux du monde v2, chaque element avec son id
+    # (o..., m..., p...), pour relier une decision a ce que l'agent avait vu.
+    "perception.v2": {"agent": str, "moteur": str, "observations": list, "messages": list,
+                      "publications": list, "souvenirs": list, "documents": list},
     # Controle de coherence temporelle sur tout le run (C6) : combien de
     # contextes ont ete verifies, combien contenaient une info venue du futur.
     "coherence.v1": {"controles": int, "violations": int, "details": list},
@@ -117,7 +155,13 @@ def verifier(evt):
             evt[champ] = valeur
         if not isinstance(valeur, attendu):
             return False, f"{champ} : {type(valeur).__name__} au lieu de {attendu}"
-    if nom == "decision.v1" and evt["categorie"] not in SENS:
+    if nom == "run.v2" and evt["modele_social"] not in MODELES_SOCIAUX:
+        return False, f"modele_social inconnu : {evt['modele_social']!r}"
+    if nom == "decision.v2" and evt["sens_percu"] not in SENS:
+        return False, f"sens_percu hors liste fermee : {evt['sens_percu']!r}"
+    if nom in ("decision.v1", "decision.v2") and evt["categorie"] not in SENS:
+        return False, f"categorie hors liste fermee : {evt['categorie']!r}"
+    if nom == "replique.v1" and evt["categorie"] is not None and evt["categorie"] not in SENS:
         return False, f"categorie hors liste fermee : {evt['categorie']!r}"
     if nom == "indicateurs.v1" and evt["sens_dominant"] not in SENS:
         return False, f"sens_dominant hors liste fermee : {evt['sens_dominant']!r}"

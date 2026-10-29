@@ -184,6 +184,32 @@ ce curseur à zéro : au passage suivant, chacun relit tout le fil en plus de
 l'article. Elle ne touche pas au temps de port, qui se compte depuis la
 décision précédente.
 
+### Conversations (`--conversation N`, `ephemere/dialogue.py`)
+
+Sans cette option, un agent publie et un autre lit, sans jamais répondre. Avec
+elle, un message privé entre deux agents LLM ouvre une **conversation** : le
+destinataire répond, puis l'auteur répond à son tour (`--repliques 3` par
+défaut, message d'ouverture compris). Chaque réplique est un événement
+`replique.v1`, entre dans la mémoire de celui à qui elle s'adresse, et dit ce
+que le ruban veut dire pour celui qui parle à ce moment de l'échange.
+
+La croyance de l'agent change à sa **décision suivante**, qui lit l'échange
+dans sa mémoire : une seule décision par agent et par jour, comme sans
+conversation. `analyser.py` compare, pour chaque participant, le sens avant,
+pendant (sa dernière réplique) et après (sa décision suivante). Au plus N
+conversations par jour, chacune coûte `repliques - 1` appels de plus. Un agent
+à règles ne converse pas.
+
+### Sortie structurée (`--sortie-structuree`)
+
+Le schéma JSON de la réponse est envoyé au modèle (Ollama contraint alors la
+génération elle-même), puis la réponse est vérifiée contre ce même schéma par
+`valider()`, en bibliothèque standard : ni pydantic ni LangChain. Une réponse
+hors schéma devient un incident `schema_non_respecte`. Les deux options sont
+coupées par défaut : les runs `exp_*` restent comparables, et leur effet se
+mesure (incidents A4, changements de sens A2) en les activant sur les mêmes
+graines.
+
 ### Détection des dérives (A4)
 
 La fiche du sujet prévient : un LLM aligné sur la sécurité répond volontiers
@@ -301,10 +327,86 @@ l'a traité.
 
 Un bloc par groupe, un rond par étudiant. La **couleur dit ce que le ruban veut
 dire** pour lui, le ruban dessiné autour dit qu'il le porte, un liseré rouge
-signale un agent dont la dernière réponse était inexploitable.
+signale un agent dont la dernière réponse était inexploitable. Une légende
+permanente donne la clé de lecture, et la grille s'adapte à 20, 50 ou 100 agents.
 
-Clic sur un étudiant : son sens, la justification de sa dernière décision et sa
-mémoire. Quatre boutons en bas injectent un événement dans le monde en cours.
+**Vue 3D** (`godot/campus3d.gd`). Elle remplace le plan au même endroit de
+l'écran ; la touche V, ou le bouton en haut, rebascule sur le plan 2D. Le
+panneau d'inspection, le tableau des groupes, la courbe et les boutons restent
+en 2D. Mêmes règles que le plan : chaque groupe est un bâtiment, les étudiants
+se tiennent sur son parvis, les ponts sont des chemins au sol, les traits sont
+les regards du jour (ou le réseau, touche L), et personne ne se déplace, car
+le modèle n'a pas d'espace. Le corps a la couleur du sens ; corps franc et
+anneau au poignet : il porte le ruban ; corps pâle : il ne le porte pas. Un
+message privé file d'une tête à l'autre, une publication part en onde au sol,
+un étudiant qui change d'avis fait un petit saut. Glisser pour tourner, molette
+pour zoomer, clic sur un étudiant pour l'inspecter. Tout le décor est construit
+en code : rien à monter dans l'éditeur.
+
+Chaque rond porte les lettres qui le distinguent (« Ad » et « Ay », jamais deux
+« A »), et le prénom est écrit dessous quand il y a la place. Les accents
+viennent d'une police complète, Noto Sans (`godot/polices/`, licence OFL) ; les
+identifiants de la simulation restent sans accents, seul l'affichage les met.
+
+Ce qui bouge : un message privé file le long du lien entre deux étudiants, une
+publication publique part en onde, un étudiant qui change de choix ou de sens
+s'éclaire un instant.
+
+**Contre-tendance.** Le pont la repère quand au moins 15 % du campus (et au
+moins deux agents) se mettent le même jour à porter le ruban par ironie, ou
+l'enlèvent. C'est une règle d'affichage, pas un indicateur de l'étude. Un
+bandeau s'allume au-dessus de la courbe, avec le jour et les prénoms, et un
+triangle la marque sur la courbe : bleu pour l'ironie, rouge pour un abandon.
+
+Le campus est un **plan** : chaque groupe est un bâtiment, et les ponts du
+réseau tracent les chemins entre bâtiments, plus larges quand les ponts sont
+nombreux : en ligne droite entre bâtiments voisins, en arc par-dessus le plan
+entre bâtiments éloignés, une seule étiquette par chemin. En cloisonné, il n'y
+a aucun chemin. Le relief des bâtiments est un simple effet de dessin, en 2D. Le plan ne montre **aucun
+déplacement** : le modèle n'a pas d'autre espace, et en v2 le « lieu » où l'on
+croise des gens est son groupe. Il montre en revanche **qui a vu qui ce
+jour-là**, d'après `perception.v2`. Un trait vers quelqu'un qui porte le ruban
+prend la couleur de son sens, un trait vers quelqu'un qui ne le porte pas reste
+gris. La touche L remplace ces regards par le réseau : liens forts en trait
+plein, ponts en pointillé.
+
+Clic sur un étudiant : ses liens restent nets, le reste s'estompe. Le panneau
+donne son sens et sa mémoire. En v1, il donne aussi la justification de sa
+dernière décision. En v2, il donne :
+- ce qu'il croit que le campus en pense, et sa confiance ;
+- le **détail du score** : une barre par terme, avec S, porte demain si S > 0 ;
+- ce qu'il a vu le dernier jour ;
+- les sources de son dernier changement d'avis, en phrases.
+
+Sans sélection, le panneau montre **ce que le ruban veut dire, groupe par
+groupe** (exigence B1) : une ligne par groupe, une colonne par jour, la couleur
+du sens dominant du groupe, plus franche quand il y est majoritaire. On y voit
+un groupe garder son sens pendant qu'un autre bascule. Dessous, le fil du
+réseau interne, où les messages identiques sont regroupés (« c'est dépassé ×34,
+J14 à J26 »).
+
+L'horloge affiche « fin du jour 25 sur 25 » au dernier relevé. Le relevé de
+t = 25 × 1440 minutes s'écrit `J26 00:00` dans le journal, mais c'est bien la
+fin du jour 25 : le run ne dure pas un jour de plus.
+
+Quatre boutons en bas injectent un événement dans le monde en cours. Le pont
+répond par un accusé affiché en haut à droite : envoyée, rejeu, Kafka
+injoignable, ou modèle v2 (pas encore d'injection avant l'étape 7). Chaque
+injection est marquée sur la courbe, avec le pic d'adoption, pour voir ce qui
+suit.
+
+Un run v2 se regarde en rejeu, car `simuler.py --modele-social v2` n'écrit pas
+encore dans Kafka :
+
+```bash
+python3 simuler.py --modele-social v2 --tout-regles --graine 3 --nom demo_v2
+.venv/bin/python pont.py --rejeu runs/demo_v2.jsonl
+```
+
+En rejeu, la scène pilote la lecture : espace met en pause, les flèches
+reculent ou avancent d'un jour, et un clic sur la courbe ou sur le tableau des
+groupes va directement à ce jour. Le pont reconstruit alors l'état depuis le
+début du fichier : il ne vient toujours que des événements.
 
 ### Les injections (`ephemere/commandes.py`)
 
@@ -391,6 +493,21 @@ L'accord mesuré est la part du campus sur le sens le plus répandu **autre que
 « aucun sens »**, avec les non-porteurs au dénominateur. Quand « aucun sens »
 domine, le relevé n'est donc plus jeté.
 
+## Suivi en direct et tableau de bord : une seule page
+
+`direct.py` et `tableau.py` produisent la **même page** (`vues.py`), avec deux
+onglets : **Suivre un run** et **Comparer les runs**. Les mêmes informations
+se trouvent aux deux endroits ; seule la source change :
+
+| | `python3 direct.py` | `python3 tableau.py` |
+|---|---|---|
+| Page | servie sur http://localhost:8770 | écrite dans `runs/tableau.html` |
+| Données | relues à chaque rafraîchissement | figées au moment de l'export |
+| Usage | pendant un run, ou à côté d'une série | à envoyer, à ouvrir sans serveur |
+
+Le bouton « Ouvrir dans « Suivre un run » » de l'onglet de comparaison ouvre le
+run choisi dans l'autre onglet.
+
 ## Suivi en direct
 
 ```bash
@@ -439,6 +556,8 @@ open runs/tableau.html
 ```
 
 Le script produit une page HTML autonome, sans dépendance et sans accès réseau.
+C'est la page de `direct.py`, données figées : l'onglet **Suivre un run**
+montre aussi chaque run, terminé ou non, comme en direct.
 La scène Godot montre **un** run en direct ; ce tableau **compare** les runs
 entre eux après coup, série par série et configuration par configuration :
 
@@ -554,6 +673,7 @@ Ephemere/
   analyser.py           chiffres d'un run, pour le rapport
   tableau.py            tableau de bord HTML : métriques, vitesses, agents
   direct.py             suivi en direct d'un run : agents et performances
+  vues.py               page commune à direct.py et tableau.py
   docker-compose.yml    Kafka ; profil colibri : GLM-5.2, Ollama, simulation
   Dockerfile            image de la simulation
   godot/main.gd         la scène du campus

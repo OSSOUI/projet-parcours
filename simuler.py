@@ -25,7 +25,7 @@ from ephemere.contrat import VERSION_CONTRAT
 from ephemere.horloge import MINUTES_PAR_JOUR, Echeancier, Horloge
 from ephemere.journal import Journal
 from ephemere.monde import Monde, memoriser
-from ephemere.regles import Regles
+from ephemere.regles_v1 import Regles
 
 RACINE = os.path.dirname(os.path.abspath(__file__))
 
@@ -37,12 +37,18 @@ def fabriquer_decideurs(agents, args, config, base=None):
     cohabitent dans le meme run : c'est A6. Deux tailles de modele sont
     reellement appelees : c'est A5.
     """
-    regles = Regles()
+    regles = Regles(lassitude_suiveurs=getattr(args, "lassitude_suiveurs", False))
     if getattr(args, "tout_grand", False):
         # Reference de l'exigence E5 : meme population, meme graine, mais
         # chaque agent raisonne avec le plus grand modele.
         for a in agents:
             a["moteur"] = "llm_grand"
+    if getattr(args, "meneurs_llm", False):
+        # Isole l'effet des meneurs : seuls les pionniers et la figure
+        # populaire raisonnent avec un LLM, la population suit des regles.
+        for a in agents:
+            meneur = a["profil"] in ("pionnier", "figure_populaire")
+            a["moteur"] = "llm_grand" if meneur else "regles"
     if args.tout_regles:
         for a in agents:
             a["moteur"] = "regles"
@@ -60,12 +66,13 @@ def fabriquer_decideurs(agents, args, config, base=None):
         client = ClientLLM(args.fournisseur, modeles, pause=args.pause,
                            attente_max=args.attente_max)
         for taille in tailles:
-            moteurs[taille] = DecideurLLM(client, taille, base=base, k=args.passages)
+            moteurs[taille] = DecideurLLM(client, taille, base=base, k=args.passages,
+                                          structure=getattr(args, "sortie_structuree", False))
             print(f"  {taille:10s} -> {modeles[taille]}")
     return {a["id"]: moteurs[a["moteur"]] for a in agents}, client
 
 
-def enregistrer(journal, monde, agent, d, horloge):
+def enregistrer(journal, monde, agent, d, horloge, dialogue=None):
     """Ecrit la decision, l'incident eventuel et la parole de l'agent."""
     journal.ecrire("decision.v1", agent=agent["id"], porte=d["porte"],
                    categorie=d["categorie"], sens=d["sens"], raison=d["raison"],
@@ -98,6 +105,8 @@ def enregistrer(journal, monde, agent, d, horloge):
     if cible:
         journal.ecrire("publication.v1", agent=agent["id"], texte=texte,
                        portee="personne", destinataire=cible)
+        if dialogue:
+            dialogue.noter(monde, agent["id"], cible, texte, horloge.minutes)
     else:
         # Destinataire inconnu ou absent : le message part sur le reseau public.
         monde.publier(agent["id"], texte, horloge.minutes)
@@ -247,9 +256,13 @@ def tourner_synchrone(monde, decideurs, journal, horloge, args, ecoute=None):
             decisions.append((agent, d))
             tracer(horloge, agent, d)
         # Simultaneite : on n'applique qu'apres avoir interroge tout le monde.
+        dialogue = getattr(args, "dialogue", None)
         for agent, d in decisions:
-            enregistrer(journal, monde, agent, d, horloge)
+            enregistrer(journal, monde, agent, d, horloge, dialogue)
             appliquer(agent, d, monde, horloge)
+        if dialogue:
+            # Apres les decisions du pas : chacun parle depuis son choix du jour.
+            dialogue.mener(journal, monde, horloge)
         if horloge.minutes % args.releve_min == 0:
             relever(monde, journal, horloge)
 
@@ -296,8 +309,11 @@ def tourner_asynchrone(monde, decideurs, journal, horloge, args, rng, ecoute=Non
                 echeancier.planifier(t_sim + reflexion, agent_id)
                 continue
         tracer(horloge, agent, d)
-        enregistrer(journal, monde, agent, d, horloge)
+        dialogue = getattr(args, "dialogue", None)
+        enregistrer(journal, monde, agent, d, horloge, dialogue)
         appliquer(agent, d, monde, horloge)
+        if dialogue:
+            dialogue.mener(journal, monde, horloge)
         echeancier.planifier(horloge.minutes + agent["cadence_min"]
                              + rng.randint(-120, 120), agent_id)
 
@@ -328,6 +344,28 @@ def main():
                    help="aucun agent LLM : c'est la baseline de l'exigence E1")
     p.add_argument("--tout-grand", action="store_true",
                    help="tous les agents sur le grand modele : reference de l'exigence E5")
+    p.add_argument("--meneurs-llm", action="store_true",
+                   help="seuls pionniers et figure populaire en LLM, le reste en regles")
+    p.add_argument("--modele-social", choices=["v1", "v2"], default="v1",
+                   help="v1 : modele a profils, reference des runs du 21 octobre ; "
+                        "v2 : modele a traits, reseau et croyances (regles seules pour l'instant)")
+    p.add_argument("--cloisonne", action="store_true",
+                   help="v2 : reseau sans ponts, rien ne passe d'un groupe a l'autre")
+    p.add_argument("--canal-public-coupe", action="store_true",
+                   help="v2 : personne ne publie ni ne lit sur le reseau interne")
+    p.add_argument("--reglage", action="append", default=[], metavar="CLE=VALEUR",
+                   help="v2 : surcharge de config['decision'], ex. distinction=false, "
+                        "lassitude.actif=false, alpha=0 (valeur lue en JSON)")
+    p.add_argument("--lassitude-suiveurs", action="store_true",
+                   help="v1.1 : les suiveurs a regles quittent quand plus aucun meneur ne porte")
+    p.add_argument("--sortie-structuree", action="store_true",
+                   help="schema JSON impose au modele (Ollama le respecte a la generation) "
+                        "puis verifie : moins de reponses inexploitables (A4)")
+    p.add_argument("--conversation", type=int, default=0, metavar="N",
+                   help="A2 : au plus N conversations privees par jour entre agents LLM ; "
+                        "chaque conversation coute --repliques - 1 appels de plus")
+    p.add_argument("--repliques", type=int, default=3,
+                   help="repliques par conversation, message d'ouverture compris")
     p.add_argument("--energie", choices=["auto", "non"], default="auto",
                    help="mesure l'energie avec CodeCarbon s'il est installe (E4)")
     p.add_argument("--corpus", default=os.path.join(RACINE, "corpus"),
@@ -339,6 +377,8 @@ def main():
                    help="publie aussi les evenements dans Kafka (defaut localhost:9092)")
     p.add_argument("--nom", default=None)
     args = p.parse_args()
+    if args.modele_social == "v2":
+        return executer_v2(args)
 
     rng = random.Random(args.graine)
     agents, config = population.construire(args.config, args.agents, args.graine)
@@ -350,6 +390,13 @@ def main():
     base = Base(args.corpus)
     print(f"  corpus  : {base.resume()}")
     decideurs, client = fabriquer_decideurs(agents, args, config, base=base)
+    if args.conversation and client:
+        from ephemere.dialogue import Dialogue
+        args.dialogue = Dialogue(decideurs, args.conversation, args.repliques)
+        print(f"  conversations : {args.conversation} par jour au plus, "
+              f"{args.repliques} repliques chacune")
+    if args.sortie_structuree and client:
+        print("  sortie structuree : schema JSON impose et verifie")
     print()
     monde = Monde(agents, config.get("perception"))
     horloge = Horloge(0)
@@ -361,17 +408,22 @@ def main():
         bus = Bus(args.kafka, nom_run=nom)   # echoue vite, avant tout appel LLM
         ecoute = cmd.Ecoute(args.kafka)      # injections venues de la scene (D3)
 
-    if args.tout_regles and args.tout_grand:
-        raise SystemExit("--tout-regles et --tout-grand s'excluent.")
+    if sum([args.tout_regles, args.tout_grand, args.meneurs_llm]) > 1:
+        raise SystemExit("--tout-regles, --tout-grand et --meneurs-llm s'excluent.")
     mesureur = Energie(args.energie == "auto", nom)
     args.telemetrie = Telemetrie(os.path.join(RACINE, "runs", f"{nom}.direct.jsonl"))
     t0 = time.perf_counter()
     interrompu = False
     with Journal(os.path.join(RACINE, "runs"), nom, horloge, bus=bus) as journal:
-        journal.ecrire("run.v1", mode=args.mode, nb_agents=len(agents),
+        journal.ecrire("run.v2", mode=args.mode, nb_agents=len(agents),
                        graine=args.graine, jours=args.jours,
                        config=os.path.basename(args.config),
-                       version_contrat=VERSION_CONTRAT)
+                       version_contrat=VERSION_CONTRAT,
+                       modele_social="v1.1" if args.lassitude_suiveurs else "v1",
+                       corpus=os.path.basename(os.path.normpath(args.corpus)),
+                       sortie_structuree=bool(args.sortie_structuree and client),
+                       conversation={"par_jour": args.conversation if client else 0,
+                                     "repliques": args.repliques})
         # Qui habite ce monde. Publie dans le flux pour que tout consommateur
         # puisse afficher des noms et des groupes sans fichier annexe.
         journal.ecrire("population.v1", resume=resume, agents=[
@@ -452,6 +504,73 @@ class Energie:
                 "co2_kg": None if co2 is None else float(co2),
                 "portee": "machine locale",
                 "note": "inference locale comprise si le fournisseur est ollama"}
+
+
+def executer_v2(args):
+    """Un run du modele social v2. La graine est la repetition r (ephemere/graines.py)."""
+    from ephemere import boucle_v2, population_v2, reseau as reseau_v2
+    from ephemere.regles_v2 import ReglesV2
+
+    if not args.tout_regles:
+        raise SystemExit("v2 : seuls les agents a regles existent pour l'instant (--tout-regles). "
+                         "Les agents LLM v2 arrivent a l'etape 8.")
+    if args.mode != "synchrone":
+        raise SystemExit("v2 : seul le mode synchrone existe pour l'instant.")
+    if args.config == os.path.join(RACINE, "config", "tessaline.json"):
+        args.config = os.path.join(RACINE, "config", "tessaline_v2.json")
+    reglages = {}
+    for r in args.reglage:
+        cle, _, valeur = r.partition("=")
+        reglages[cle] = json.loads(valeur)
+    monde, config, graines, liens = boucle_v2.construire(
+        args.config, args.agents, args.graine, cloisonne=args.cloisonne,
+        canal_public=not args.canal_public_coupe, reglages=reglages)
+    agents = list(monde.agents.values())
+    for a in agents:
+        a["moteur"] = "regles"
+    regles = ReglesV2(config["decision"], graines["dynamique"])
+    decideurs = {a["id"]: regles for a in agents}
+    resume = population.resume(agents)
+    print(f"Tessaline v2, {resume['total']} agents, repetition r = {args.graine}")
+    print(f"  profils : {resume['par_profil']}")
+    print(f"  reseau  : {reseau_v2.resume(agents, liens)}")
+    if reglages:
+        print(f"  reglages: {reglages}")
+    print()
+
+    horloge = Horloge(0)
+    nom = args.nom or f"v2_{datetime.now():%Y%m%d_%H%M%S}"
+    mesureur = Energie(args.energie == "auto", nom)
+    t0 = time.perf_counter()
+    interrompu = False
+    with Journal(os.path.join(RACINE, "runs"), nom, horloge) as journal:
+        journal.ecrire("run.v2", mode=args.mode, nb_agents=len(agents), graine=args.graine,
+                       jours=args.jours, config=os.path.basename(args.config),
+                       version_contrat=VERSION_CONTRAT, modele_social="v2",
+                       cloisonne=args.cloisonne, canal_public=not args.canal_public_coupe,
+                       reglages=reglages, decision=config["decision"])
+        journal.ecrire("population.v2", resume=resume, graines=graines,
+                       agents=population_v2.decrire(agents))
+        journal.ecrire("reseau.v1", liens=liens, resume=reseau_v2.resume(agents, liens),
+                       cloisonne=args.cloisonne)
+        mesureur.demarrer()
+
+        def afficher(h, ind):
+            print(f"{h.lisible()}  >> adoption {ind['taux_adoption']:5.0%}   "
+                  f"sens dominant {ind['sens_dominant']:16s} {ind['part_sens_dominant']:4.0%}")
+        try:
+            boucle_v2.tourner(monde, config, decideurs, journal, horloge, args.jours, afficher)
+        except KeyboardInterrupt:
+            interrompu = True
+            print("\n!! Run arrete a la main. Les evenements deja ecrits restent valides.")
+        journal.ecrire("energie.v1", **mesureur.arreter())
+        journal.ecrire("coherence.v1", **_controler_coherence(journal.chemin))
+        journal.ecrire("bilan.v1", appels=0, tokens_entree=0, tokens_sortie=0,
+                       duree_run_s=round(time.perf_counter() - t0, 2), interrompu=interrompu,
+                       incidents=_compter_incidents(journal.chemin), par_taille={})
+        ecrits, rejets, chemin = journal.nb_ecrits, journal.nb_rejets, journal.chemin
+    print(f"\n{ecrits} evenements conformes, {rejets} rejetes")
+    print(f"Run enregistre dans {chemin}")
 
 
 def _controler_coherence(chemin):

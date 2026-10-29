@@ -88,8 +88,13 @@ class ClientLLM:
         with urllib.request.urlopen(req, timeout=self.delai_s) as rep:
             return json.loads(rep.read().decode("utf-8"))
 
-    def json(self, systeme, consigne, taille="llm_petit", essais=3):
-        """Appelle le modele de la taille demandee. Renvoie un dict, ou None."""
+    def json(self, systeme, consigne, taille="llm_petit", essais=3, schema=None):
+        """Appelle le modele de la taille demandee. Renvoie un dict, ou None.
+
+        schema : un schema JSON que la reponse doit respecter (sortie
+        structuree). Ollama contraint alors la generation elle-meme ; sans
+        schema, on demande seulement "un objet JSON".
+        """
         if taille not in self.modeles:
             raise SystemExit(f"Taille de modele inconnue : {taille}")
         casier = self._casier(taille)
@@ -97,7 +102,10 @@ class ClientLLM:
                  "messages": [{"role": "system", "content": systeme},
                               {"role": "user", "content": consigne}],
                  "temperature": self.temperature,
-                 "response_format": {"type": "json_object"}}
+                 "response_format": ({"type": "json_schema",
+                                      "json_schema": {"name": "reponse", "strict": True,
+                                                      "schema": schema}}
+                                     if schema else {"type": "json_object"})}
         attente = self.pause
         mesure = {"taille": taille, "modele": self.modeles[taille], "latence_s": None,
                   "attente_s": 0.0, "essais": 0, "tokens_entree": 0, "tokens_sortie": 0}
