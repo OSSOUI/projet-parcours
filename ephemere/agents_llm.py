@@ -434,7 +434,8 @@ class DecideurLLM:
         requete, documents = self._recuperer(agent, t_sim)
         consigne, perception = self._consigne(agent, monde, t_sim, horloge_lisible, documents)
         reponse = self.client.json(SYSTEME, consigne, self.taille,
-                                   **({"schema": SCHEMA_DECISION} if self.structure else {}))
+                                   **self._options(SCHEMA_DECISION,
+                                                   f"decision:{agent['id']}:{t_sim}"))
         mesure = dict(self.client.derniere_mesure)
         brut = getattr(self.client, "dernier_brut", None)
         perception["reponse_brute"] = None if brut is None else str(brut)[:4000]
@@ -470,6 +471,16 @@ class DecideurLLM:
                 "perception": perception,
                 "recuperation": {"requete": requete, "resultats": documents}}
 
+    def _options(self, schema, cle):
+        """Options d'appel : schema si sortie structuree, cle de graine si le
+        client a une graine. Rien sinon, pour les clients factices des tests."""
+        options = {}
+        if self.structure:
+            options["schema"] = schema
+        if getattr(self.client, "graine", None) is not None:
+            options["cle"] = cle
+        return options
+
     def repondre(self, agent, autre, echanges, horloge_lisible=""):
         """Une replique de conversation privee (A2). Renvoie un dict :
         texte, categorie, valide, incident, mesure."""
@@ -482,7 +493,9 @@ class DecideurLLM:
             categories="\n".join(f"- {cle} : {texte}" for cle, texte in SENS.items()),
         )
         reponse = self.client.json(SYSTEME, consigne, self.taille,
-                                   **({"schema": SCHEMA_REPLIQUE} if self.structure else {}))
+                                   **self._options(SCHEMA_REPLIQUE,
+                                                   f"replique:{agent['id']}:{autre['id']}:"
+                                                   f"{horloge_lisible}:{len(echanges)}"))
         mesure = dict(self.client.derniere_mesure)
         nature, details = derive_replique(reponse)
         if nature is None and self.structure:

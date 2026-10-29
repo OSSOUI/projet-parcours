@@ -23,7 +23,7 @@ modele dans les quatre variantes : les ecarts se lisent agent par agent. Les
 agents a regles n'ont pas de modele : ils repondent avec llm_petit. La
 temperature est celle des runs (0,9) : c'est un tirage, pas une verite.
 
-    python3 sens_a_priori.py                          # graine 100, les 4 variantes
+    python3 sens_a_priori.py --tirages 5              # graine 100, 4 variantes, 5 tirages
     python3 sens_a_priori.py --variantes nu profil    # une partie seulement
     python3 sens_a_priori.py --graine 101
 
@@ -110,6 +110,9 @@ def main():
     p.add_argument("--agents", type=int, default=20)
     p.add_argument("--config", default=os.path.join(RACINE, "config", "tessaline.json"))
     p.add_argument("--variantes", nargs="+", choices=VARIANTES, default=list(VARIANTES))
+    p.add_argument("--tirages", type=int, default=1,
+                   help="tirages par agent et par variante, chacun avec sa graine LLM : "
+                        "a temperature 0,9, un seul tirage est trop bruite")
     p.add_argument("--fournisseur", default="ollama")
     p.add_argument("--passages", type=int, default=3)
     args = p.parse_args()
@@ -118,6 +121,8 @@ def main():
     charger_env(os.path.join(RACINE, ".env"))
     modeles = config["modeles"][args.fournisseur]
     client = ClientLLM(args.fournisseur, modeles)
+    clients = [ClientLLM(args.fournisseur, modeles, graine=f"apriori:{args.graine}:{t}")
+               for t in range(args.tirages)]
     t_sim = 1440   # moment de la premiere decision dans un run synchrone
     print(f"Sens a priori, graine {args.graine}, {len(agents)} personnages, "
           f"temperature {client.temperature}, variantes {' '.join(args.variantes)}")
@@ -126,37 +131,41 @@ def main():
         base = Base(os.path.join(RACINE, CORPUS[variante])) if variante in CORPUS else None
         print(f"\n== {variante}")
         reponses = []
-        for a in agents:
-            taille = a["moteur"] if a["moteur"] != "regles" else "llm_petit"
-            decideur = DecideurLLM(client, taille, base=base, k=args.passages)
-            requete, documents = decideur._recuperer(a, t_sim)
-            consigne = consigne_neutre(decideur, a, t_sim, documents, nu=variante == "nu")
-            rep = client.json(SYSTEME, consigne, taille)
-            nature, _ = detecter_derive(rep)
-            ok = nature is None
-            r = {"agent": a["id"], "profil": a["profil"], "groupe": a["groupe"],
-                 "moteur_du_run": a["moteur"], "taille": taille, "modele": modeles[taille],
-                 "porte_avant": a["porte"], "incident": nature,
-                 "porte": bool(rep["porte"]) if ok else None,
-                 "categorie": rep["categorie"] if ok else None,
-                 "sens": str(rep.get("sens", ""))[:300] if ok else "",
-                 "raison": str(rep.get("raison", ""))[:300] if ok else "",
-                 "documents": [f"{d['id']}#{d['numero']}" for d in documents],
-                 "requete": requete, "consigne": consigne}
-            reponses.append(r)
-            print(f"  {a['nom']:9s} {a['profil']:17s} {modeles[taille]:12s} "
-                  + (f"{r['categorie']:16s} {'porte' if r['porte'] else '-':6s} {r['sens'][:60]}"
-                     if ok else f"INCIDENT {nature}"))
+        for tirage, client_t in enumerate(clients):
+            for a in agents:
+                taille = a["moteur"] if a["moteur"] != "regles" else "llm_petit"
+                decideur = DecideurLLM(client_t, taille, base=base, k=args.passages)
+                requete, documents = decideur._recuperer(a, t_sim)
+                consigne = consigne_neutre(decideur, a, t_sim, documents, nu=variante == "nu")
+                rep = client_t.json(SYSTEME, consigne, taille, cle=f"{variante}:{a['id']}")
+                nature, _ = detecter_derive(rep)
+                ok = nature is None
+                r = {"tirage": tirage, "graine_llm": client_t.graine_appel(f"{variante}:{a['id']}"),
+                     "agent": a["id"], "profil": a["profil"], "groupe": a["groupe"],
+                     "moteur_du_run": a["moteur"], "taille": taille, "modele": modeles[taille],
+                     "porte_avant": a["porte"], "incident": nature,
+                     "porte": bool(rep["porte"]) if ok else None,
+                     "categorie": rep["categorie"] if ok else None,
+                     "sens": str(rep.get("sens", ""))[:300] if ok else "",
+                     "raison": str(rep.get("raison", ""))[:300] if ok else "",
+                     "documents": [f"{d['id']}#{d['numero']}" for d in documents],
+                     "requete": requete, "consigne": consigne}
+                reponses.append(r)
+                print(f"  {a['nom']:9s} {a['profil']:17s} {modeles[taille]:12s} "
+                      + (f"{r['categorie']:16s} {'porte' if r['porte'] else '-':6s} {r['sens'][:60]}"
+                         if ok else f"INCIDENT {nature}"))
         resume = resumer(reponses)
         print(f"  repartition : {resume['repartition']}")
         print(f"  sens dominant : {resume['dominant']} a {resume['part_dominant']:.0%}, "
               f"entropie {resume['entropie']}")
         for m, c in resume["par_modele"].items():
             print(f"    {m:12s} {c}")
-        sortie = os.path.join(RACINE, "resultats", f"sens_a_priori_g{args.graine}_{variante}.json")
+        suffixe = f"_t{args.tirages}" if args.tirages > 1 else ""
+        sortie = os.path.join(RACINE, "resultats",
+                              f"sens_a_priori_g{args.graine}_{variante}{suffixe}.json")
         with open(sortie, "w", encoding="utf-8") as f:
             json.dump({"date": datetime.now().isoformat(timespec="seconds"),
-                       "graine": args.graine, "variante": variante,
+                       "graine": args.graine, "variante": variante, "tirages": args.tirages,
                        "corpus": CORPUS.get(variante), "agents": len(agents),
                        "fournisseur": args.fournisseur, "modeles": modeles,
                        "temperature": client.temperature, "t_sim": t_sim, "systeme": SYSTEME,

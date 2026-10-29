@@ -83,6 +83,10 @@ PLANS = {
     "meneurs": ["baseline", "llm_meneurs", "llm_synchrone"],  # effet des meneurs LLM
     "temps": ["llm_synchrone", "llm_asynchrone"],          # C5
     "sobriete": ["llm_synchrone", "tout_grand"],           # E5
+    # Phase 1 de l'audit 2 (decision du 28 octobre) : une seule serie de
+    # reference, puis Q2/B3, C5 et E5 sur les memes graines, avec une graine
+    # envoyee au LLM. Le plus cher (tout_grand) passe en dernier.
+    "phase1": ["llm_synchrone", "llm_temoin_cloisonne", "llm_asynchrone", "tout_grand"],
     "complet": ["baseline", "temoin_cloisonne", "llm_synchrone", "llm_temoin_cloisonne",
                 "llm_asynchrone", "tout_grand"],
 }

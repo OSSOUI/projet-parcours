@@ -64,7 +64,7 @@ def fabriquer_decideurs(agents, args, config, base=None):
             raise SystemExit(f"Aucun modele configure pour {args.fournisseur} "
                              f"dans {os.path.basename(args.config)}.")
         client = ClientLLM(args.fournisseur, modeles, pause=args.pause,
-                           attente_max=args.attente_max)
+                           attente_max=args.attente_max, graine=args.graine)
         for taille in tailles:
             moteurs[taille] = DecideurLLM(client, taille, base=base, k=args.passages,
                                           structure=getattr(args, "sortie_structuree", False))
@@ -421,6 +421,7 @@ def main():
                        version_contrat=VERSION_CONTRAT,
                        modele_social="v1.1" if args.lassitude_suiveurs else "v1",
                        corpus=os.path.basename(os.path.normpath(args.corpus)),
+                       graine_llm=bool(client),
                        sortie_structuree=bool(args.sortie_structuree and client),
                        conversation={"par_jour": args.conversation if client else 0,
                                      "repliques": args.repliques})
