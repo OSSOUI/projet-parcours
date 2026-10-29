@@ -1,0 +1,32 @@
+{
+ "date": "2026-10-28",
+ "config": "tessaline_v2.json, reference",
+ "jours": 25,
+ "definition_cycle": "pic >= 50 % et moyenne des 3 derniers jours >= 30 points sous le pic",
+ "resultats": {
+  "20": {
+   "graines": 50,
+   "cycles": 29,
+   "pic_moyen": 0.751,
+   "pic_et": 0.089,
+   "fin_moyenne": 0.424,
+   "jour_pic_median": 4.0
+  },
+  "50": {
+   "graines": 50,
+   "cycles": 28,
+   "pic_moyen": 0.805,
+   "pic_et": 0.048,
+   "fin_moyenne": 0.503,
+   "jour_pic_median": 5.0
+  },
+  "100": {
+   "graines": 50,
+   "cycles": 29,
+   "pic_moyen": 0.81,
+   "pic_et": 0.022,
+   "fin_moyenne": 0.56,
+   "jour_pic_median": 8.0
+  }
+ }
+}
