@@ -68,6 +68,18 @@ petits = {"a": ["ironie"] * 4, "b": ["tendance"] * 2, "c": ["ringard"]}
 verifier("les groupes de moins de 3 sens exprimes sont ignores : non defini",
          I.convergence_groupes(petits) is None)
 
+print("\nRegroupement tendance / suivre_la_foule")
+verifier("regroupe, 2 tendance + 2 suivre_la_foule sur 5 font 80 %",
+         I.accord_exprime(["tendance"] * 2 + ["suivre_la_foule"] * 2 + ["ironie"],
+                          I.REGROUPEMENT_FOULE) == 0.8)
+uni = {("x", "llm_petit"): {s: 1 for s in ("cercle_creatif", "tendance", "suivre_la_foule",
+                                            "ringard", "ironie", "aucun_sens")}}
+six = I.modele_nul([("x", "llm_petit")] * 20, uni, releves=26, tirages=300, graine=2)
+cinq = I.modele_nul([("x", "llm_petit")] * 20, uni, releves=26, tirages=300, graine=2,
+                    regroupement=I.REGROUPEMENT_FOULE)
+verifier(f"regrouper fait monter A0 ({six['a0']:.2f} -> {cinq['a0']:.2f})",
+         cinq["a0"] > six["a0"] + 0.05)
+
 print()
 if echecs:
     print(f"{len(echecs)} verification(s) en echec : {echecs}")

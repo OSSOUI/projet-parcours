@@ -536,11 +536,69 @@ recouvre `aucun_sens`.
   reproduire le test et le run `frontiere_nettes_100_direct` (25 jours suivis dans Godot). Ce run a été enregistré
   avant l'option : son en-tête ne porte pas le champ `definitions`.
 - Pas de troisième formulation : ce serait chercher la bonne phrase à l'aveugle.
-- L'analyse compte `tendance` et `suivre_la_foule` comme un seul sens.
+- L'analyse compte `tendance` et `suivre_la_foule` comme un seul sens
+  (`indicateurs.REGROUPEMENT_FOULE`).
 
 **Pour le rapport.** Le petit modèle ne tient pas une distinction fine entre
 six sens : la finesse du sens dépend de la taille du modèle. C'est un argument
 pour A5 et E5, à mettre en regard du run « tout grand ».
+
+### Indicateur d'émergence, en six sens puis regroupé
+
+L'indicateur est celui d'`ephemere/indicateurs.py`, et il n'en existe qu'une
+version :
+- **accord exprimé** : la part du sens le plus répandu parmi les agents qui
+  expriment un sens ;
+- **ΔA** : la meilleure fenêtre de 3 relevés consécutifs, prise à son minimum,
+  moins A0, l'accord attendu sans échange ;
+- **seuil** : le 95ᵉ centile de ΔA sous le modèle nul, calculé sur 1 000 runs.
+
+Le modèle nul calcule la même statistique que les runs, sur le même nombre de
+relevés. Chaque agent y tire son sens dans la répartition du point zéro de sa
+classe (profil, taille de modèle). En lecture regroupée, il tire dans les six
+sens puis regroupe, comme les runs : A0 monte d'environ 4 points.
+
+```bash
+python3 regroupement.py     # aucun appel ; écrit resultats/regroupement_phase1.json
+```
+
+**Contrôle.** Sur 500 runs tirés du modèle nul avec une autre graine, 0 à 5 %
+sont déclarés émergents. Le seuil tient donc ses 5 %.
+
+**Runs LLM.** Le calcul ne porte que sur les agents LLM. Le point zéro de
+référence est la variante complet, à 5 tirages : même corpus que les runs,
+définitions courtes, sans schéma.
+
+| Runs | Six sens | Regroupé |
+|---|---|---|
+| `exp_complet_llm_synchrone` (graines 100 à 104) | 4/5 émergents, ΔA de +7 à +22 points | 5/5, ΔA de +12 à +27 points |
+| `exp_phase1_llm_synchrone_01` | émergent, ΔA +24 points | émergent, ΔA +20 points |
+| `exp_complet_llm_temoin_cloisonne_01` | non mesurable : le run s'arrête à 3 relevés | non mesurable |
+| `exp_meneurs_llm_meneurs` | 3/5 | 0/5, non interprétable |
+
+Ce que ce tableau veut dire :
+- **B3 côté LLM n'est pas encore démontré.** Le seul témoin LLM est incomplet.
+  Il faut relancer `python3 experience.py --plan b3_llm`.
+- **Les runs « meneurs » ne sont pas interprétables.** Ils n'ont que 4 agents
+  LLM. En lecture regroupée, A0 vaut 80 % et ΔA ne peut pas dépasser
+  20 points, ce qui est exactement le seuil.
+
+**Runs à règles.** Leur sens est écrit d'après l'adoption : l'indicateur ne s'y
+applique pas. B3 y est donc présenté comme un résultat sur l'adoption au pic :
+- `exp_socle_baseline` : médiane 65 %, de 15 à 75 % ;
+- `exp_socle_temoin_cloisonne` : médiane 20 %, de 15 à 40 %.
+
+L'accord comparé au hasard uniforme n'y est qu'un repère. Le témoin cloisonné
+le dépasse 22 fois sur 30 en six sens, ce qui montre justement que ce repère
+ne dit rien des règles.
+
+**Limites.**
+- Le point zéro ne couvre que la population de la graine 100. Les graines 101
+  à 104 empruntent ses répartitions par classe. Il reste à faire leur point
+  zéro.
+- Au point zéro, les agents à règles de la graine 100 ont répondu avec
+  qwen2.5:3b. Leurs réponses servent de répartition pour les agents LLM du
+  même profil dans les autres populations.
 
 ## Suivi en direct et tableau de bord : une seule page
 

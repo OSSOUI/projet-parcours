@@ -26,6 +26,11 @@ Complementaire, pour B1 (le sens "pour chaque groupe du campus") :
 
 Ces indicateurs ne s'appliquent pas aux agents a regles v1 : leur sens est une
 fonction ecrite de l'adoption percue, pas une croyance.
+
+Regroupement (decide le 30 octobre) : tendance et suivre_la_foule comptent pour
+un seul sens, le petit modele ne tenant pas la frontiere (sens_a_priori.py).
+Le modele nul tire toujours dans les six sens du point zero, puis regroupe
+comme les runs : le seuil monte avec l'accord attendu par hasard.
 """
 import collections
 import math
@@ -37,11 +42,12 @@ FENETRE = 3
 MIN_GROUPE = 3
 TIRAGES_NULS = 1000
 CENTILE = 0.95
+REGROUPEMENT_FOULE = {"tendance": "tendance_ou_foule", "suivre_la_foule": "tendance_ou_foule"}
 
 
-def accord_exprime(categories):
+def accord_exprime(categories, regroupement=None):
     """Part du sens le plus repandu parmi les sens exprimes, ou None."""
-    exprimes = [c for c in categories if c and c != AUCUN]
+    exprimes = [(regroupement or {}).get(c, c) for c in categories if c and c != AUCUN]
     if len(exprimes) < MIN_EXPRIMES:
         return None
     return collections.Counter(exprimes).most_common(1)[0][1] / len(exprimes)
@@ -83,7 +89,8 @@ def _tirer(rng, compte):
     return sorted(compte)[-1]
 
 
-def modele_nul(classes, distributions, releves, tirages=TIRAGES_NULS, graine=0):
+def modele_nul(classes, distributions, releves, tirages=TIRAGES_NULS, graine=0,
+               regroupement=None):
     """A0 et seuil de Delta A pour une population donnee.
 
     classes : la classe (profil, taille) de chaque agent dont on mesure le sens.
@@ -93,7 +100,7 @@ def modele_nul(classes, distributions, releves, tirages=TIRAGES_NULS, graine=0):
     rng = random.Random(graine)
     comptes = [distributions[c] for c in classes]
     def un_releve():
-        return accord_exprime([_tirer(rng, c) for c in comptes])
+        return accord_exprime([_tirer(rng, c) for c in comptes], regroupement)
     # A0 : esperance de l'accord exprime sans echange, estimee sur autant de releves.
     echantillon = [x for x in (un_releve() for _ in range(tirages)) if x is not None]
     a0 = sum(echantillon) / len(echantillon)

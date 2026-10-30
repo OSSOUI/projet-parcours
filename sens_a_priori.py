@@ -49,7 +49,8 @@ Resultat (30 octobre, graine 100, profil, 10 tirages, schema) : le critere est
 rempli (21 % -> 4 %), mais le garde-fou montre que la baisse vient de
 qwen2.5:3b, qui ne dit plus jamais tendance ni aucun_sens ; qwen2.5:7b passe
 de 14 % a 33 %. Les definitions nettes ne sont pas retenues : les agents
-gardent les courtes, et l'analyse regroupe tendance et suivre_la_foule.
+gardent les courtes, et l'analyse regroupe tendance et suivre_la_foule
+(regroupement.py).
 """
 import argparse
 import collections
