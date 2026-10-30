@@ -10,8 +10,9 @@ RACINE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, RACINE)
 
 from ephemere import mesures_llm as M  # noqa: E402
-from ephemere.agents_llm import (SCHEMA_DECISION, SCHEMA_REPLIQUE, DecideurLLM,  # noqa: E402
-                                 valider)
+from ephemere.agents_llm import (DEFINITIONS_SENS, SCHEMA_DECISION, SCHEMA_REPLIQUE,  # noqa: E402
+                                 DecideurLLM, valider)
+from ephemere.contrat import SENS  # noqa: E402
 from ephemere.contrat import verifier as conforme  # noqa: E402
 from ephemere.dialogue import Dialogue  # noqa: E402
 from ephemere.horloge import Horloge  # noqa: E402
@@ -143,6 +144,15 @@ verifier("et Ali garde ironie a sa decision suivante", (conv["bouge_apres"], con
          conv)
 verifier("la replique recue compte comme un echange pour A2",
          M.echanges(evs)["avec_message"]["decisions"] == 1)
+
+print("\nDefinitions des sens")
+d = DecideurLLM(None, "llm_petit", structure=True)
+verifier("par defaut, les definitions courtes des runs", d.definitions is SENS
+         and d.schema_decision is SCHEMA_DECISION)
+n = DecideurLLM(None, "llm_petit", structure=True, definitions="nettes")
+verifier("nettes seulement sur demande, memes noms de sens",
+         n.definitions is DEFINITIONS_SENS
+         and n.schema_decision["properties"]["categorie"]["enum"] == list(SENS))
 
 print()
 if echecs:

@@ -208,7 +208,9 @@ génération elle-même), puis la réponse est vérifiée contre ce même schém
 hors schéma devient un incident `schema_non_respecte`. Les deux options sont
 coupées par défaut : les runs `exp_*` restent comparables, et leur effet se
 mesure (incidents A4, changements de sens A2) en les activant sur les mêmes
-graines.
+graines. Le prompt et le schéma portent les définitions courtes des six sens ;
+`--definitions nettes` les remplace par celles du test du 30 octobre, non
+retenues (voir « Frontière entre `tendance` et `suivre_la_foule` »).
 
 ### Détection des dérives (A4)
 
@@ -492,6 +494,53 @@ configuration est écrite dans `experience.py` avant toute mesure.
 L'accord mesuré est la part du campus sur le sens le plus répandu **autre que
 « aucun sens »**, avec les non-porteurs au dénominateur. Quand « aucun sens »
 domine, le relevé n'est donc plus jeté.
+
+### Frontière entre `tendance` et `suivre_la_foule` (point zéro répété, 30 octobre)
+
+Pour savoir si le flou entre ces deux sens vient des définitions, chaque
+personnage de la graine 100 (variante profil, sortie structurée) a reçu dix
+fois le même prompt avec les définitions courtes des runs, et dix fois avec
+des définitions plus nettes (`agents_llm.DEFINITIONS_SENS`). Cela fait 400
+appels.
+
+```bash
+python3 sens_a_priori.py --variantes profil --repetitions 10 \
+    --definitions courtes nettes --sortie-structuree
+python3 sens_a_priori.py --comparer \
+    resultats/sens_a_priori_g100_profil_r10_courtes_schema.json \
+    resultats/sens_a_priori_g100_profil_r10_nettes_schema.json
+```
+
+**Verdict du critère fixé avant la mesure.** La confusion chez un même agent
+passe de 21 % (49 paires sur 237) à 4 % (17 sur 483). La baisse relative est
+de 83 %, avec un intervalle à 95 % de +3 à +30 points (bootstrap sur les
+agents). Le critère est rempli.
+
+**Ce que le verdict cache.** Le tableau suivant sépare les deux modèles. Le
+garde-fou `mesures_llm.garde_fou` affiche ces chiffres à côté du verdict.
+
+| Modèle | Confusion | Sens employés | Réponses avec les définitions nettes |
+|---|---|---|---|
+| qwen2.5:3b | 23 % → 0 % | 6 → 3 | `suivre_la_foule` 115, `ironie` 29, `ringard` 4 |
+| qwen2.5:7b | 14 % → 33 % | 3 → 4 | `tendance` 12, `cercle_creatif` 11, `ringard` 9, `suivre_la_foule` 7 |
+
+La baisse vient du petit modèle, et il ne distingue pas mieux les deux sens : il
+ne répond plus jamais `tendance`, `cercle_creatif` ni `aucun_sens`. Sa
+définition de `suivre_la_foule` (« sans que ça veuille dire grand-chose »)
+recouvre `aucun_sens`.
+
+**Décision.**
+- Les définitions nettes ne sont pas retenues. Les agents gardent les
+  définitions courtes, y compris avec `--sortie-structuree`.
+- Les définitions nettes ne s'activent qu'avec `--definitions nettes`, pour
+  reproduire le test et le run `frontiere_nettes_100_direct` (25 jours suivis dans Godot). Ce run a été enregistré
+  avant l'option : son en-tête ne porte pas le champ `definitions`.
+- Pas de troisième formulation : ce serait chercher la bonne phrase à l'aveugle.
+- L'analyse compte `tendance` et `suivre_la_foule` comme un seul sens.
+
+**Pour le rapport.** Le petit modèle ne tient pas une distinction fine entre
+six sens : la finesse du sens dépend de la taille du modèle. C'est un argument
+pour A5 et E5, à mettre en regard du run « tout grand ».
 
 ## Suivi en direct et tableau de bord : une seule page
 

@@ -294,6 +294,130 @@ def diversite(evs):
             "sens_distincts_fin": len(set(par_jour[max(par_jour)].values()))} if serie else None
 
 
+def _tirages_par_agent(reponses):
+    """agent -> categories de ses tirages exploitables, dans l'ordre."""
+    par_agent = collections.defaultdict(list)
+    for r in reponses:
+        if r.get("categorie") is not None:
+            par_agent[r["agent"]].append(r["categorie"])
+    return par_agent
+
+
+def _paires_par_agent(reponses, a, b):
+    """agent -> (paires de tirages tous deux dans {a, b}, paires discordantes)."""
+    sortie = {}
+    for agent, cats in _tirages_par_agent(reponses).items():
+        na, nb = cats.count(a), cats.count(b)
+        sortie[agent] = ((na + nb) * (na + nb - 1) // 2, na * nb)
+    return sortie
+
+
+def confusion(reponses, a="tendance", b="suivre_la_foule"):
+    """Desaccord entre deux sens chez un meme agent, devant le meme prompt.
+
+    reponses : tirages repetes du point zero, chacun {agent, categorie}, avec
+    categorie None si la reponse etait inexploitable. Pour chaque agent, on
+    forme les paires de tirages qui tombent tous deux dans {a, b} ; une paire
+    est discordante si l'un dit a et l'autre b. Si la frontiere est nette pour
+    le modele, un meme personnage choisit toujours le meme des deux : le taux
+    tend vers 0. Il ne peut pas depasser 1/2 pour un agent seul.
+
+    instabilite : part des paires discordantes tous sens confondus, pour ne
+    pas prendre un modele simplement instable pour une frontiere floue.
+    """
+    par_agent = _tirages_par_agent(reponses)
+    paires = _paires_par_agent(reponses, a, b)
+    total = sum(p for p, _ in paires.values())
+    discordantes = sum(d for _, d in paires.values())
+    toutes = differentes = 0
+    for cats in par_agent.values():
+        n = len(cats)
+        toutes += n * (n - 1) // 2
+        differentes += n * (n - 1) // 2 - sum(k * (k - 1) // 2
+                                              for k in collections.Counter(cats).values())
+    return {"sens": [a, b], "paires": total, "discordantes": discordantes,
+            "taux": discordantes / total if total else None,
+            "agents_concernes": sum(1 for cats in par_agent.values() if a in cats or b in cats),
+            "agents_mixtes": sum(1 for cats in par_agent.values() if a in cats and b in cats),
+            "instabilite": differentes / toutes if toutes else None}
+
+
+def comparer_confusion(avant, apres, a="tendance", b="suivre_la_foule", tirages=2000, graine=0):
+    """Baisse du desaccord entre a et b d'une condition a l'autre, avec un
+    intervalle a 95 %.
+
+    Le bootstrap tire des AGENTS avec remise, et non des paires : les tirages
+    d'un meme agent ne sont pas independants. Le meme agent est tire dans les
+    deux conditions, puisque seule la definition change.
+    """
+    pa, pp = _paires_par_agent(avant, a, b), _paires_par_agent(apres, a, b)
+    agents = sorted(set(pa) | set(pp))
+    ca, cp = confusion(avant, a, b), confusion(apres, a, b)
+    sortie = {"avant": ca, "apres": cp, "baisse": None, "baisse_relative": None,
+              "intervalle_95": None, "tirages": tirages, "graine": graine}
+    if ca["taux"] is None or cp["taux"] is None:
+        return sortie
+    sortie["baisse"] = ca["taux"] - cp["taux"]
+    sortie["baisse_relative"] = sortie["baisse"] / ca["taux"] if ca["taux"] else None
+    hasard = random.Random(graine)
+    baisses = []
+    for _ in range(tirages):
+        tire = [hasard.choice(agents) for _ in agents]
+        n_a = sum(pa.get(x, (0, 0))[0] for x in tire)
+        n_p = sum(pp.get(x, (0, 0))[0] for x in tire)
+        if n_a and n_p:
+            baisses.append(sum(pa.get(x, (0, 0))[1] for x in tire) / n_a
+                           - sum(pp.get(x, (0, 0))[1] for x in tire) / n_p)
+    if baisses:
+        baisses.sort()
+        sortie["intervalle_95"] = [baisses[int(0.025 * len(baisses))],
+                                   baisses[min(len(baisses) - 1, int(0.975 * len(baisses)))]]
+    return sortie
+
+
+def garde_fou(reponses, a="tendance", b="suivre_la_foule", cle="modele"):
+    """Ce qu'une confusion basse peut cacher : la repartition des reponses par
+    modele et le nombre de sens qu'il emploie vraiment.
+
+    Un modele qui ne dit plus jamais a, et range tout sous b, a une confusion
+    nulle sans rien distinguer (point zero du 30 octobre : qwen2.5:3b, 0 paire
+    discordante sur 432, mais plus aucun "tendance"). On le signale comme un
+    effondrement : l'un des deux sens a disparu alors que l'autre est employe.
+    """
+    sortie = {}
+    for m in sorted({r.get(cle) for r in reponses if r.get("categorie") is not None}):
+        cats = collections.Counter(r["categorie"] for r in reponses
+                                   if r.get(cle) == m and r.get("categorie") is not None)
+        c = confusion([r for r in reponses if r.get(cle) == m], a, b)
+        sortie[m] = {"reponses": sum(cats.values()), "repartition": dict(cats.most_common()),
+                     "sens_utilises": len(cats), "confusion": c["taux"], "paires": c["paires"],
+                     "effondrement": [x for x, y in ((a, b), (b, a))
+                                      if cats[x] == 0 and cats[y] > 0]}
+    return sortie
+
+
+def alertes_garde_fou(avant, apres):
+    """Les ecarts entre deux garde_fou() qui doivent accompagner le verdict."""
+    alertes = []
+    for m in sorted(set(avant) | set(apres)):
+        ga, gp = avant.get(m), apres.get(m)
+        if not ga or not gp:
+            continue
+        for x in gp["effondrement"]:
+            if x not in ga["effondrement"]:
+                alertes.append(f"{m} : plus aucun {x} apres ({ga['repartition'].get(x, 0)} "
+                               f"avant), sa confusion basse ne prouve pas une frontiere nette")
+        perdus = sorted(set(ga["repartition"]) - set(gp["repartition"]))
+        if perdus:
+            alertes.append(f"{m} : sens disparus apres : {', '.join(perdus)} "
+                           f"({ga['sens_utilises']} sens employes avant, {gp['sens_utilises']} apres)")
+        if ga["confusion"] is not None and gp["confusion"] is not None \
+                and gp["confusion"] > ga["confusion"]:
+            alertes.append(f"{m} : confusion en hausse, {ga['confusion']:.0%} -> "
+                           f"{gp['confusion']:.0%} ({ga['paires']} puis {gp['paires']} paires)")
+    return alertes
+
+
 def _norme(texte):
     return " ".join(re.findall(r"[a-z]+", normaliser(texte)))
 
