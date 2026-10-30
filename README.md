@@ -345,6 +345,48 @@ un étudiant qui change d'avis fait un petit saut. Glisser pour tourner, molette
 pour zoomer, clic sur un étudiant pour l'inspecter. Tout le décor est construit
 en code : rien à monter dans l'éditeur.
 
+**Rendu (Forward+).** Le projet force le moteur Forward+ (`project.godot`).
+
+- **Lumière** : SDFGI pour la lumière indirecte et les reflets, brouillard
+  volumétrique léger, SSAO pour les ombres de contact sous les pieds, SSIL pour
+  la couleur qui rebondit à courte distance, ciel procédural aux teintes de
+  l'interface.
+- **Matériaux** : PBR (`StandardMaterial3D`, rugosité et métallicité par
+  surface : sol mat, toit en zinc, vitres lisses, ruban satiné).
+- **Surfaces émissives** (énergie supérieure à 1) : les fenêtres, les lampes de
+  porche, les rubans portés et les messages en vol.
+- **Ombres** : soleil et lampes de porche ont des ombres douces (pénombre PCSS,
+  filtrage « soft high »).
+
+Le SDFGI ne retient que la géométrie statique. Le décor éclaire donc le campus,
+mais un étudiant, qui saute et change de couleur, est en GI dynamique : il
+reçoit la lumière indirecte sans en émettre. Son ruban brille par l'émission et
+le glow, pas par le SDFGI. Sinon le sol garderait la couleur d'un sens que
+l'étudiant a déjà quitté.
+
+Le brouillard reste faible (`BROUILLARD`, environ 20 % de voile à 40 m) : les
+couleurs du sens sont le code de lecture de la scène. Les repères d'interface
+(sélection, alerte, regards) restent non éclairés, pour garder leur couleur
+exacte.
+
+**Coût.** La vue ne calcule rien quand rien ne change :
+
+- couleurs et traits se recalculent sur un changement d'état, de sélection ou
+  de survol ;
+- le survol se calcule quand la souris ou la caméra bouge ;
+- seules les animations en cours font tourner `_process` ;
+- un étudiant hors du champ de la caméra (`VisibleOnScreenNotifier3D`) n'est ni
+  recoloré, ni animé, ni testé au survol ;
+- quand le plan 2D est affiché, la vue 3D cesse de rendre et de calculer.
+
+Il n'y a pas de `NavigationServer3D` : personne ne se déplace, et un trajet
+affiché serait un mouvement qu'aucun événement du run ne contient (F6).
+
+**Touche G** : rendu léger (sans SDFGI, sans SSIL, sans brouillard volumétrique,
+ombres douces simples). C'est le repli prévu pour une machine qui peine pendant
+la démo. Sur une machine sans Vulkan, Godot passe en Compatibility et ignore
+ces effets.
+
 Chaque rond porte les lettres qui le distinguent (« Ad » et « Ay », jamais deux
 « A »), et le prénom est écrit dessous quand il y a la place. Les accents
 viennent d'une police complète, Noto Sans (`godot/polices/`, licence OFL) ; les
