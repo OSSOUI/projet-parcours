@@ -64,10 +64,11 @@ def fabriquer_decideurs(agents, args, config, base=None):
             raise SystemExit(f"Aucun modele configure pour {args.fournisseur} "
                              f"dans {os.path.basename(args.config)}.")
         client = ClientLLM(args.fournisseur, modeles, pause=args.pause,
-                           attente_max=args.attente_max)
+                           attente_max=args.attente_max, graine=args.graine)
         for taille in tailles:
             moteurs[taille] = DecideurLLM(client, taille, base=base, k=args.passages,
-                                          structure=getattr(args, "sortie_structuree", False))
+                                          structure=getattr(args, "sortie_structuree", False),
+                                          definitions=getattr(args, "definitions", "courtes"))
             print(f"  {taille:10s} -> {modeles[taille]}")
     return {a["id"]: moteurs[a["moteur"]] for a in agents}, client
 
@@ -361,6 +362,9 @@ def main():
     p.add_argument("--sortie-structuree", action="store_true",
                    help="schema JSON impose au modele (Ollama le respecte a la generation) "
                         "puis verifie : moins de reponses inexploitables (A4)")
+    p.add_argument("--definitions", choices=["courtes", "nettes"], default="courtes",
+                   help="definitions des six sens dans le prompt et le schema ; nettes = "
+                        "celles testees le 30 octobre et non retenues (sens_a_priori.py)")
     p.add_argument("--conversation", type=int, default=0, metavar="N",
                    help="A2 : au plus N conversations privees par jour entre agents LLM ; "
                         "chaque conversation coute --repliques - 1 appels de plus")
@@ -421,7 +425,9 @@ def main():
                        version_contrat=VERSION_CONTRAT,
                        modele_social="v1.1" if args.lassitude_suiveurs else "v1",
                        corpus=os.path.basename(os.path.normpath(args.corpus)),
+                       graine_llm=bool(client),
                        sortie_structuree=bool(args.sortie_structuree and client),
+                       definitions=args.definitions if client else None,
                        conversation={"par_jour": args.conversation if client else 0,
                                      "repliques": args.repliques})
         # Qui habite ce monde. Publie dans le flux pour que tout consommateur

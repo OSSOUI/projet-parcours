@@ -1,0 +1,136 @@
+{
+ "date": "2026-10-30T12:43:36",
+ "fichiers": [
+  "resultats/sens_a_priori_g100_profil_r10_courtes_schema.json",
+  "resultats/sens_a_priori_g100_profil_r10_nettes_schema.json"
+ ],
+ "avant": {
+  "sens": [
+   "tendance",
+   "suivre_la_foule"
+  ],
+  "paires": 237,
+  "discordantes": 49,
+  "taux": 0.20675105485232068,
+  "agents_concernes": 14,
+  "agents_mixtes": 6,
+  "instabilite": 0.45169082125603865
+ },
+ "apres": {
+  "sens": [
+   "tendance",
+   "suivre_la_foule"
+  ],
+  "paires": 483,
+  "discordantes": 17,
+  "taux": 0.035196687370600416,
+  "agents_concernes": 19,
+  "agents_mixtes": 2,
+  "instabilite": 0.2572877059569075
+ },
+ "baisse": 0.17155436748172026,
+ "baisse_relative": 0.8297629610850551,
+ "intervalle_95": [
+  0.03135495143868566,
+  0.30049261083743845
+ ],
+ "tirages": 2000,
+ "graine": 0,
+ "foule_aucun": {
+  "avant": {
+   "sens": [
+    "suivre_la_foule",
+    "aucun_sens"
+   ],
+   "paires": 222,
+   "discordantes": 54,
+   "taux": 0.24324324324324326,
+   "agents_concernes": 13,
+   "agents_mixtes": 7,
+   "instabilite": 0.45169082125603865
+  },
+  "apres": {
+   "sens": [
+    "suivre_la_foule",
+    "aucun_sens"
+   ],
+   "paires": 439,
+   "discordantes": 0,
+   "taux": 0.0,
+   "agents_concernes": 18,
+   "agents_mixtes": 0,
+   "instabilite": 0.2572877059569075
+  }
+ },
+ "critere": {
+  "baisse_relative_min": 0.5,
+  "paires_min": 10
+ },
+ "garde_fou": {
+  "avant": {
+   "qwen2.5:3b": {
+    "reponses": 153,
+    "repartition": {
+     "suivre_la_foule": 59,
+     "ironie": 41,
+     "cercle_creatif": 17,
+     "ringard": 17,
+     "aucun_sens": 11,
+     "tendance": 8
+    },
+    "sens_utilises": 6,
+    "confusion": 0.22777777777777777,
+    "paires": 180,
+    "effondrement": []
+   },
+   "qwen2.5:7b": {
+    "reponses": 39,
+    "repartition": {
+     "cercle_creatif": 23,
+     "suivre_la_foule": 8,
+     "tendance": 8
+    },
+    "sens_utilises": 3,
+    "confusion": 0.14035087719298245,
+    "paires": 57,
+    "effondrement": []
+   }
+  },
+  "apres": {
+   "qwen2.5:3b": {
+    "reponses": 148,
+    "repartition": {
+     "suivre_la_foule": 115,
+     "ironie": 29,
+     "ringard": 4
+    },
+    "sens_utilises": 3,
+    "confusion": 0.0,
+    "paires": 432,
+    "effondrement": [
+     "tendance"
+    ]
+   },
+   "qwen2.5:7b": {
+    "reponses": 39,
+    "repartition": {
+     "tendance": 12,
+     "cercle_creatif": 11,
+     "ringard": 9,
+     "suivre_la_foule": 7
+    },
+    "sens_utilises": 4,
+    "confusion": 0.3333333333333333,
+    "paires": 51,
+    "effondrement": []
+   }
+  }
+ },
+ "alertes": [
+  "qwen2.5:3b : plus aucun tendance apres (8 avant), sa confusion basse ne prouve pas une frontiere nette",
+  "qwen2.5:3b : sens disparus apres : aucun_sens, cercle_creatif, tendance (6 sens employes avant, 3 apres)",
+  "qwen2.5:7b : confusion en hausse, 14% -> 33% (57 puis 51 paires)"
+ ],
+ "nette": true,
+ "verdict": "baisse nette : les definitions vont dans la version LLM de la v2"
+}

@@ -26,7 +26,8 @@ extends Node2D
 ## avec les mêmes données et les mêmes règles de lecture ; le panneau, le
 ## tableau B1, la courbe et les boutons restent en 2D. V bascule 3D / plan 2D.
 ##
-## Clavier : L passe des regards du jour au réseau, Échap désélectionne.
+## Clavier : L passe des regards du jour au réseau, Échap désélectionne,
+## G bascule le rendu 3D entre haute qualité et léger.
 ## En rejeu : espace met en pause, flèches gauche et droite changent de jour,
 ## un clic sur la courbe ou sur le tableau des groupes va à ce jour.
 
@@ -439,6 +440,10 @@ func _unhandled_input(event: InputEvent) -> void:
 			selection = ""
 		elif event.keycode == KEY_V:
 			_basculer_vue()
+		elif event.keycode == KEY_G:
+			vue3d.regler_qualite(not vue3d.haute_qualite)
+			bandeau = {"texte": "rendu 3D " + ("haute qualité" if vue3d.haute_qualite else "léger"),
+				"couleur": ENCRE, "reste": 2.0}
 		elif event.keycode == KEY_SPACE:
 			_basculer_lecture()
 		elif event.keycode == KEY_LEFT:

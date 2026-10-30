@@ -7,6 +7,7 @@ c'est ce comptage qui prouve le levier de sobriete de l'exigence E5.
 Il chronometre chaque appel : la latence reelle sert aussi a convertir le temps
 de reflexion en temps simule dans le mode asynchrone.
 """
+import hashlib
 import json
 import os
 import time
@@ -48,7 +49,8 @@ def charger_env(chemin=".env"):
 
 
 class ClientLLM:
-    def __init__(self, fournisseur, modeles, pause=1.0, temperature=0.9, attente_max=90):
+    def __init__(self, fournisseur, modeles, pause=1.0, temperature=0.9, attente_max=90,
+                 graine=None):
         if fournisseur not in FOURNISSEURS:
             raise SystemExit(f"Fournisseur inconnu : {fournisseur}")
         conf = FOURNISSEURS[fournisseur]
@@ -64,6 +66,12 @@ class ClientLLM:
         self.pause = pause
         self.temperature = temperature
         self.attente_max = attente_max
+        # Graine du run (decision du 28 octobre) : chaque appel recoit une graine
+        # derivee de celle-ci et d'une cle (agent, moment simule, type d'appel),
+        # et non d'un compteur, pour que l'ordre des appels n'y change rien
+        # (mode asynchrone). Meme prompt, meme cle, meme modele : meme reponse
+        # (verifie sur Ollama, 4 appels sur 4, les deux modeles alternes).
+        self.graine = graine
         self.compte = {}                  # par taille : appels, tokens, latences
         self.nb_erreurs = 0
         self.attente_totale = 0.0
@@ -88,7 +96,13 @@ class ClientLLM:
         with urllib.request.urlopen(req, timeout=self.delai_s) as rep:
             return json.loads(rep.read().decode("utf-8"))
 
-    def json(self, systeme, consigne, taille="llm_petit", essais=3, schema=None):
+    def graine_appel(self, cle):
+        """Graine d'un appel, stable pour une meme graine de run et une meme cle."""
+        if self.graine is None or cle is None:
+            return None
+        return int(hashlib.sha256(f"{self.graine}:{cle}".encode()).hexdigest()[:8], 16)
+
+    def json(self, systeme, consigne, taille="llm_petit", essais=3, schema=None, cle=None):
         """Appelle le modele de la taille demandee. Renvoie un dict, ou None.
 
         schema : un schema JSON que la reponse doit respecter (sortie
@@ -106,9 +120,13 @@ class ClientLLM:
                                       "json_schema": {"name": "reponse", "strict": True,
                                                       "schema": schema}}
                                      if schema else {"type": "json_object"})}
+        graine = self.graine_appel(cle)
+        if graine is not None:
+            corps["seed"] = graine
         attente = self.pause
         mesure = {"taille": taille, "modele": self.modeles[taille], "latence_s": None,
-                  "attente_s": 0.0, "essais": 0, "tokens_entree": 0, "tokens_sortie": 0}
+                  "attente_s": 0.0, "essais": 0, "tokens_entree": 0, "tokens_sortie": 0,
+                  "graine": graine}
         self.derniere_mesure = mesure
         self.dernier_brut = None
 

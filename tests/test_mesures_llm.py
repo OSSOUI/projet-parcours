@@ -119,6 +119,25 @@ lignes = M.echantillon_f2(evs + rec, os.path.join(RACINE, "corpus"))
 verifier("une ligne par decision tiree, colonne de jugement vide",
          len(lignes) == 1 and lignes[0]["pertinent (oui / en partie / non)"] == "")
 
+print("\nConfusion et garde-fou (point zero repete)")
+t, f = "tendance", "suivre_la_foule"
+avant = ([{"agent": "a", "modele": "petit", "categorie": c} for c in (t, f, t, f)]
+         + [{"agent": "b", "modele": "petit", "categorie": c} for c in (t, "ironie")])
+apres = ([{"agent": "a", "modele": "petit", "categorie": c} for c in (f, f, f, f)]
+         + [{"agent": "b", "modele": "petit", "categorie": c} for c in (f, "ironie")])
+c = M.confusion(avant)
+verifier("a : 6 paires dont 4 discordantes ; b : aucune paire",
+         c["paires"] == 6 and c["discordantes"] == 4 and c["agents_mixtes"] == 1, c)
+verifier("tout sous suivre_la_foule : confusion nulle", M.confusion(apres)["taux"] == 0)
+g_av, g_ap = M.garde_fou(avant), M.garde_fou(apres)
+verifier("le garde-fou compte les sens employes",
+         g_av["petit"]["sens_utilises"] == 3 and g_ap["petit"]["sens_utilises"] == 2)
+verifier("plus aucun tendance : effondrement signale",
+         g_ap["petit"]["effondrement"] == [t] and g_av["petit"]["effondrement"] == [])
+alertes = M.alertes_garde_fou(g_av, g_ap)
+verifier("l'alerte accompagne une confusion nulle",
+         any("plus aucun tendance" in a for a in alertes), alertes)
+
 print()
 if echecs:
     print(f"{len(echecs)} verification(s) en echec : {echecs}")

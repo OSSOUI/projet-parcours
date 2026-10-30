@@ -69,26 +69,66 @@ veux le mettre, alors "porte" vaut true. Si tu ecris que tu le refuses, alors
 N'utilise aucune phrase de cette consigne dans tes reponses : ecris les tiennes.
 Reponds uniquement par ton objet JSON, sans aucun texte avant ni apres."""
 
+# Definitions "nettes" des six sens, testees le 30 octobre au point zero
+# repete (sens_a_priori.py) et NON RETENUES : le petit modele n'y repondait
+# plus jamais tendance et rangeait tout sous suivre_la_foule, dont "sans que ca
+# veuille dire grand-chose" recouvre aucun_sens. Les agents gardent les
+# definitions courtes de contrat.SENS ; celles-ci ne servent que si on les
+# demande (--definitions nettes), pour reproduire le test et le run
+# frontiere_nettes_100_direct. Les noms ne changent pas, donc le contrat non plus.
+DEFINITIONS_SENS = {
+    "cercle_creatif": "c'est le signe de l'atelier de design et de son entourage : "
+                      "le porter dit que je fais partie du cercle créatif.",
+    "tendance": "le ruban est stylé, le porter dit que je suis dans le coup.",
+    "suivre_la_foule": "on le porte parce que tout le monde le porte, sans que ça "
+                       "veuille dire grand-chose.",
+    "ringard": "le ruban a fait son temps : le porter aujourd'hui, c'est être dépassé.",
+    "ironie": "on le porte pour s'en moquer : le geste tourne la mode en dérision.",
+    "aucun_sens": "le ruban ne veut rien dire : ce n'est ni un signe ni une mode, "
+                  "juste un bout de tissu.",
+}
+DEFINITIONS = {"courtes": SENS, "nettes": DEFINITIONS_SENS}
+
+
+def lister_sens(definitions):
+    """Le bloc des six sens, tel que le prompt et le schema le donnent."""
+    return "\n".join(f"- {cle} : {texte}" for cle, texte in definitions.items())
+
+
 # Sortie structuree (option --sortie-structuree) : le schema est donne au
 # fournisseur, qui contraint la generation (Ollama le fait), puis la reponse
 # est verifiee contre le MEME schema par valider(), en bibliotheque standard :
 # le moteur ne depend d'aucun paquet (ni pydantic, ni LangChain).
+# Ollama traduit le schema en grammaire et ne montre pas la description au
+# modele : le prompt liste donc les memes definitions que le schema.
 CHAMPS_TEXTE = ("sens", "publication", "destinataire", "raison")
-SCHEMA_DECISION = {
-    "type": "object",
-    "properties": {"porte": {"type": "boolean"},
-                   "categorie": {"type": "string", "enum": list(SENS)},
-                   **{c: {"type": "string"} for c in CHAMPS_TEXTE}},
-    "required": ["porte", "categorie", *CHAMPS_TEXTE],
-    "additionalProperties": False,
-}
-SCHEMA_REPLIQUE = {
-    "type": "object",
-    "properties": {"texte": {"type": "string"},
-                   "categorie": {"type": "string", "enum": list(SENS)}},
-    "required": ["texte", "categorie"],
-    "additionalProperties": False,
-}
+
+
+def schema_decision(definitions=SENS):
+    return {
+        "type": "object",
+        "properties": {"porte": {"type": "boolean"},
+                       "categorie": {"type": "string", "enum": list(SENS),
+                                     "description": lister_sens(definitions)},
+                       **{c: {"type": "string"} for c in CHAMPS_TEXTE}},
+        "required": ["porte", "categorie", *CHAMPS_TEXTE],
+        "additionalProperties": False,
+    }
+
+
+def schema_replique(definitions=SENS):
+    return {
+        "type": "object",
+        "properties": {"texte": {"type": "string"},
+                       "categorie": {"type": "string", "enum": list(SENS),
+                                     "description": lister_sens(definitions)}},
+        "required": ["texte", "categorie"],
+        "additionalProperties": False,
+    }
+
+
+SCHEMA_DECISION = schema_decision()
+SCHEMA_REPLIQUE = schema_replique()
 _TYPES = {"object": dict, "string": str, "boolean": bool}
 
 
@@ -346,12 +386,16 @@ def requete_de(agent):
 class DecideurLLM:
     """Un moteur par taille de modele : llm_grand ou llm_petit (exigence A5)."""
 
-    def __init__(self, client, taille, base=None, k=3, structure=False):
+    def __init__(self, client, taille, base=None, k=3, structure=False, definitions="courtes"):
         self.client = client
         self.taille = taille
         self.base = base      # base de connaissances, exigence F1
         self.k = k
         self.structure = structure   # sortie structuree : schema JSON impose et verifie
+        self.definitions = DEFINITIONS[definitions]
+        courtes = definitions == "courtes"
+        self.schema_decision = SCHEMA_DECISION if courtes else schema_decision(self.definitions)
+        self.schema_replique = SCHEMA_REPLIQUE if courtes else schema_replique(self.definitions)
 
     def _situation(self, agent):
         """Ce que l'agent sait de SA propre histoire avec le ruban.
@@ -423,7 +467,7 @@ class DecideurLLM:
             ) or "- (rien de nouveau)",
             souvenirs=souvenirs(agent, choisis=choisis),
             etat="portes" if agent["porte"] else "ne portes pas",
-            categories="\n".join(f"- {cle} : {texte}" for cle, texte in SENS.items()),
+            categories=lister_sens(self.definitions),
             voisins=(" Dans ton groupe il y a : "
                      + ", ".join(a["nom"] for a in pairs[:5]) + ".")
                     if pairs else "",
@@ -434,13 +478,14 @@ class DecideurLLM:
         requete, documents = self._recuperer(agent, t_sim)
         consigne, perception = self._consigne(agent, monde, t_sim, horloge_lisible, documents)
         reponse = self.client.json(SYSTEME, consigne, self.taille,
-                                   **({"schema": SCHEMA_DECISION} if self.structure else {}))
+                                   **self._options(self.schema_decision,
+                                                   f"decision:{agent['id']}:{t_sim}"))
         mesure = dict(self.client.derniere_mesure)
         brut = getattr(self.client, "dernier_brut", None)
         perception["reponse_brute"] = None if brut is None else str(brut)[:4000]
         nature, details = detecter_derive(reponse)
         if nature is None and self.structure:
-            ecarts = valider(reponse, SCHEMA_DECISION)
+            ecarts = valider(reponse, self.schema_decision)
             if ecarts:
                 nature, details = "schema_non_respecte", {"ecarts": ecarts[:5]}
         if isinstance(reponse, dict) and "_categorie_brute" in reponse:
@@ -470,6 +515,16 @@ class DecideurLLM:
                 "perception": perception,
                 "recuperation": {"requete": requete, "resultats": documents}}
 
+    def _options(self, schema, cle):
+        """Options d'appel : schema si sortie structuree, cle de graine si le
+        client a une graine. Rien sinon, pour les clients factices des tests."""
+        options = {}
+        if self.structure:
+            options["schema"] = schema
+        if getattr(self.client, "graine", None) is not None:
+            options["cle"] = cle
+        return options
+
     def repondre(self, agent, autre, echanges, horloge_lisible=""):
         """Une replique de conversation privee (A2). Renvoie un dict :
         texte, categorie, valide, incident, mesure."""
@@ -479,14 +534,16 @@ class DecideurLLM:
             etat="portes" if agent["porte"] else "ne portes pas",
             sens=agent.get("sens") or SENS[agent["categorie"]], autre=autre["nom"],
             echanges="\n".join(f"- {qui} : {texte}" for qui, texte in echanges),
-            categories="\n".join(f"- {cle} : {texte}" for cle, texte in SENS.items()),
+            categories=lister_sens(self.definitions),
         )
         reponse = self.client.json(SYSTEME, consigne, self.taille,
-                                   **({"schema": SCHEMA_REPLIQUE} if self.structure else {}))
+                                   **self._options(self.schema_replique,
+                                                   f"replique:{agent['id']}:{autre['id']}:"
+                                                   f"{horloge_lisible}:{len(echanges)}"))
         mesure = dict(self.client.derniere_mesure)
         nature, details = derive_replique(reponse)
         if nature is None and self.structure:
-            ecarts = valider(reponse, SCHEMA_REPLIQUE)
+            ecarts = valider(reponse, self.schema_replique)
             if ecarts:
                 nature, details = "schema_non_respecte", {"ecarts": ecarts[:5]}
         if nature:
