@@ -23,14 +23,14 @@ modele dans les quatre variantes : les ecarts se lisent agent par agent. Les
 agents a regles n'ont pas de modele : ils repondent avec llm_petit. La
 temperature est celle des runs (0,9) : c'est un tirage, pas une verite.
 
-    python3 sens_a_priori.py                          # graine 100, les 4 variantes
+    python3 sens_a_priori.py --tirages 5              # graine 100, 4 variantes, 5 tirages
     python3 sens_a_priori.py --variantes nu profil    # une partie seulement
     python3 sens_a_priori.py --graine 101
 
 Ecrit resultats/sens_a_priori_g<graine>_<variante>.json (reponses, prompts, resume).
 
 Frontiere entre tendance et suivre_la_foule (decidee le 29 octobre). Le meme
-prompt est repose a chaque personnage (--repetitions), avec deux jeux de
+prompt est repose a chaque personnage (--tirages, alias --repetitions), avec deux jeux de
 definitions des six sens, en alternance appel par appel :
 
   courtes  celles des runs (contrat.SENS)
@@ -41,7 +41,7 @@ definitions que le prompt : d'une condition a l'autre, seules les definitions
 changent. La confusion se mesure chez un meme agent (mesures_llm.confusion) :
 part des paires de ses tirages tendance / suivre_la_foule qui se contredisent.
 
-    python3 sens_a_priori.py --variantes profil --repetitions 10 \\
+    python3 sens_a_priori.py --variantes profil --tirages 10 \\
         --definitions courtes nettes --sortie-structuree       # 2 x 200 appels
     python3 sens_a_priori.py --comparer AVANT.json APRES.json  # aucun appel
 
@@ -212,10 +212,11 @@ def main():
     p.add_argument("--agents", type=int, default=20)
     p.add_argument("--config", default=os.path.join(RACINE, "config", "tessaline.json"))
     p.add_argument("--variantes", nargs="+", choices=VARIANTES, default=list(VARIANTES))
+    p.add_argument("--tirages", "--repetitions", type=int, default=1, dest="tirages",
+                   help="tirages par agent et par variante, chacun avec sa graine LLM : "
+                        "a temperature 0,9, un seul tirage est trop bruite")
     p.add_argument("--fournisseur", default="ollama")
     p.add_argument("--passages", type=int, default=3)
-    p.add_argument("--repetitions", type=int, default=1,
-                   help="tirages par personnage et par jeu de definitions")
     p.add_argument("--definitions", nargs="+", choices=list(DEFINITIONS), default=["courtes"],
                    help="courtes : celles des runs ; nettes : celles de la sortie structuree")
     p.add_argument("--sortie-structuree", action="store_true",
@@ -239,20 +240,21 @@ def main():
             print(f"  ecrit dans {args.ecrire}")
         return
 
-    repete = (args.repetitions > 1 or args.definitions != ["courtes"]
-              or args.sortie_structuree)
+    frontiere = args.definitions != ["courtes"] or args.sortie_structuree
     agents, config = population.construire(args.config, args.agents, args.graine)
     charger_env(os.path.join(RACINE, ".env"))
     modeles = config["modeles"][args.fournisseur]
     client = ClientLLM(args.fournisseur, modeles)
+    clients = [ClientLLM(args.fournisseur, modeles, graine=f"apriori:{args.graine}:{t}")
+               for t in range(args.tirages)]
     t_sim = 1440   # moment de la premiere decision dans un run synchrone
     print(f"Sens a priori, graine {args.graine}, {len(agents)} personnages, "
           f"temperature {client.temperature}, variantes {' '.join(args.variantes)}")
-    if repete:
-        print(f"  {args.repetitions} tirage(s) par personnage, definitions "
+    if args.tirages > 1 or frontiere:
+        print(f"  {args.tirages} tirage(s) par personnage, definitions "
               f"{' et '.join(args.definitions)}"
               + (", schema envoye" if args.sortie_structuree else "")
-              + f" : {args.repetitions * len(agents) * len(args.definitions)} appels par variante")
+              + f" : {args.tirages * len(agents) * len(args.definitions)} appels par variante")
     os.makedirs(os.path.join(RACINE, "resultats"), exist_ok=True)
     for variante in args.variantes:
         base = Base(os.path.join(RACINE, CORPUS[variante])) if variante in CORPUS else None
@@ -260,22 +262,26 @@ def main():
         reponses = {d: [] for d in args.definitions}
         # Les conditions alternent appel par appel : une derive de la machine
         # ou du modele en cours de serie touche les deux de la meme facon.
-        for tirage in range(args.repetitions):
+        for tirage, client_t in enumerate(clients):
             for a in agents:
                 taille = a["moteur"] if a["moteur"] != "regles" else "llm_petit"
-                decideur = DecideurLLM(client, taille, base=base, k=args.passages)
+                decideur = DecideurLLM(client_t, taille, base=base, k=args.passages)
                 requete, documents = decideur._recuperer(a, t_sim)
                 for d in args.definitions:
                     consigne = consigne_neutre(decideur, a, t_sim, documents,
                                                nu=variante == "nu", definitions=DEFINITIONS[d])
                     schema = schema_decision(DEFINITIONS[d]) if args.sortie_structuree else None
-                    rep = client.json(SYSTEME, consigne, taille,
-                                      **({"schema": schema} if schema else {}))
+                    # Meme cle pour les deux jeux de definitions : a un tirage
+                    # donne, les deux conditions recoivent la meme graine LLM.
+                    rep = client_t.json(SYSTEME, consigne, taille, cle=f"{variante}:{a['id']}",
+                                        **({"schema": schema} if schema else {}))
                     nature, _ = detecter_derive(rep)
                     if nature is None and schema and valider(rep, schema):
                         nature = "schema_non_respecte"
                     ok = nature is None
-                    r = {"agent": a["id"], "profil": a["profil"], "groupe": a["groupe"],
+                    r = {"tirage": tirage,
+                         "graine_llm": client_t.graine_appel(f"{variante}:{a['id']}"),
+                         "agent": a["id"], "profil": a["profil"], "groupe": a["groupe"],
                          "moteur_du_run": a["moteur"], "taille": taille, "modele": modeles[taille],
                          "porte_avant": a["porte"], "incident": nature,
                          "porte": bool(rep["porte"]) if ok else None,
@@ -284,16 +290,17 @@ def main():
                          "raison": str(rep.get("raison", ""))[:300] if ok else "",
                          "documents": [f"{x['id']}#{x['numero']}" for x in documents],
                          "requete": requete, "consigne": consigne}
-                    if repete:
-                        r.update(tirage=tirage, definitions=d)
+                    if frontiere:
+                        r["definitions"] = d
                     reponses[d].append(r)
                     print(f"  {a['nom']:9s} {a['profil']:17s} {modeles[taille]:12s} "
-                          + (f"t{tirage + 1} {d:7s} " if repete else "")
+                          + (f"t{tirage + 1} " if args.tirages > 1 else "")
+                          + (f"{d:7s} " if frontiere else "")
                           + (f"{r['categorie']:16s} {'porte' if r['porte'] else '-':6s} "
                              f"{r['sens'][:60]}" if ok else f"INCIDENT {nature}"), flush=True)
         for d in args.definitions:
             resume = resumer(reponses[d])
-            if repete:
+            if args.tirages > 1:
                 resume["confusion"] = M.confusion(reponses[d])
                 resume["confusion_foule_aucun"] = M.confusion(reponses[d], "suivre_la_foule",
                                                               "aucun_sens")
@@ -302,19 +309,21 @@ def main():
                   f"entropie {resume['entropie']}")
             for m, c in resume["par_modele"].items():
                 print(f"    {m:12s} {c}")
-            suffixe = (f"_r{args.repetitions}_{d}" + ("_schema" if args.sortie_structuree else "")
-                       if repete else "")
+            # _t<n> : tirages du 29 octobre ; _r<n>_<definitions> : test de la
+            # frontiere du 30 octobre. Les noms des fichiers deja ecrits restent.
+            suffixe = (f"_r{args.tirages}_{d}" + ("_schema" if args.sortie_structuree else "")
+                       if frontiere else f"_t{args.tirages}" if args.tirages > 1 else "")
             sortie = os.path.join(RACINE, "resultats",
                                   f"sens_a_priori_g{args.graine}_{variante}{suffixe}.json")
             with open(sortie, "w", encoding="utf-8") as f:
                 json.dump({"date": datetime.now().isoformat(timespec="seconds"),
-                           "graine": args.graine, "variante": variante,
+                           "graine": args.graine, "variante": variante, "tirages": args.tirages,
                            "corpus": CORPUS.get(variante), "agents": len(agents),
                            "fournisseur": args.fournisseur, "modeles": modeles,
                            "temperature": client.temperature, "t_sim": t_sim, "systeme": SYSTEME,
-                           **({"repetitions": args.repetitions, "definitions": d,
+                           **({"repetitions": args.tirages, "definitions": d,
                                "texte_definitions": DEFINITIONS[d],
-                               "schema": args.sortie_structuree} if repete else {}),
+                               "schema": args.sortie_structuree} if frontiere else {}),
                            "resume": resume, "reponses": reponses[d]},
                           f, ensure_ascii=False, indent=1)
             print(f"  ecrit dans {sortie}")
@@ -322,12 +331,12 @@ def main():
             comp = comparer(reponses["courtes"], reponses["nettes"])
             afficher_comparaison(comp)
             sortie = os.path.join(RACINE, "resultats", f"frontiere_g{args.graine}_{variante}"
-                                  f"_r{args.repetitions}"
+                                  f"_r{args.tirages}"
                                   + ("_schema" if args.sortie_structuree else "") + ".json")
             with open(sortie, "w", encoding="utf-8") as f:
                 json.dump({"date": datetime.now().isoformat(timespec="seconds"),
                            "graine": args.graine, "variante": variante,
-                           "repetitions": args.repetitions, "schema": args.sortie_structuree,
+                           "repetitions": args.tirages, "schema": args.sortie_structuree,
                            **comp}, f, ensure_ascii=False, indent=1)
             print(f"  ecrit dans {sortie}")
 

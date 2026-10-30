@@ -478,13 +478,14 @@ class DecideurLLM:
         requete, documents = self._recuperer(agent, t_sim)
         consigne, perception = self._consigne(agent, monde, t_sim, horloge_lisible, documents)
         reponse = self.client.json(SYSTEME, consigne, self.taille,
-                                   **({"schema": self.schema_decision} if self.structure else {}))
+                                   **self._options(self.schema_decision,
+                                                   f"decision:{agent['id']}:{t_sim}"))
         mesure = dict(self.client.derniere_mesure)
         brut = getattr(self.client, "dernier_brut", None)
         perception["reponse_brute"] = None if brut is None else str(brut)[:4000]
         nature, details = detecter_derive(reponse)
         if nature is None and self.structure:
-            ecarts = valider(reponse, SCHEMA_DECISION)
+            ecarts = valider(reponse, self.schema_decision)
             if ecarts:
                 nature, details = "schema_non_respecte", {"ecarts": ecarts[:5]}
         if isinstance(reponse, dict) and "_categorie_brute" in reponse:
@@ -514,6 +515,16 @@ class DecideurLLM:
                 "perception": perception,
                 "recuperation": {"requete": requete, "resultats": documents}}
 
+    def _options(self, schema, cle):
+        """Options d'appel : schema si sortie structuree, cle de graine si le
+        client a une graine. Rien sinon, pour les clients factices des tests."""
+        options = {}
+        if self.structure:
+            options["schema"] = schema
+        if getattr(self.client, "graine", None) is not None:
+            options["cle"] = cle
+        return options
+
     def repondre(self, agent, autre, echanges, horloge_lisible=""):
         """Une replique de conversation privee (A2). Renvoie un dict :
         texte, categorie, valide, incident, mesure."""
@@ -526,11 +537,13 @@ class DecideurLLM:
             categories=lister_sens(self.definitions),
         )
         reponse = self.client.json(SYSTEME, consigne, self.taille,
-                                   **({"schema": self.schema_replique} if self.structure else {}))
+                                   **self._options(self.schema_replique,
+                                                   f"replique:{agent['id']}:{autre['id']}:"
+                                                   f"{horloge_lisible}:{len(echanges)}"))
         mesure = dict(self.client.derniere_mesure)
         nature, details = derive_replique(reponse)
         if nature is None and self.structure:
-            ecarts = valider(reponse, SCHEMA_REPLIQUE)
+            ecarts = valider(reponse, self.schema_replique)
             if ecarts:
                 nature, details = "schema_non_respecte", {"ecarts": ecarts[:5]}
         if nature:
