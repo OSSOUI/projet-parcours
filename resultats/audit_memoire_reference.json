@@ -1,0 +1,152 @@
+[
+ {
+  "run": "exp_reference_llm_reference_01",
+  "decisions_llm": 212,
+  "reconstruction_exacte": 1.0,
+  "disponible": {
+   "souvenirs_de_decision_moyen": 6.3,
+   "echanges_moyen": 0.69,
+   "part_au_plafond_decisions": 0.623,
+   "part_au_plafond_echanges": 0.0
+  },
+  "injecte": {
+   "souvenirs_par_prompt_moyen": 3.79,
+   "par_genre": {
+    "decision": 713,
+    "echange": 91
+   },
+   "part_prompts_avec_un_echange": 0.311,
+   "age_moyen_jours": 3.32,
+   "age_max_jours": 22.0,
+   "raisons_de_decision_qui_nomment_un_sens": 0.485,
+   "sens_explicite_de_la_veille": 0
+  },
+  "echanges": {
+   "recus_distincts": 14,
+   "injectes_au_moins_une_fois": 14,
+   "jamais_injectes": 0
+  },
+  "persistance_du_sens_individuel": 0.745,
+  "paires_de_decisions": 196
+ },
+ {
+  "run": "exp_reference_llm_reference_02",
+  "decisions_llm": 262,
+  "reconstruction_exacte": 1.0,
+  "disponible": {
+   "souvenirs_de_decision_moyen": 6.35,
+   "echanges_moyen": 0.27,
+   "part_au_plafond_decisions": 0.634,
+   "part_au_plafond_echanges": 0.0
+  },
+  "injecte": {
+   "souvenirs_par_prompt_moyen": 3.71,
+   "par_genre": {
+    "decision": 908,
+    "echange": 63
+   },
+   "part_prompts_avec_un_echange": 0.21,
+   "age_moyen_jours": 3.03,
+   "age_max_jours": 21.0,
+   "raisons_de_decision_qui_nomment_un_sens": 0.428,
+   "sens_explicite_de_la_veille": 0
+  },
+  "echanges": {
+   "recus_distincts": 8,
+   "injectes_au_moins_une_fois": 8,
+   "jamais_injectes": 0
+  },
+  "persistance_du_sens_individuel": 0.725,
+  "paires_de_decisions": 233
+ },
+ {
+  "run": "exp_reference_llm_reference_03",
+  "decisions_llm": 287,
+  "reconstruction_exacte": 1.0,
+  "disponible": {
+   "souvenirs_de_decision_moyen": 6.37,
+   "echanges_moyen": 0.27,
+   "part_au_plafond_decisions": 0.638,
+   "part_au_plafond_echanges": 0.0
+  },
+  "injecte": {
+   "souvenirs_par_prompt_moyen": 3.74,
+   "par_genre": {
+    "decision": 1000,
+    "echange": 72
+   },
+   "part_prompts_avec_un_echange": 0.237,
+   "age_moyen_jours": 3.09,
+   "age_max_jours": 20.0,
+   "raisons_de_decision_qui_nomment_un_sens": 0.455,
+   "sens_explicite_de_la_veille": 0
+  },
+  "echanges": {
+   "recus_distincts": 7,
+   "injectes_au_moins_une_fois": 7,
+   "jamais_injectes": 0
+  },
+  "persistance_du_sens_individuel": 0.724,
+  "paires_de_decisions": 257
+ },
+ {
+  "run": "exp_reference_llm_reference_04",
+  "decisions_llm": 262,
+  "reconstruction_exacte": 1.0,
+  "disponible": {
+   "souvenirs_de_decision_moyen": 6.35,
+   "echanges_moyen": 0.41,
+   "part_au_plafond_decisions": 0.634,
+   "part_au_plafond_echanges": 0.0
+  },
+  "injecte": {
+   "souvenirs_par_prompt_moyen": 3.84,
+   "par_genre": {
+    "decision": 907,
+    "echange": 100
+   },
+   "part_prompts_avec_un_echange": 0.359,
+   "age_moyen_jours": 3.32,
+   "age_max_jours": 22.0,
+   "raisons_de_decision_qui_nomment_un_sens": 0.483,
+   "sens_explicite_de_la_veille": 0
+  },
+  "echanges": {
+   "recus_distincts": 10,
+   "injectes_au_moins_une_fois": 10,
+   "jamais_injectes": 0
+  },
+  "persistance_du_sens_individuel": 0.692,
+  "paires_de_decisions": 237
+ },
+ {
+  "run": "exp_reference_llm_reference_05",
+  "decisions_llm": 287,
+  "reconstruction_exacte": 1.0,
+  "disponible": {
+   "souvenirs_de_decision_moyen": 6.37,
+   "echanges_moyen": 0.45,
+   "part_au_plafond_decisions": 0.638,
+   "part_au_plafond_echanges": 0.0
+  },
+  "injecte": {
+   "souvenirs_par_prompt_moyen": 3.75,
+   "par_genre": {
+    "decision": 974,
+    "echange": 101
+   },
+   "part_prompts_avec_un_echange": 0.282,
+   "age_moyen_jours": 2.99,
+   "age_max_jours": 20.0,
+   "raisons_de_decision_qui_nomment_un_sens": 0.548,
+   "sens_explicite_de_la_veille": 0
+  },
+  "echanges": {
+   "recus_distincts": 14,
+   "injectes_au_moins_une_fois": 14,
+   "jamais_injectes": 0
+  },
+  "persistance_du_sens_individuel": 0.736,
+  "paires_de_decisions": 261
+ }
+]

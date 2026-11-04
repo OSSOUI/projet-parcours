@@ -1,0 +1,14 @@
+{
+ "date": "2026-11-04T06:59:03",
+ "fichiers": {
+  "resultats/PROTOCOLE_MEMOIRE.md": "e01e6f602b7cf85ee3fc8ea1fe60e8efacff8ec028d1ca8be0aa6b2bdd2fb985",
+  "experience_memoire.py": "90fe82f73a6a4927fb97f9039e5a2062384203dd8d81d536a9fe28ab9487a441"
+ },
+ "references_A": {
+  "100": "7111ca4dcf02465fcfad806c9d6ea9244c557f460dd34f31ecd372bb1f4cab37",
+  "101": "e87f038abe5293c54754a0b4a2eb4cd3eeb71980ca1f8c8d7dc2af88ea950368",
+  "102": "9d22f907b08ba4020ee265e149823eb788f23d3a1726cb5dc9b59bb7befab182",
+  "103": "fa1ce36a93120e701412eae03e2e6cf2792d88cb8854b2c5d2159fbf7a691b6f",
+  "104": "4474c6042250028ca658f37e59fb6e2a82edaa3beb2cf3db3b5d2c9b3b50a6f3"
+ }
+}
