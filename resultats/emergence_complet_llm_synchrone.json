@@ -1,0 +1,92 @@
+{
+ "point_zero": "resultats/sens_a_priori_g100_complet_t5.json",
+ "runs": [
+  {
+   "run": "exp_complet_llm_synchrone_01",
+   "graine": 100,
+   "agents_llm": 10,
+   "releves": 26,
+   "incidents": 9,
+   "persistance": 0.7155555555555555,
+   "seuil_persistance": {
+    "six_sens": {
+     "accord_max": 0.6666666666666666,
+     "exprimes_min": 6,
+     "a0": 0.4314547619047619,
+     "seuil": 0.1935452380952381,
+     "delta_a": 0.0685452380952381,
+     "fenetre_debut": 1,
+     "emergent": false
+    },
+    "regroupe": {
+     "accord_max": 0.9,
+     "exprimes_min": 6,
+     "a0": 0.46718809523809524,
+     "seuil": 0.1994785714285714,
+     "delta_a": 0.1994785714285714,
+     "fenetre_debut": 6,
+     "emergent": false
+    }
+   },
+   "ombres": {}
+  },
+  {
+   "run": "exp_complet_llm_synchrone_02",
+   "graine": 101,
+   "agents_llm": 12,
+   "releves": 26,
+   "incidents": 9,
+   "persistance": 0.8134328358208955,
+   "seuil_persistance": {
+    "six_sens": {
+     "accord_max": 0.7272727272727273,
+     "exprimes_min": 7,
+     "a0": 0.44493080808080804,
+     "seuil": 0.2550691919191919,
+     "delta_a": 0.19143282828282832,
+     "fenetre_debut": 14,
+     "emergent": false
+    },
+    "regroupe": {
+     "accord_max": 0.8333333333333334,
+     "exprimes_min": 7,
+     "a0": 0.48214090909090906,
+     "seuil": 0.2178590909090909,
+     "delta_a": 0.26785909090909094,
+     "fenetre_debut": 3,
+     "emergent": true
+    }
+   },
+   "ombres": {}
+  },
+  {
+   "run": "exp_complet_llm_synchrone_03",
+   "graine": 102,
+   "agents_llm": 13,
+   "releves": 26,
+   "incidents": 15,
+   "persistance": 0.7366548042704626,
+   "seuil_persistance": {
+    "six_sens": {
+     "accord_max": 0.75,
+     "exprimes_min": 9,
+     "a0": 0.4584574592074592,
+     "seuil": 0.24154254079254078,
+     "delta_a": 0.15692715617715625,
+     "fenetre_debut": 18,
+     "emergent": false
+    },
+    "regroupe": {
+     "accord_max": 0.75,
+     "exprimes_min": 9,
+     "a0": 0.4936787878787879,
+     "seuil": 0.20632121212121207,
+     "delta_a": 0.12170582750582754,
+     "fenetre_debut": 4,
+     "emergent": false
+    }
+   },
+   "ombres": {}
+  }
+ ]
+}

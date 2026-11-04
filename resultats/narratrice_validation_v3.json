@@ -1,0 +1,48 @@
+{
+ "narrations": 80,
+ "statuts": {
+  "partiel": 62,
+  "valide": 18
+ },
+ "types": {
+  "mesure": 112,
+  "interpretation": 95
+ },
+ "rejets": {
+  "nombre dans une lecture": 49,
+  "source hors sujet (sens du ruban)": 11,
+  "interpretation sans conditionnel": 7,
+  "source hors sujet (port du ruban)": 3,
+  "hausse affirmee sans fait de variation cite": 2,
+  "quantificateur \"la plupart\" contraire aux faits cites": 1,
+  "quantificateur \"la plupart\" sans proportion citee": 1
+ },
+ "factuelles": 112,
+ "factuelles_verifiees": 112,
+ "sources_citees": 113,
+ "sources_invalides": 0,
+ "tokens": 102011,
+ "par_fichier": {
+  "n6_reference_03.narration.jsonl": {
+   "valide": 5,
+   "partiel": 20
+  },
+  "n6_reference_04.narration.jsonl": {
+   "partiel": 17,
+   "valide": 8
+  },
+  "n6_reference_05.narration.jsonl": {
+   "partiel": 20,
+   "valide": 5
+  },
+  "n6_llm_suivi.narration.jsonl": {
+   "partiel": 5
+  }
+ },
+ "latence_s": {
+  "n": 80,
+  "mediane": 7.145,
+  "max": 23.137
+ },
+ "part_factuelles_verifiees": 1.0
+}

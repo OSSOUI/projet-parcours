@@ -1,0 +1,49 @@
+{
+ "narrations": 60,
+ "statuts": {
+  "valide": 36,
+  "partiel": 24
+ },
+ "types": {
+  "observation": 162,
+  "mesure": 66,
+  "incertitude": 1,
+  "interpretation": 1
+ },
+ "rejets": {
+  "intention attribuee dans un constat": 15,
+  "nombre non conforme": 10,
+  "retrait de Lea non sourcee": 2,
+  "mesure sans nombre": 2,
+  "hausse affirmee sans fait de variation cite": 1,
+  "retrait de Adam non sourcee": 1
+ },
+ "factuelles": 228,
+ "factuelles_verifiees": 198,
+ "sources_citees": 314,
+ "sources_invalides": 0,
+ "tokens": 69196,
+ "par_fichier": {
+  "n4_regles_avec.narration.jsonl": {
+   "valide": 22,
+   "partiel": 3
+  },
+  "n4_llm_suivi.narration.jsonl": {
+   "valide": 3,
+   "partiel": 2
+  },
+  "c1_llm_01.narration.jsonl": {
+   "partiel": 5
+  },
+  "n4_reference_01.narration.jsonl": {
+   "partiel": 14,
+   "valide": 11
+  }
+ },
+ "latence_s": {
+  "n": 60,
+  "mediane": 9.8,
+  "max": 25.231
+ },
+ "part_factuelles_verifiees": 0.868
+}

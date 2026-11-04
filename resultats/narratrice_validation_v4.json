@@ -1,0 +1,51 @@
+{
+ "narrations": 100,
+ "statuts": {
+  "partiel": 80,
+  "valide": 20
+ },
+ "types": {
+  "mesure": 130,
+  "interpretation": 115,
+  "observation": 3
+ },
+ "rejets": {
+  "nombre dans une lecture": 51,
+  "source hors sujet (sens du ruban)": 14,
+  "interpretation sans conditionnel": 13,
+  "cause suggeree dans une interpretation": 3,
+  "hausse contraire a la variation mesuree": 3,
+  "quantificateur \"la plupart\" contraire aux faits cites": 3,
+  "source hors sujet (port du ruban)": 2,
+  "baisse affirmee sans fait de variation cite": 1
+ },
+ "factuelles": 133,
+ "factuelles_verifiees": 133,
+ "sources_citees": 148,
+ "sources_invalides": 0,
+ "tokens": 125699,
+ "par_fichier": {
+  "n7_complet_01.narration.jsonl": {
+   "valide": 5,
+   "partiel": 20
+  },
+  "n7_complet_02.narration.jsonl": {
+   "valide": 5,
+   "partiel": 20
+  },
+  "n7_complet_03.narration.jsonl": {
+   "partiel": 21,
+   "valide": 4
+  },
+  "n7_complet_04.narration.jsonl": {
+   "partiel": 19,
+   "valide": 6
+  }
+ },
+ "latence_s": {
+  "n": 100,
+  "mediane": 7.089,
+  "max": 12.772
+ },
+ "part_factuelles_verifiees": 1.0
+}

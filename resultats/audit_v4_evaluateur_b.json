@@ -1,0 +1,1066 @@
+[
+ {
+  "id": "exp_complet_llm_synchrone_01/N1/0",
+  "fenetre": "J01 00:00 -> J02 00:00",
+  "texte": "Taux d'adoption au releve de J02 00:00 : 30 % (6 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_01#39 releve J02 00:00 adoption 0.30 porteurs 6 sens {'cercle_creatif': 4, 'tendance': 1, 'suivre_la_foule': 1, 'ringard': 0, 'ironie': 3, 'aucun_sens': 11}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_01/N2/0",
+  "fenetre": "J02 00:00 -> J03 00:00",
+  "texte": "Taux d'adoption au releve de J03 00:00 : 45 % (9 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_01#80 releve J03 00:00 adoption 0.45 porteurs 9 sens {'cercle_creatif': 2, 'tendance': 4, 'suivre_la_foule': 1, 'ringard': 0, 'ironie': 6, 'aucun_sens': 7}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_01/N3/0",
+  "fenetre": "J03 00:00 -> J04 00:00",
+  "texte": "Taux d'adoption au releve de J04 00:00 : 60 % (12 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_01#117 releve J04 00:00 adoption 0.60 porteurs 12 sens {'cercle_creatif': 2, 'tendance': 7, 'suivre_la_foule': 1, 'ringard': 0, 'ironie': 5, 'aucun_sens': 5}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_01/N3/2",
+  "fenetre": "J03 00:00 -> J04 00:00",
+  "texte": "Sens le plus donne au ruban au releve de J04 00:00 : tendance (7 etudiants sur 20, agents a regles compris).",
+  "nature": "sens",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_01#117 releve J04 00:00 adoption 0.60 porteurs 12 sens {'cercle_creatif': 2, 'tendance': 7, 'suivre_la_foule': 1, 'ringard': 0, 'ironie': 5, 'aucun_sens': 5}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_01/N4/0",
+  "fenetre": "J04 00:00 -> J05 00:00",
+  "texte": "Taux d'adoption au releve de J05 00:00 : 75 % (15 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_01#160 releve J05 00:00 adoption 0.75 porteurs 15 sens {'cercle_creatif': 2, 'tendance': 4, 'suivre_la_foule': 8, 'ringard': 0, 'ironie': 5, 'aucun_sens': 1}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_01/N4/2",
+  "fenetre": "J04 00:00 -> J05 00:00",
+  "texte": "Sens le plus donne au ruban au releve de J05 00:00 : suivre_la_foule (8 etudiants sur 20, agents a regles compris).",
+  "nature": "sens",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_01#160 releve J05 00:00 adoption 0.75 porteurs 15 sens {'cercle_creatif': 2, 'tendance': 4, 'suivre_la_foule': 8, 'ringard': 0, 'ironie': 5, 'aucun_sens': 1}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_01/N5/0",
+  "fenetre": "J05 00:00 -> J06 00:00",
+  "texte": "Taux d'adoption au releve de J06 00:00 : 70 % (14 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_01#200 releve J06 00:00 adoption 0.70 porteurs 14 sens {'cercle_creatif': 1, 'tendance': 4, 'suivre_la_foule': 11, 'ringard': 0, 'ironie': 4, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_01/N6/0",
+  "fenetre": "J06 00:00 -> J07 00:00",
+  "texte": "Taux d'adoption au releve de J07 00:00 : 65 % (13 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_01#243 releve J07 00:00 adoption 0.65 porteurs 13 sens {'cercle_creatif': 0, 'tendance': 4, 'suivre_la_foule': 13, 'ringard': 0, 'ironie': 3, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_01/N7/0",
+  "fenetre": "J07 00:00 -> J08 00:00",
+  "texte": "Taux d'adoption au releve de J08 00:00 : 65 % (13 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_01#281 releve J08 00:00 adoption 0.65 porteurs 13 sens {'cercle_creatif': 0, 'tendance': 5, 'suivre_la_foule': 11, 'ringard': 0, 'ironie': 3, 'aucun_sens': 1}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_01/N7/2",
+  "fenetre": "J07 00:00 -> J08 00:00",
+  "texte": "Sens le plus donne au ruban au releve de J08 00:00 : suivre_la_foule (11 etudiants sur 20, agents a regles compris).",
+  "nature": "sens",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_01#281 releve J08 00:00 adoption 0.65 porteurs 13 sens {'cercle_creatif': 0, 'tendance': 5, 'suivre_la_foule': 11, 'ringard': 0, 'ironie': 3, 'aucun_sens': 1}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_01/N8/0",
+  "fenetre": "J08 00:00 -> J09 00:00",
+  "texte": "Taux d'adoption au releve de J09 00:00 : 70 % (14 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_01#324 releve J09 00:00 adoption 0.70 porteurs 14 sens {'cercle_creatif': 0, 'tendance': 7, 'suivre_la_foule': 10, 'ringard': 0, 'ironie': 3, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_01/N9/0",
+  "fenetre": "J09 00:00 -> J10 00:00",
+  "texte": "Taux d'adoption au releve de J10 00:00 : 70 % (14 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_01#361 releve J10 00:00 adoption 0.70 porteurs 14 sens {'cercle_creatif': 1, 'tendance': 6, 'suivre_la_foule': 10, 'ringard': 0, 'ironie': 3, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_01/N9/2",
+  "fenetre": "J09 00:00 -> J10 00:00",
+  "texte": "Sens le plus donne au ruban au releve de J10 00:00 : suivre_la_foule (10 etudiants sur 20, agents a regles compris).",
+  "nature": "sens",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_01#361 releve J10 00:00 adoption 0.70 porteurs 14 sens {'cercle_creatif': 1, 'tendance': 6, 'suivre_la_foule': 10, 'ringard': 0, 'ironie': 3, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_01/N10/0",
+  "fenetre": "J10 00:00 -> J11 00:00",
+  "texte": "Taux d'adoption au releve de J11 00:00 : 65 % (13 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_01#404 releve J11 00:00 adoption 0.65 porteurs 13 sens {'cercle_creatif': 0, 'tendance': 6, 'suivre_la_foule': 11, 'ringard': 0, 'ironie': 3, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_01/N11/0",
+  "fenetre": "J11 00:00 -> J12 00:00",
+  "texte": "Taux d'adoption au releve de J12 00:00 : 65 % (13 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_01#443 releve J12 00:00 adoption 0.65 porteurs 13 sens {'cercle_creatif': 0, 'tendance': 5, 'suivre_la_foule': 10, 'ringard': 0, 'ironie': 5, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_01/N11/2",
+  "fenetre": "J11 00:00 -> J12 00:00",
+  "texte": "Sens le plus donne au ruban au releve de J12 00:00 : suivre_la_foule (10 etudiants sur 20, agents a regles compris).",
+  "nature": "sens",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_01#443 releve J12 00:00 adoption 0.65 porteurs 13 sens {'cercle_creatif': 0, 'tendance': 5, 'suivre_la_foule': 10, 'ringard': 0, 'ironie': 5, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_01/N12/0",
+  "fenetre": "J12 00:00 -> J13 00:00",
+  "texte": "Taux d'adoption au releve de J13 00:00 : 70 % (14 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_01#485 releve J13 00:00 adoption 0.70 porteurs 14 sens {'cercle_creatif': 0, 'tendance': 6, 'suivre_la_foule': 10, 'ringard': 0, 'ironie': 4, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_01/N13/0",
+  "fenetre": "J13 00:00 -> J14 00:00",
+  "texte": "Taux d'adoption au releve de J14 00:00 : 70 % (14 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_01#526 releve J14 00:00 adoption 0.70 porteurs 14 sens {'cercle_creatif': 0, 'tendance': 4, 'suivre_la_foule': 11, 'ringard': 0, 'ironie': 5, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_01/N14/0",
+  "fenetre": "J14 00:00 -> J15 00:00",
+  "texte": "Taux d'adoption au releve de J15 00:00 : 70 % (14 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_01#571 releve J15 00:00 adoption 0.70 porteurs 14 sens {'cercle_creatif': 0, 'tendance': 5, 'suivre_la_foule': 10, 'ringard': 0, 'ironie': 5, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_01/N15/0",
+  "fenetre": "J15 00:00 -> J16 00:00",
+  "texte": "Taux d'adoption au releve de J16 00:00 : 75 % (15 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_01#609 releve J16 00:00 adoption 0.75 porteurs 15 sens {'cercle_creatif': 0, 'tendance': 4, 'suivre_la_foule': 12, 'ringard': 0, 'ironie': 4, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_01/N16/0",
+  "fenetre": "J16 00:00 -> J17 00:00",
+  "texte": "Taux d'adoption au releve de J17 00:00 : 75 % (15 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_01#651 releve J17 00:00 adoption 0.75 porteurs 15 sens {'cercle_creatif': 0, 'tendance': 4, 'suivre_la_foule': 11, 'ringard': 0, 'ironie': 5, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_01/N16/2",
+  "fenetre": "J16 00:00 -> J17 00:00",
+  "texte": "Sens le plus donne au ruban au releve de J17 00:00 : suivre_la_foule (11 etudiants sur 20, agents a regles compris).",
+  "nature": "sens",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_01#651 releve J17 00:00 adoption 0.75 porteurs 15 sens {'cercle_creatif': 0, 'tendance': 4, 'suivre_la_foule': 11, 'ringard': 0, 'ironie': 5, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_01/N16/3",
+  "fenetre": "J16 00:00 -> J17 00:00",
+  "texte": "Lea a ecrit sur le reseau : \"J'ai décidé de faire de cette mode un outil d'ironie. Ce ruban, je le porte avec une pointe d'ironie pour montrer que certains membres de la tendance ne sont pas en phase avec le reste.\"",
+  "nature": "parole",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_01#616 publication lea (campus) : J'ai décidé de faire de cette mode un outil d'ironie. Ce ruban, je le porte avec une pointe d'ironie pour montrer que certains membres de la tendance ne sont pa"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_01/N16/4",
+  "fenetre": "J16 00:00 -> J17 00:00",
+  "texte": "Imane a ecrit sur le reseau : \"Je porte le ruban aujourd'hui pour montrer que j'ironise sur cette mode qui a pris des proportions indécentes.\"",
+  "nature": "parole",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_01#637 publication imane (campus) : Je porte le ruban aujourd'hui pour montrer que j'ironise sur cette mode qui a pris des proportions indécentes."
+ },
+ {
+  "id": "exp_complet_llm_synchrone_01/N17/0",
+  "fenetre": "J17 00:00 -> J18 00:00",
+  "texte": "Taux d'adoption au releve de J18 00:00 : 75 % (15 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_01#693 releve J18 00:00 adoption 0.75 porteurs 15 sens {'cercle_creatif': 0, 'tendance': 4, 'suivre_la_foule': 10, 'ringard': 0, 'ironie': 6, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_01/N18/0",
+  "fenetre": "J18 00:00 -> J19 00:00",
+  "texte": "Taux d'adoption au releve de J19 00:00 : 75 % (15 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_01#733 releve J19 00:00 adoption 0.75 porteurs 15 sens {'cercle_creatif': 0, 'tendance': 4, 'suivre_la_foule': 12, 'ringard': 0, 'ironie': 4, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_01/N19/0",
+  "fenetre": "J19 00:00 -> J20 00:00",
+  "texte": "Taux d'adoption au releve de J20 00:00 : 75 % (15 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_01#774 releve J20 00:00 adoption 0.75 porteurs 15 sens {'cercle_creatif': 0, 'tendance': 4, 'suivre_la_foule': 10, 'ringard': 0, 'ironie': 6, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_01/N20/0",
+  "fenetre": "J20 00:00 -> J21 00:00",
+  "texte": "Taux d'adoption au releve de J21 00:00 : 75 % (15 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_01#819 releve J21 00:00 adoption 0.75 porteurs 15 sens {'cercle_creatif': 0, 'tendance': 4, 'suivre_la_foule': 11, 'ringard': 0, 'ironie': 5, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_01/N21/0",
+  "fenetre": "J21 00:00 -> J22 00:00",
+  "texte": "Taux d'adoption au releve de J22 00:00 : 75 % (15 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_01#860 releve J22 00:00 adoption 0.75 porteurs 15 sens {'cercle_creatif': 0, 'tendance': 3, 'suivre_la_foule': 10, 'ringard': 0, 'ironie': 6, 'aucun_sens': 1}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_01/N22/0",
+  "fenetre": "J22 00:00 -> J23 00:00",
+  "texte": "Taux d'adoption au releve de J23 00:00 : 75 % (15 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_01#905 releve J23 00:00 adoption 0.75 porteurs 15 sens {'cercle_creatif': 1, 'tendance': 3, 'suivre_la_foule': 11, 'ringard': 0, 'ironie': 5, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_01/N22/2",
+  "fenetre": "J22 00:00 -> J23 00:00",
+  "texte": "Sens le plus donne au ruban au releve de J23 00:00 : suivre_la_foule (11 etudiants sur 20, agents a regles compris).",
+  "nature": "sens",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_01#905 releve J23 00:00 adoption 0.75 porteurs 15 sens {'cercle_creatif': 1, 'tendance': 3, 'suivre_la_foule': 11, 'ringard': 0, 'ironie': 5, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_01/N23/0",
+  "fenetre": "J23 00:00 -> J24 00:00",
+  "texte": "Taux d'adoption au releve de J24 00:00 : 75 % (15 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_01#944 releve J24 00:00 adoption 0.75 porteurs 15 sens {'cercle_creatif': 0, 'tendance': 3, 'suivre_la_foule': 16, 'ringard': 0, 'ironie': 1, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_01/N24/0",
+  "fenetre": "J24 00:00 -> J25 00:00",
+  "texte": "Taux d'adoption au releve de J25 00:00 : 75 % (15 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_01#988 releve J25 00:00 adoption 0.75 porteurs 15 sens {'cercle_creatif': 0, 'tendance': 4, 'suivre_la_foule': 11, 'ringard': 0, 'ironie': 4, 'aucun_sens': 1}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_01/N25/0",
+  "fenetre": "J25 00:00 -> J26 00:00",
+  "texte": "Taux d'adoption au releve de J26 00:00 : 75 % (15 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_01#1028 releve J26 00:00 adoption 0.75 porteurs 15 sens {'cercle_creatif': 0, 'tendance': 3, 'suivre_la_foule': 10, 'ringard': 0, 'ironie': 6, 'aucun_sens': 1}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_01/N25/2",
+  "fenetre": "J25 00:00 -> J26 00:00",
+  "texte": "Sens le plus donne au ruban au releve de J26 00:00 : suivre_la_foule (10 etudiants sur 20, agents a regles compris).",
+  "nature": "sens",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_01#1028 releve J26 00:00 adoption 0.75 porteurs 15 sens {'cercle_creatif': 0, 'tendance': 3, 'suivre_la_foule': 10, 'ringard': 0, 'ironie': 6, 'aucun_sens': 1}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_02/N1/0",
+  "fenetre": "J01 00:00 -> J02 00:00",
+  "texte": "Taux d'adoption au releve de J02 00:00 : 15 % (3 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_02#43 releve J02 00:00 adoption 0.15 porteurs 3 sens {'cercle_creatif': 2, 'tendance': 2, 'suivre_la_foule': 2, 'ringard': 1, 'ironie': 4, 'aucun_sens': 9}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_02/N2/0",
+  "fenetre": "J02 00:00 -> J03 00:00",
+  "texte": "Taux d'adoption au releve de J03 00:00 : 20 % (4 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_02#93 releve J03 00:00 adoption 0.20 porteurs 4 sens {'cercle_creatif': 2, 'tendance': 3, 'suivre_la_foule': 0, 'ringard': 1, 'ironie': 4, 'aucun_sens': 10}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_02/N3/0",
+  "fenetre": "J03 00:00 -> J04 00:00",
+  "texte": "Taux d'adoption au releve de J04 00:00 : 30 % (6 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_02#137 releve J04 00:00 adoption 0.30 porteurs 6 sens {'cercle_creatif': 1, 'tendance': 4, 'suivre_la_foule': 5, 'ringard': 0, 'ironie': 2, 'aucun_sens': 8}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_02/N4/0",
+  "fenetre": "J04 00:00 -> J05 00:00",
+  "texte": "Taux d'adoption au releve de J05 00:00 : 35 % (7 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_02#183 releve J05 00:00 adoption 0.35 porteurs 7 sens {'cercle_creatif': 0, 'tendance': 9, 'suivre_la_foule': 4, 'ringard': 0, 'ironie': 2, 'aucun_sens': 5}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_02/N4/2",
+  "fenetre": "J04 00:00 -> J05 00:00",
+  "texte": "Sens le plus donne au ruban au releve de J05 00:00 : tendance (9 etudiants sur 20, agents a regles compris).",
+  "nature": "sens",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_02#183 releve J05 00:00 adoption 0.35 porteurs 7 sens {'cercle_creatif': 0, 'tendance': 9, 'suivre_la_foule': 4, 'ringard': 0, 'ironie': 2, 'aucun_sens': 5}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_02/N4/3",
+  "fenetre": "J04 00:00 -> J05 00:00",
+  "texte": "Ont change de lecture du ruban : Karim (suivre_la_foule puis ironie), Yanis (cercle_creatif puis tendance), Theo (suivre_la_foule puis tendance), Mehdi (aucun_sens puis suivre_la_foule), Rayan (aucun_sens puis tendance), Omar (ironie puis suivre_la_foule), Maya (aucun_sens puis tendance), Zakaria (suivre_la_foule puis tendance) (8).",
+  "nature": "change",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_02#144 decision karim porte=False sens=ironie valide=True | exp_complet_llm_synchrone_02#151 decision yanis porte=False sens=tendance valide=True | exp_complet_llm_synchrone_02#157 decision theo porte=True sens=tendance valide=True | exp_complet_llm_synchrone_02#164 decision mehdi porte=False sens=suivre_la_foule valide=True | exp_complet_llm_synchrone_02#169 decision rayan porte=True sens=tendance valide=True | exp_complet_llm_synchrone_02#171 decision omar porte=False sens=suivre_la_foule valide=True | exp_complet_llm_synchrone_02#177 decision maya porte=True sens=tendance valide=True | exp_complet_llm_synchrone_02#178 decision zakaria porte=True sens=tendance valide=True"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_02/N5/0",
+  "fenetre": "J05 00:00 -> J06 00:00",
+  "texte": "Taux d'adoption au releve de J06 00:00 : 50 % (10 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_02#228 releve J06 00:00 adoption 0.50 porteurs 10 sens {'cercle_creatif': 1, 'tendance': 9, 'suivre_la_foule': 4, 'ringard': 0, 'ironie': 2, 'aucun_sens': 4}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_02/N5/2",
+  "fenetre": "J05 00:00 -> J06 00:00",
+  "texte": "Sens le plus donne au ruban au releve de J06 00:00 : tendance (9 etudiants sur 20, agents a regles compris).",
+  "nature": "sens",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_02#228 releve J06 00:00 adoption 0.50 porteurs 10 sens {'cercle_creatif': 1, 'tendance': 9, 'suivre_la_foule': 4, 'ringard': 0, 'ironie': 2, 'aucun_sens': 4}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_02/N6/0",
+  "fenetre": "J06 00:00 -> J07 00:00",
+  "texte": "Taux d'adoption au releve de J07 00:00 : 60 % (12 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_02#276 releve J07 00:00 adoption 0.60 porteurs 12 sens {'cercle_creatif': 1, 'tendance': 11, 'suivre_la_foule': 3, 'ringard': 0, 'ironie': 2, 'aucun_sens': 3}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_02/N6/2",
+  "fenetre": "J06 00:00 -> J07 00:00",
+  "texte": "Sens le plus donne au ruban au releve de J07 00:00 : tendance (11 etudiants sur 20, agents a regles compris).",
+  "nature": "sens",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_02#276 releve J07 00:00 adoption 0.60 porteurs 12 sens {'cercle_creatif': 1, 'tendance': 11, 'suivre_la_foule': 3, 'ringard': 0, 'ironie': 2, 'aucun_sens': 3}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_02/N7/0",
+  "fenetre": "J07 00:00 -> J08 00:00",
+  "texte": "Taux d'adoption au releve de J08 00:00 : 60 % (12 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_02#320 releve J08 00:00 adoption 0.60 porteurs 12 sens {'cercle_creatif': 0, 'tendance': 7, 'suivre_la_foule': 9, 'ringard': 0, 'ironie': 2, 'aucun_sens': 2}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_02/N8/0",
+  "fenetre": "J08 00:00 -> J09 00:00",
+  "texte": "Taux d'adoption au releve de J09 00:00 : 60 % (12 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_02#368 releve J09 00:00 adoption 0.60 porteurs 12 sens {'cercle_creatif': 0, 'tendance': 5, 'suivre_la_foule': 7, 'ringard': 0, 'ironie': 6, 'aucun_sens': 2}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_02/N9/0",
+  "fenetre": "J09 00:00 -> J10 00:00",
+  "texte": "Taux d'adoption au releve de J10 00:00 : 65 % (13 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_02#414 releve J10 00:00 adoption 0.65 porteurs 13 sens {'cercle_creatif': 0, 'tendance': 3, 'suivre_la_foule': 6, 'ringard': 0, 'ironie': 8, 'aucun_sens': 3}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_02/N10/0",
+  "fenetre": "J10 00:00 -> J11 00:00",
+  "texte": "Taux d'adoption au releve de J11 00:00 : 65 % (13 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_02#462 releve J11 00:00 adoption 0.65 porteurs 13 sens {'cercle_creatif': 0, 'tendance': 5, 'suivre_la_foule': 6, 'ringard': 0, 'ironie': 7, 'aucun_sens': 2}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_02/N10/2",
+  "fenetre": "J10 00:00 -> J11 00:00",
+  "texte": "Sens le plus donne au ruban au releve de J11 00:00 : ironie (7 etudiants sur 20, agents a regles compris).",
+  "nature": "sens",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_02#462 releve J11 00:00 adoption 0.65 porteurs 13 sens {'cercle_creatif': 0, 'tendance': 5, 'suivre_la_foule': 6, 'ringard': 0, 'ironie': 7, 'aucun_sens': 2}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_02/N11/0",
+  "fenetre": "J11 00:00 -> J12 00:00",
+  "texte": "Taux d'adoption au releve de J12 00:00 : 65 % (13 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_02#505 releve J12 00:00 adoption 0.65 porteurs 13 sens {'cercle_creatif': 0, 'tendance': 4, 'suivre_la_foule': 6, 'ringard': 0, 'ironie': 8, 'aucun_sens': 2}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_02/N11/2",
+  "fenetre": "J11 00:00 -> J12 00:00",
+  "texte": "Sens le plus donne au ruban au releve de J12 00:00 : ironie (8 etudiants sur 20, agents a regles compris).",
+  "nature": "sens",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_02#505 releve J12 00:00 adoption 0.65 porteurs 13 sens {'cercle_creatif': 0, 'tendance': 4, 'suivre_la_foule': 6, 'ringard': 0, 'ironie': 8, 'aucun_sens': 2}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_02/N12/0",
+  "fenetre": "J12 00:00 -> J13 00:00",
+  "texte": "Taux d'adoption au releve de J13 00:00 : 65 % (13 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_02#551 releve J13 00:00 adoption 0.65 porteurs 13 sens {'cercle_creatif': 0, 'tendance': 4, 'suivre_la_foule': 6, 'ringard': 0, 'ironie': 8, 'aucun_sens': 2}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_02/N13/0",
+  "fenetre": "J13 00:00 -> J14 00:00",
+  "texte": "Taux d'adoption au releve de J14 00:00 : 65 % (13 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_02#597 releve J14 00:00 adoption 0.65 porteurs 13 sens {'cercle_creatif': 0, 'tendance': 5, 'suivre_la_foule': 6, 'ringard': 0, 'ironie': 7, 'aucun_sens': 2}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_02/N14/0",
+  "fenetre": "J14 00:00 -> J15 00:00",
+  "texte": "Taux d'adoption au releve de J15 00:00 : 60 % (12 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_02#645 releve J15 00:00 adoption 0.60 porteurs 12 sens {'cercle_creatif': 0, 'tendance': 3, 'suivre_la_foule': 7, 'ringard': 0, 'ironie': 8, 'aucun_sens': 2}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_02/N15/0",
+  "fenetre": "J15 00:00 -> J16 00:00",
+  "texte": "Taux d'adoption au releve de J16 00:00 : 55 % (11 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_02#689 releve J16 00:00 adoption 0.55 porteurs 11 sens {'cercle_creatif': 0, 'tendance': 3, 'suivre_la_foule': 7, 'ringard': 0, 'ironie': 8, 'aucun_sens': 2}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_02/N16/0",
+  "fenetre": "J16 00:00 -> J17 00:00",
+  "texte": "Taux d'adoption au releve de J17 00:00 : 55 % (11 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_02#737 releve J17 00:00 adoption 0.55 porteurs 11 sens {'cercle_creatif': 0, 'tendance': 6, 'suivre_la_foule': 4, 'ringard': 0, 'ironie': 8, 'aucun_sens': 2}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_02/N16/2",
+  "fenetre": "J16 00:00 -> J17 00:00",
+  "texte": "Sens le plus donne au ruban au releve de J17 00:00 : ironie (8 etudiants sur 20, agents a regles compris).",
+  "nature": "sens",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_02#737 releve J17 00:00 adoption 0.55 porteurs 11 sens {'cercle_creatif': 0, 'tendance': 6, 'suivre_la_foule': 4, 'ringard': 0, 'ironie': 8, 'aucun_sens': 2}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_02/N17/0",
+  "fenetre": "J17 00:00 -> J18 00:00",
+  "texte": "Taux d'adoption au releve de J18 00:00 : 60 % (12 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_02#783 releve J18 00:00 adoption 0.60 porteurs 12 sens {'cercle_creatif': 0, 'tendance': 6, 'suivre_la_foule': 4, 'ringard': 0, 'ironie': 8, 'aucun_sens': 2}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_02/N18/0",
+  "fenetre": "J18 00:00 -> J19 00:00",
+  "texte": "Taux d'adoption au releve de J19 00:00 : 65 % (13 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_02#834 releve J19 00:00 adoption 0.65 porteurs 13 sens {'cercle_creatif': 0, 'tendance': 4, 'suivre_la_foule': 6, 'ringard': 0, 'ironie': 8, 'aucun_sens': 2}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_02/N18/2",
+  "fenetre": "J18 00:00 -> J19 00:00",
+  "texte": "Sens le plus donne au ruban au releve de J19 00:00 : ironie (8 etudiants sur 20, agents a regles compris).",
+  "nature": "sens",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_02#834 releve J19 00:00 adoption 0.65 porteurs 13 sens {'cercle_creatif': 0, 'tendance': 4, 'suivre_la_foule': 6, 'ringard': 0, 'ironie': 8, 'aucun_sens': 2}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_02/N19/0",
+  "fenetre": "J19 00:00 -> J20 00:00",
+  "texte": "Taux d'adoption au releve de J20 00:00 : 60 % (12 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_02#880 releve J20 00:00 adoption 0.60 porteurs 12 sens {'cercle_creatif': 0, 'tendance': 4, 'suivre_la_foule': 7, 'ringard': 0, 'ironie': 7, 'aucun_sens': 2}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_02/N20/0",
+  "fenetre": "J20 00:00 -> J21 00:00",
+  "texte": "Taux d'adoption au releve de J21 00:00 : 55 % (11 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_02#929 releve J21 00:00 adoption 0.55 porteurs 11 sens {'cercle_creatif': 0, 'tendance': 4, 'suivre_la_foule': 6, 'ringard': 0, 'ironie': 8, 'aucun_sens': 2}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_02/N21/0",
+  "fenetre": "J21 00:00 -> J22 00:00",
+  "texte": "Taux d'adoption au releve de J22 00:00 : 60 % (12 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_02#973 releve J22 00:00 adoption 0.60 porteurs 12 sens {'cercle_creatif': 0, 'tendance': 5, 'suivre_la_foule': 5, 'ringard': 0, 'ironie': 8, 'aucun_sens': 2}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_02/N22/0",
+  "fenetre": "J22 00:00 -> J23 00:00",
+  "texte": "Taux d'adoption au releve de J23 00:00 : 65 % (13 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_02#1025 releve J23 00:00 adoption 0.65 porteurs 13 sens {'cercle_creatif': 0, 'tendance': 4, 'suivre_la_foule': 7, 'ringard': 0, 'ironie': 7, 'aucun_sens': 2}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_02/N22/2",
+  "fenetre": "J22 00:00 -> J23 00:00",
+  "texte": "Sens le plus donne au ruban au releve de J23 00:00 : suivre_la_foule et ironie a egalite (7 etudiants chacun sur 20, agents a regles compris).",
+  "nature": "sens",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_02#1025 releve J23 00:00 adoption 0.65 porteurs 13 sens {'cercle_creatif': 0, 'tendance': 4, 'suivre_la_foule': 7, 'ringard': 0, 'ironie': 7, 'aucun_sens': 2}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_02/N23/0",
+  "fenetre": "J23 00:00 -> J24 00:00",
+  "texte": "Taux d'adoption au releve de J24 00:00 : 65 % (13 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_02#1071 releve J24 00:00 adoption 0.65 porteurs 13 sens {'cercle_creatif': 0, 'tendance': 4, 'suivre_la_foule': 6, 'ringard': 0, 'ironie': 8, 'aucun_sens': 2}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_02/N24/0",
+  "fenetre": "J24 00:00 -> J25 00:00",
+  "texte": "Taux d'adoption au releve de J25 00:00 : 65 % (13 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_02#1119 releve J25 00:00 adoption 0.65 porteurs 13 sens {'cercle_creatif': 0, 'tendance': 4, 'suivre_la_foule': 6, 'ringard': 0, 'ironie': 8, 'aucun_sens': 2}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_02/N25/0",
+  "fenetre": "J25 00:00 -> J26 00:00",
+  "texte": "Taux d'adoption au releve de J26 00:00 : 65 % (13 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_02#1165 releve J26 00:00 adoption 0.65 porteurs 13 sens {'cercle_creatif': 0, 'tendance': 4, 'suivre_la_foule': 7, 'ringard': 0, 'ironie': 7, 'aucun_sens': 2}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_03/N1/0",
+  "fenetre": "J01 00:00 -> J02 00:00",
+  "texte": "Taux d'adoption au releve de J02 00:00 : 20 % (4 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_03#47 releve J02 00:00 adoption 0.20 porteurs 4 sens {'cercle_creatif': 3, 'tendance': 1, 'suivre_la_foule': 1, 'ringard': 1, 'ironie': 7, 'aucun_sens': 7}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_03/N2/0",
+  "fenetre": "J02 00:00 -> J03 00:00",
+  "texte": "Taux d'adoption au releve de J03 00:00 : 40 % (8 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_03#96 releve J03 00:00 adoption 0.40 porteurs 8 sens {'cercle_creatif': 3, 'tendance': 3, 'suivre_la_foule': 0, 'ringard': 0, 'ironie': 8, 'aucun_sens': 6}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_03/N2/2",
+  "fenetre": "J02 00:00 -> J03 00:00",
+  "texte": "Sens le plus donne au ruban au releve de J03 00:00 : ironie (8 etudiants sur 20, agents a regles compris).",
+  "nature": "sens",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_03#96 releve J03 00:00 adoption 0.40 porteurs 8 sens {'cercle_creatif': 3, 'tendance': 3, 'suivre_la_foule': 0, 'ringard': 0, 'ironie': 8, 'aucun_sens': 6}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_03/N3/0",
+  "fenetre": "J03 00:00 -> J04 00:00",
+  "texte": "Taux d'adoption au releve de J04 00:00 : 60 % (12 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_03#143 releve J04 00:00 adoption 0.60 porteurs 12 sens {'cercle_creatif': 2, 'tendance': 7, 'suivre_la_foule': 2, 'ringard': 0, 'ironie': 8, 'aucun_sens': 1}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_03/N4/0",
+  "fenetre": "J04 00:00 -> J05 00:00",
+  "texte": "Taux d'adoption au releve de J05 00:00 : 70 % (14 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_03#192 releve J05 00:00 adoption 0.70 porteurs 14 sens {'cercle_creatif': 1, 'tendance': 9, 'suivre_la_foule': 6, 'ringard': 0, 'ironie': 4, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_03/N4/2",
+  "fenetre": "J04 00:00 -> J05 00:00",
+  "texte": "Ont noue le ruban pendant la fenetre : Sofia, Salma, Ayoub (3).",
+  "nature": "noue",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_03#154 decision sofia porte=True sens=tendance valide=True | exp_complet_llm_synchrone_03#172 decision salma porte=True sens=tendance valide=True | exp_complet_llm_synchrone_03#177 decision ayoub porte=True sens=tendance valide=True"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_03/N5/0",
+  "fenetre": "J05 00:00 -> J06 00:00",
+  "texte": "Taux d'adoption au releve de J06 00:00 : 70 % (14 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_03#238 releve J06 00:00 adoption 0.70 porteurs 14 sens {'cercle_creatif': 1, 'tendance': 5, 'suivre_la_foule': 10, 'ringard': 0, 'ironie': 4, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_03/N6/0",
+  "fenetre": "J06 00:00 -> J07 00:00",
+  "texte": "Taux d'adoption au releve de J07 00:00 : 70 % (14 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_03#289 releve J07 00:00 adoption 0.70 porteurs 14 sens {'cercle_creatif': 1, 'tendance': 3, 'suivre_la_foule': 7, 'ringard': 0, 'ironie': 9, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_03/N6/2",
+  "fenetre": "J06 00:00 -> J07 00:00",
+  "texte": "Sens le plus donne au ruban au releve de J07 00:00 : ironie (9 etudiants sur 20, agents a regles compris).",
+  "nature": "sens",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_03#289 releve J07 00:00 adoption 0.70 porteurs 14 sens {'cercle_creatif': 1, 'tendance': 3, 'suivre_la_foule': 7, 'ringard': 0, 'ironie': 9, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_03/N7/0",
+  "fenetre": "J07 00:00 -> J08 00:00",
+  "texte": "Taux d'adoption au releve de J08 00:00 : 70 % (14 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_03#335 releve J08 00:00 adoption 0.70 porteurs 14 sens {'cercle_creatif': 1, 'tendance': 3, 'suivre_la_foule': 9, 'ringard': 0, 'ironie': 7, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_03/N8/0",
+  "fenetre": "J08 00:00 -> J09 00:00",
+  "texte": "Taux d'adoption au releve de J09 00:00 : 60 % (12 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_03#388 releve J09 00:00 adoption 0.60 porteurs 12 sens {'cercle_creatif': 0, 'tendance': 3, 'suivre_la_foule': 7, 'ringard': 1, 'ironie': 9, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_03/N9/0",
+  "fenetre": "J09 00:00 -> J10 00:00",
+  "texte": "Taux d'adoption au releve de J10 00:00 : 60 % (12 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_03#436 releve J10 00:00 adoption 0.60 porteurs 12 sens {'cercle_creatif': 0, 'tendance': 3, 'suivre_la_foule': 9, 'ringard': 1, 'ironie': 7, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_03/N10/0",
+  "fenetre": "J10 00:00 -> J11 00:00",
+  "texte": "Taux d'adoption au releve de J11 00:00 : 55 % (11 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_03#485 releve J11 00:00 adoption 0.55 porteurs 11 sens {'cercle_creatif': 0, 'tendance': 5, 'suivre_la_foule': 9, 'ringard': 0, 'ironie': 5, 'aucun_sens': 1}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_03/N11/0",
+  "fenetre": "J11 00:00 -> J12 00:00",
+  "texte": "Taux d'adoption au releve de J12 00:00 : 55 % (11 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_03#531 releve J12 00:00 adoption 0.55 porteurs 11 sens {'cercle_creatif': 0, 'tendance': 6, 'suivre_la_foule': 9, 'ringard': 0, 'ironie': 4, 'aucun_sens': 1}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_03/N12/0",
+  "fenetre": "J12 00:00 -> J13 00:00",
+  "texte": "Taux d'adoption au releve de J13 00:00 : 55 % (11 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_03#582 releve J13 00:00 adoption 0.55 porteurs 11 sens {'cercle_creatif': 1, 'tendance': 5, 'suivre_la_foule': 9, 'ringard': 0, 'ironie': 5, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_03/N13/0",
+  "fenetre": "J13 00:00 -> J14 00:00",
+  "texte": "Taux d'adoption au releve de J14 00:00 : 60 % (12 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_03#628 releve J14 00:00 adoption 0.60 porteurs 12 sens {'cercle_creatif': 0, 'tendance': 5, 'suivre_la_foule': 10, 'ringard': 0, 'ironie': 5, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_03/N14/0",
+  "fenetre": "J14 00:00 -> J15 00:00",
+  "texte": "Taux d'adoption au releve de J15 00:00 : 70 % (14 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_03#681 releve J15 00:00 adoption 0.70 porteurs 14 sens {'cercle_creatif': 0, 'tendance': 4, 'suivre_la_foule': 7, 'ringard': 0, 'ironie': 9, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_03/N15/0",
+  "fenetre": "J15 00:00 -> J16 00:00",
+  "texte": "Taux d'adoption au releve de J16 00:00 : 70 % (14 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_03#730 releve J16 00:00 adoption 0.70 porteurs 14 sens {'cercle_creatif': 0, 'tendance': 5, 'suivre_la_foule': 8, 'ringard': 0, 'ironie': 7, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_03/N16/0",
+  "fenetre": "J16 00:00 -> J17 00:00",
+  "texte": "Taux d'adoption au releve de J17 00:00 : 60 % (12 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_03#780 releve J17 00:00 adoption 0.60 porteurs 12 sens {'cercle_creatif': 0, 'tendance': 5, 'suivre_la_foule': 11, 'ringard': 0, 'ironie': 4, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_03/N17/0",
+  "fenetre": "J17 00:00 -> J18 00:00",
+  "texte": "Taux d'adoption au releve de J18 00:00 : 70 % (14 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_03#826 releve J18 00:00 adoption 0.70 porteurs 14 sens {'cercle_creatif': 0, 'tendance': 6, 'suivre_la_foule': 7, 'ringard': 0, 'ironie': 7, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_03/N18/0",
+  "fenetre": "J18 00:00 -> J19 00:00",
+  "texte": "Taux d'adoption au releve de J19 00:00 : 75 % (15 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_03#877 releve J19 00:00 adoption 0.75 porteurs 15 sens {'cercle_creatif': 0, 'tendance': 8, 'suivre_la_foule': 7, 'ringard': 0, 'ironie': 5, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_03/N19/0",
+  "fenetre": "J19 00:00 -> J20 00:00",
+  "texte": "Taux d'adoption au releve de J20 00:00 : 70 % (14 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_03#923 releve J20 00:00 adoption 0.70 porteurs 14 sens {'cercle_creatif': 0, 'tendance': 5, 'suivre_la_foule': 7, 'ringard': 0, 'ironie': 8, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_03/N20/0",
+  "fenetre": "J20 00:00 -> J21 00:00",
+  "texte": "Taux d'adoption au releve de J21 00:00 : 75 % (15 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_03#971 releve J21 00:00 adoption 0.75 porteurs 15 sens {'cercle_creatif': 0, 'tendance': 4, 'suivre_la_foule': 7, 'ringard': 0, 'ironie': 9, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_03/N20/2",
+  "fenetre": "J20 00:00 -> J21 00:00",
+  "texte": "Sens le plus donne au ruban au releve de J21 00:00 : ironie (9 etudiants sur 20, agents a regles compris).",
+  "nature": "sens",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_03#971 releve J21 00:00 adoption 0.75 porteurs 15 sens {'cercle_creatif': 0, 'tendance': 4, 'suivre_la_foule': 7, 'ringard': 0, 'ironie': 9, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_03/N21/0",
+  "fenetre": "J21 00:00 -> J22 00:00",
+  "texte": "Taux d'adoption au releve de J22 00:00 : 75 % (15 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_03#1018 releve J22 00:00 adoption 0.75 porteurs 15 sens {'cercle_creatif': 0, 'tendance': 5, 'suivre_la_foule': 7, 'ringard': 0, 'ironie': 8, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_03/N22/0",
+  "fenetre": "J22 00:00 -> J23 00:00",
+  "texte": "Taux d'adoption au releve de J23 00:00 : 75 % (15 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_03#1070 releve J23 00:00 adoption 0.75 porteurs 15 sens {'cercle_creatif': 0, 'tendance': 4, 'suivre_la_foule': 7, 'ringard': 0, 'ironie': 9, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_03/N23/0",
+  "fenetre": "J23 00:00 -> J24 00:00",
+  "texte": "Taux d'adoption au releve de J24 00:00 : 75 % (15 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_03#1114 releve J24 00:00 adoption 0.75 porteurs 15 sens {'cercle_creatif': 0, 'tendance': 5, 'suivre_la_foule': 8, 'ringard': 0, 'ironie': 7, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_03/N24/0",
+  "fenetre": "J24 00:00 -> J25 00:00",
+  "texte": "Taux d'adoption au releve de J25 00:00 : 75 % (15 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_03#1162 releve J25 00:00 adoption 0.75 porteurs 15 sens {'cercle_creatif': 0, 'tendance': 4, 'suivre_la_foule': 7, 'ringard': 0, 'ironie': 9, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_03/N25/0",
+  "fenetre": "J25 00:00 -> J26 00:00",
+  "texte": "Taux d'adoption au releve de J26 00:00 : 65 % (13 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_03#1208 releve J26 00:00 adoption 0.65 porteurs 13 sens {'cercle_creatif': 0, 'tendance': 6, 'suivre_la_foule': 8, 'ringard': 0, 'ironie': 6, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_03/N25/2",
+  "fenetre": "J25 00:00 -> J26 00:00",
+  "texte": "Sens le plus donne au ruban au releve de J26 00:00 : suivre_la_foule (8 etudiants sur 20, agents a regles compris).",
+  "nature": "sens",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_03#1208 releve J26 00:00 adoption 0.65 porteurs 13 sens {'cercle_creatif': 0, 'tendance': 6, 'suivre_la_foule': 8, 'ringard': 0, 'ironie': 6, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_04/N1/0",
+  "fenetre": "J01 00:00 -> J02 00:00",
+  "texte": "Taux d'adoption au releve de J02 00:00 : 40 % (8 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_04#43 releve J02 00:00 adoption 0.40 porteurs 8 sens {'cercle_creatif': 4, 'tendance': 4, 'suivre_la_foule': 1, 'ringard': 0, 'ironie': 3, 'aucun_sens': 8}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_04/N2/0",
+  "fenetre": "J02 00:00 -> J03 00:00",
+  "texte": "Taux d'adoption au releve de J03 00:00 : 50 % (10 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_04#91 releve J03 00:00 adoption 0.50 porteurs 10 sens {'cercle_creatif': 0, 'tendance': 8, 'suivre_la_foule': 0, 'ringard': 0, 'ironie': 8, 'aucun_sens': 4}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_04/N3/0",
+  "fenetre": "J03 00:00 -> J04 00:00",
+  "texte": "Taux d'adoption au releve de J04 00:00 : 60 % (12 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_04#137 releve J04 00:00 adoption 0.60 porteurs 12 sens {'cercle_creatif': 0, 'tendance': 6, 'suivre_la_foule': 5, 'ringard': 0, 'ironie': 8, 'aucun_sens': 1}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_04/N4/0",
+  "fenetre": "J04 00:00 -> J05 00:00",
+  "texte": "Taux d'adoption au releve de J05 00:00 : 60 % (12 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_04#185 releve J05 00:00 adoption 0.60 porteurs 12 sens {'cercle_creatif': 0, 'tendance': 6, 'suivre_la_foule': 7, 'ringard': 0, 'ironie': 6, 'aucun_sens': 1}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_04/N4/2",
+  "fenetre": "J04 00:00 -> J05 00:00",
+  "texte": "Ont change de lecture du ruban : Lina (tendance puis suivre_la_foule), Aya (ironie puis suivre_la_foule), Ilyas (ironie puis tendance) (3).",
+  "nature": "change",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_04#174 decision lina porte=True sens=suivre_la_foule valide=True | exp_complet_llm_synchrone_04#178 decision aya porte=True sens=suivre_la_foule valide=True | exp_complet_llm_synchrone_04#182 decision ilyas porte=True sens=tendance valide=True"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_04/N5/0",
+  "fenetre": "J05 00:00 -> J06 00:00",
+  "texte": "Taux d'adoption au releve de J06 00:00 : 60 % (12 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_04#229 releve J06 00:00 adoption 0.60 porteurs 12 sens {'cercle_creatif': 0, 'tendance': 6, 'suivre_la_foule': 6, 'ringard': 0, 'ironie': 7, 'aucun_sens': 1}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_04/N6/0",
+  "fenetre": "J06 00:00 -> J07 00:00",
+  "texte": "Taux d'adoption au releve de J07 00:00 : 65 % (13 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_04#278 releve J07 00:00 adoption 0.65 porteurs 13 sens {'cercle_creatif': 0, 'tendance': 4, 'suivre_la_foule': 8, 'ringard': 0, 'ironie': 6, 'aucun_sens': 2}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_04/N6/2",
+  "fenetre": "J06 00:00 -> J07 00:00",
+  "texte": "Sens le plus donne au ruban au releve de J07 00:00 : suivre_la_foule (8 etudiants sur 20, agents a regles compris).",
+  "nature": "sens",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_04#278 releve J07 00:00 adoption 0.65 porteurs 13 sens {'cercle_creatif': 0, 'tendance': 4, 'suivre_la_foule': 8, 'ringard': 0, 'ironie': 6, 'aucun_sens': 2}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_04/N7/0",
+  "fenetre": "J07 00:00 -> J08 00:00",
+  "texte": "Taux d'adoption au releve de J08 00:00 : 75 % (15 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_04#322 releve J08 00:00 adoption 0.75 porteurs 15 sens {'cercle_creatif': 0, 'tendance': 4, 'suivre_la_foule': 7, 'ringard': 1, 'ironie': 8, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_04/N8/0",
+  "fenetre": "J08 00:00 -> J09 00:00",
+  "texte": "Taux d'adoption au releve de J09 00:00 : 75 % (15 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_04#372 releve J09 00:00 adoption 0.75 porteurs 15 sens {'cercle_creatif': 1, 'tendance': 3, 'suivre_la_foule': 7, 'ringard': 1, 'ironie': 8, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_04/N8/2",
+  "fenetre": "J08 00:00 -> J09 00:00",
+  "texte": "Sens le plus donne au ruban au releve de J09 00:00 : ironie (8 etudiants sur 20, agents a regles compris).",
+  "nature": "sens",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_04#372 releve J09 00:00 adoption 0.75 porteurs 15 sens {'cercle_creatif': 1, 'tendance': 3, 'suivre_la_foule': 7, 'ringard': 1, 'ironie': 8, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_04/N9/0",
+  "fenetre": "J09 00:00 -> J10 00:00",
+  "texte": "Taux d'adoption au releve de J10 00:00 : 80 % (16 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_04#417 releve J10 00:00 adoption 0.80 porteurs 16 sens {'cercle_creatif': 1, 'tendance': 4, 'suivre_la_foule': 8, 'ringard': 0, 'ironie': 7, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_04/N9/2",
+  "fenetre": "J09 00:00 -> J10 00:00",
+  "texte": "Sens le plus donne au ruban au releve de J10 00:00 : suivre_la_foule (8 etudiants sur 20, agents a regles compris).",
+  "nature": "sens",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_04#417 releve J10 00:00 adoption 0.80 porteurs 16 sens {'cercle_creatif': 1, 'tendance': 4, 'suivre_la_foule': 8, 'ringard': 0, 'ironie': 7, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_04/N10/0",
+  "fenetre": "J10 00:00 -> J11 00:00",
+  "texte": "Taux d'adoption au releve de J11 00:00 : 80 % (16 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_04#468 releve J11 00:00 adoption 0.80 porteurs 16 sens {'cercle_creatif': 0, 'tendance': 5, 'suivre_la_foule': 9, 'ringard': 0, 'ironie': 6, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_04/N11/0",
+  "fenetre": "J11 00:00 -> J12 00:00",
+  "texte": "Taux d'adoption au releve de J12 00:00 : 80 % (16 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_04#515 releve J12 00:00 adoption 0.80 porteurs 16 sens {'cercle_creatif': 0, 'tendance': 8, 'suivre_la_foule': 10, 'ringard': 0, 'ironie': 2, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_04/N12/0",
+  "fenetre": "J12 00:00 -> J13 00:00",
+  "texte": "Taux d'adoption au releve de J13 00:00 : 80 % (16 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_04#563 releve J13 00:00 adoption 0.80 porteurs 16 sens {'cercle_creatif': 1, 'tendance': 6, 'suivre_la_foule': 9, 'ringard': 0, 'ironie': 4, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_04/N13/0",
+  "fenetre": "J13 00:00 -> J14 00:00",
+  "texte": "Taux d'adoption au releve de J14 00:00 : 80 % (16 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_04#609 releve J14 00:00 adoption 0.80 porteurs 16 sens {'cercle_creatif': 1, 'tendance': 8, 'suivre_la_foule': 10, 'ringard': 0, 'ironie': 1, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_04/N14/0",
+  "fenetre": "J14 00:00 -> J15 00:00",
+  "texte": "Taux d'adoption au releve de J15 00:00 : 75 % (15 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_04#657 releve J15 00:00 adoption 0.75 porteurs 15 sens {'cercle_creatif': 0, 'tendance': 7, 'suivre_la_foule': 9, 'ringard': 1, 'ironie': 3, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_04/N15/0",
+  "fenetre": "J15 00:00 -> J16 00:00",
+  "texte": "Taux d'adoption au releve de J16 00:00 : 75 % (15 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_04#702 releve J16 00:00 adoption 0.75 porteurs 15 sens {'cercle_creatif': 0, 'tendance': 10, 'suivre_la_foule': 8, 'ringard': 0, 'ironie': 2, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_04/N15/2",
+  "fenetre": "J15 00:00 -> J16 00:00",
+  "texte": "Sens le plus donne au ruban au releve de J16 00:00 : tendance (10 etudiants sur 20, agents a regles compris).",
+  "nature": "sens",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_04#702 releve J16 00:00 adoption 0.75 porteurs 15 sens {'cercle_creatif': 0, 'tendance': 10, 'suivre_la_foule': 8, 'ringard': 0, 'ironie': 2, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_04/N16/0",
+  "fenetre": "J16 00:00 -> J17 00:00",
+  "texte": "Taux d'adoption au releve de J17 00:00 : 75 % (15 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_04#749 releve J17 00:00 adoption 0.75 porteurs 15 sens {'cercle_creatif': 0, 'tendance': 5, 'suivre_la_foule': 10, 'ringard': 0, 'ironie': 5, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_04/N17/0",
+  "fenetre": "J17 00:00 -> J18 00:00",
+  "texte": "Taux d'adoption au releve de J18 00:00 : 75 % (15 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_04#792 releve J18 00:00 adoption 0.75 porteurs 15 sens {'cercle_creatif': 1, 'tendance': 6, 'suivre_la_foule': 10, 'ringard': 0, 'ironie': 3, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_04/N18/0",
+  "fenetre": "J18 00:00 -> J19 00:00",
+  "texte": "Taux d'adoption au releve de J19 00:00 : 70 % (14 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_04#842 releve J19 00:00 adoption 0.70 porteurs 14 sens {'cercle_creatif': 0, 'tendance': 6, 'suivre_la_foule': 9, 'ringard': 0, 'ironie': 5, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_04/N18/2",
+  "fenetre": "J18 00:00 -> J19 00:00",
+  "texte": "Sens le plus donne au ruban au releve de J19 00:00 : suivre_la_foule (9 etudiants sur 20, agents a regles compris).",
+  "nature": "sens",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_04#842 releve J19 00:00 adoption 0.70 porteurs 14 sens {'cercle_creatif': 0, 'tendance': 6, 'suivre_la_foule': 9, 'ringard': 0, 'ironie': 5, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_04/N18/3",
+  "fenetre": "J18 00:00 -> J19 00:00",
+  "texte": "Sofia a ecrit sur le reseau : \"Je porte le ruban aujourd'hui pour conserver mon style d'ironie.\"",
+  "nature": "parole",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_04#807 publication sofia (campus) : Je porte le ruban aujourd'hui pour conserver mon style d'ironie."
+ },
+ {
+  "id": "exp_complet_llm_synchrone_04/N19/0",
+  "fenetre": "J19 00:00 -> J20 00:00",
+  "texte": "Taux d'adoption au releve de J20 00:00 : 70 % (14 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_04#887 releve J20 00:00 adoption 0.70 porteurs 14 sens {'cercle_creatif': 0, 'tendance': 4, 'suivre_la_foule': 10, 'ringard': 1, 'ironie': 5, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_04/N20/0",
+  "fenetre": "J20 00:00 -> J21 00:00",
+  "texte": "Taux d'adoption au releve de J21 00:00 : 75 % (15 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_04#936 releve J21 00:00 adoption 0.75 porteurs 15 sens {'cercle_creatif': 0, 'tendance': 6, 'suivre_la_foule': 9, 'ringard': 0, 'ironie': 5, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_04/N21/0",
+  "fenetre": "J21 00:00 -> J22 00:00",
+  "texte": "Taux d'adoption au releve de J22 00:00 : 75 % (15 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_04#980 releve J22 00:00 adoption 0.75 porteurs 15 sens {'cercle_creatif': 1, 'tendance': 7, 'suivre_la_foule': 9, 'ringard': 0, 'ironie': 3, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_04/N21/2",
+  "fenetre": "J21 00:00 -> J22 00:00",
+  "texte": "Ont change de lecture du ruban : Lea (tendance puis cercle_creatif), Sofia (ironie puis suivre_la_foule), Mehdi (ironie puis tendance), Salma (ironie puis tendance), Ilyas (suivre_la_foule puis ironie) (5).",
+  "nature": "change",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_04#941 decision lea porte=True sens=cercle_creatif valide=True | exp_complet_llm_synchrone_04#948 decision sofia porte=True sens=suivre_la_foule valide=True | exp_complet_llm_synchrone_04#961 decision mehdi porte=True sens=tendance valide=True | exp_complet_llm_synchrone_04#964 decision salma porte=True sens=tendance valide=True | exp_complet_llm_synchrone_04#977 decision ilyas porte=True sens=ironie valide=True"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_04/N22/0",
+  "fenetre": "J22 00:00 -> J23 00:00",
+  "texte": "Taux d'adoption au releve de J23 00:00 : 70 % (14 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_04#1029 releve J23 00:00 adoption 0.70 porteurs 14 sens {'cercle_creatif': 0, 'tendance': 7, 'suivre_la_foule': 8, 'ringard': 0, 'ironie': 5, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_04/N23/0",
+  "fenetre": "J23 00:00 -> J24 00:00",
+  "texte": "Taux d'adoption au releve de J24 00:00 : 70 % (14 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_04#1074 releve J24 00:00 adoption 0.70 porteurs 14 sens {'cercle_creatif': 0, 'tendance': 6, 'suivre_la_foule': 9, 'ringard': 0, 'ironie': 5, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_04/N24/0",
+  "fenetre": "J24 00:00 -> J25 00:00",
+  "texte": "Taux d'adoption au releve de J25 00:00 : 75 % (15 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_04#1123 releve J25 00:00 adoption 0.75 porteurs 15 sens {'cercle_creatif': 0, 'tendance': 7, 'suivre_la_foule': 7, 'ringard': 0, 'ironie': 6, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_04/N25/0",
+  "fenetre": "J25 00:00 -> J26 00:00",
+  "texte": "Taux d'adoption au releve de J26 00:00 : 75 % (15 etudiants sur 20 portent le ruban).",
+  "nature": "adoption",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_04#1166 releve J26 00:00 adoption 0.75 porteurs 15 sens {'cercle_creatif': 0, 'tendance': 7, 'suivre_la_foule': 8, 'ringard': 0, 'ironie': 5, 'aucun_sens': 0}"
+ },
+ {
+  "id": "exp_complet_llm_synchrone_04/N25/2",
+  "fenetre": "J25 00:00 -> J26 00:00",
+  "texte": "Sens le plus donne au ruban au releve de J26 00:00 : suivre_la_foule (8 etudiants sur 20, agents a regles compris).",
+  "nature": "sens",
+  "verdict": "vrai",
+  "sources": "exp_complet_llm_synchrone_04#1166 releve J26 00:00 adoption 0.75 porteurs 15 sens {'cercle_creatif': 0, 'tendance': 7, 'suivre_la_foule': 8, 'ringard': 0, 'ironie': 5, 'aucun_sens': 0}"
+ }
+]
