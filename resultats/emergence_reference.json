@@ -1,0 +1,295 @@
+{
+ "point_zero": "resultats/sens_a_priori_g100_complet_t5.json",
+ "runs": [
+  {
+   "run": "exp_reference_llm_reference_01",
+   "graine": 100,
+   "agents_llm": 10,
+   "releves": 26,
+   "incidents": 6,
+   "persistance": 0.7841409691629956,
+   "seuil_persistance": {
+    "six_sens": {
+     "accord_max": 0.8,
+     "exprimes_min": 7,
+     "a0": 0.4314547619047619,
+     "seuil": 0.2828309523809524,
+     "delta_a": 0.26854523809523806,
+     "fenetre_debut": 7,
+     "emergent": false
+    },
+    "regroupe": {
+     "accord_max": 0.8,
+     "exprimes_min": 7,
+     "a0": 0.46718809523809524,
+     "seuil": 0.24709761904761907,
+     "delta_a": 0.23281190476190472,
+     "fenetre_debut": 7,
+     "emergent": false
+    }
+   },
+   "ombres": {
+    "sans_discours": {
+     "six_sens": {
+      "ecart": 0.07461904761904763,
+      "p": 0.001998001998001998,
+      "releves": 25,
+      "decisions": 212
+     },
+     "regroupe": {
+      "ecart": 0.04328571428571429,
+      "p": 0.028971028971028972,
+      "releves": 25,
+      "decisions": 212
+     }
+    },
+    "sans_social": {
+     "six_sens": {
+      "ecart": 0.05242857142857143,
+      "p": 0.013986013986013986,
+      "releves": 25,
+      "decisions": 212
+     },
+     "regroupe": {
+      "ecart": 0.048698412698412706,
+      "p": 0.001998001998001998,
+      "releves": 25,
+      "decisions": 212
+     }
+    }
+   }
+  },
+  {
+   "run": "exp_reference_llm_reference_02",
+   "graine": 101,
+   "agents_llm": 12,
+   "releves": 26,
+   "incidents": 17,
+   "persistance": 0.76171875,
+   "seuil_persistance": {
+    "six_sens": {
+     "accord_max": 0.6666666666666666,
+     "exprimes_min": 9,
+     "a0": 0.44493080808080804,
+     "seuil": 0.2550691919191919,
+     "delta_a": 0.2217358585858586,
+     "fenetre_debut": 23,
+     "emergent": false
+    },
+    "regroupe": {
+     "accord_max": 0.75,
+     "exprimes_min": 9,
+     "a0": 0.48214090909090906,
+     "seuil": 0.2178590909090909,
+     "delta_a": 0.18452575757575757,
+     "fenetre_debut": 23,
+     "emergent": false
+    }
+   },
+   "ombres": {
+    "sans_discours": {
+     "six_sens": {
+      "ecart": 0.03314141414141413,
+      "p": 0.06493506493506493,
+      "releves": 25,
+      "decisions": 262
+     },
+     "regroupe": {
+      "ecart": -0.0018888888888889043,
+      "p": 0.5424575424575424,
+      "releves": 25,
+      "decisions": 262
+     }
+    },
+    "sans_social": {
+     "six_sens": {
+      "ecart": 0.005858585858585852,
+      "p": 0.4145854145854146,
+      "releves": 25,
+      "decisions": 262
+     },
+     "regroupe": {
+      "ecart": -0.002747474747474752,
+      "p": 0.5354645354645354,
+      "releves": 25,
+      "decisions": 262
+     }
+    }
+   }
+  },
+  {
+   "run": "exp_reference_llm_reference_03",
+   "graine": 102,
+   "agents_llm": 13,
+   "releves": 26,
+   "incidents": 17,
+   "persistance": 0.7634408602150538,
+   "seuil_persistance": {
+    "six_sens": {
+     "accord_max": 0.8333333333333334,
+     "exprimes_min": 9,
+     "a0": 0.4584574592074592,
+     "seuil": 0.24154254079254078,
+     "delta_a": 0.20820920745920746,
+     "fenetre_debut": 7,
+     "emergent": false
+    },
+    "regroupe": {
+     "accord_max": 0.8333333333333334,
+     "exprimes_min": 9,
+     "a0": 0.4936787878787879,
+     "seuil": 0.20632121212121207,
+     "delta_a": 0.17298787878787875,
+     "fenetre_debut": 7,
+     "emergent": false
+    }
+   },
+   "ombres": {
+    "sans_discours": {
+     "six_sens": {
+      "ecart": 0.11825174825174825,
+      "p": 0.000999000999000999,
+      "releves": 25,
+      "decisions": 287
+     },
+     "regroupe": {
+      "ecart": 0.017226107226107224,
+      "p": 0.1958041958041958,
+      "releves": 25,
+      "decisions": 287
+     }
+    },
+    "sans_social": {
+     "six_sens": {
+      "ecart": 0.11023931623931622,
+      "p": 0.000999000999000999,
+      "releves": 25,
+      "decisions": 287
+     },
+     "regroupe": {
+      "ecart": 0.05693395493395493,
+      "p": 0.005994005994005994,
+      "releves": 25,
+      "decisions": 287
+     }
+    }
+   }
+  },
+  {
+   "run": "exp_reference_llm_reference_04",
+   "graine": 103,
+   "agents_llm": 12,
+   "releves": 26,
+   "incidents": 13,
+   "persistance": 0.7394636015325671,
+   "seuil_persistance": {
+    "six_sens": {
+     "accord_max": 0.6666666666666666,
+     "exprimes_min": 10,
+     "a0": 0.44493080808080804,
+     "seuil": 0.2550691919191919,
+     "delta_a": 0.13840252525252533,
+     "fenetre_debut": 19,
+     "emergent": false
+    },
+    "regroupe": {
+     "accord_max": 0.8181818181818182,
+     "exprimes_min": 10,
+     "a0": 0.48214090909090906,
+     "seuil": 0.2178590909090909,
+     "delta_a": 0.24513181818181823,
+     "fenetre_debut": 6,
+     "emergent": true
+    }
+   },
+   "ombres": {
+    "sans_discours": {
+     "six_sens": {
+      "ecart": 0.026181818181818174,
+      "p": 0.08191808191808192,
+      "releves": 25,
+      "decisions": 262
+     },
+     "regroupe": {
+      "ecart": 0.026000000000000013,
+      "p": 0.1068931068931069,
+      "releves": 25,
+      "decisions": 262
+     }
+    },
+    "sans_social": {
+     "six_sens": {
+      "ecart": 0.015898989898989913,
+      "p": 0.21578421578421578,
+      "releves": 25,
+      "decisions": 262
+     },
+     "regroupe": {
+      "ecart": 0.020020202020202032,
+      "p": 0.23376623376623376,
+      "releves": 25,
+      "decisions": 262
+     }
+    }
+   }
+  },
+  {
+   "run": "exp_reference_llm_reference_05",
+   "graine": 104,
+   "agents_llm": 13,
+   "releves": 26,
+   "incidents": 13,
+   "persistance": 0.7852112676056338,
+   "seuil_persistance": {
+    "six_sens": {
+     "accord_max": 0.7692307692307693,
+     "exprimes_min": 9,
+     "a0": 0.49157599067599067,
+     "seuil": 0.23569673659673662,
+     "delta_a": 0.12380862470862475,
+     "fenetre_debut": 8,
+     "emergent": false
+    },
+    "regroupe": {
+     "accord_max": 0.7692307692307693,
+     "exprimes_min": 9,
+     "a0": 0.5239855477855477,
+     "seuil": 0.20328717948717956,
+     "delta_a": 0.09139906759906768,
+     "fenetre_debut": 8,
+     "emergent": false
+    }
+   },
+   "ombres": {
+    "sans_discours": {
+     "six_sens": {
+      "ecart": 0.09558818958818958,
+      "p": 0.000999000999000999,
+      "releves": 25,
+      "decisions": 287
+     },
+     "regroupe": {
+      "ecart": 0.02704739704739704,
+      "p": 0.08491508491508491,
+      "releves": 25,
+      "decisions": 287
+     }
+    },
+    "sans_social": {
+     "six_sens": {
+      "ecart": 0.07267132867132867,
+      "p": 0.000999000999000999,
+      "releves": 25,
+      "decisions": 287
+     },
+     "regroupe": {
+      "ecart": 0.029571095571095572,
+      "p": 0.04195804195804196,
+      "releves": 25,
+      "decisions": 287
+     }
+    }
+   }
+  }
+ ]
+}

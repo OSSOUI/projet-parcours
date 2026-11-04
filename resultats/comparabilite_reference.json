@@ -1,0 +1,62 @@
+[
+ {
+  "run": "exp_reference_llm_reference_01.jsonl",
+  "graine": 100,
+  "evenements_du_monde": 1022,
+  "decisions_llm": 212,
+  "identique_configuration_du_run": true,
+  "identique_avec_sans_souvenirs": true,
+  "monde_identique_variante": true,
+  "prompts_variante_moins_ligne_sens_identiques": true,
+  "prompts_variante_avec_sens": 202,
+  "prompts": 212
+ },
+ {
+  "run": "exp_reference_llm_reference_02.jsonl",
+  "graine": 101,
+  "evenements_du_monde": 1150,
+  "decisions_llm": 262,
+  "identique_configuration_du_run": true,
+  "identique_avec_sans_souvenirs": true,
+  "monde_identique_variante": true,
+  "prompts_variante_moins_ligne_sens_identiques": true,
+  "prompts_variante_avec_sens": 250,
+  "prompts": 262
+ },
+ {
+  "run": "exp_reference_llm_reference_03.jsonl",
+  "graine": 102,
+  "evenements_du_monde": 1206,
+  "decisions_llm": 287,
+  "identique_configuration_du_run": true,
+  "identique_avec_sans_souvenirs": true,
+  "monde_identique_variante": true,
+  "prompts_variante_moins_ligne_sens_identiques": true,
+  "prompts_variante_avec_sens": 274,
+  "prompts": 287
+ },
+ {
+  "run": "exp_reference_llm_reference_04.jsonl",
+  "graine": 103,
+  "evenements_du_monde": 1154,
+  "decisions_llm": 262,
+  "identique_configuration_du_run": true,
+  "identique_avec_sans_souvenirs": true,
+  "monde_identique_variante": true,
+  "prompts_variante_moins_ligne_sens_identiques": true,
+  "prompts_variante_avec_sens": 250,
+  "prompts": 262
+ },
+ {
+  "run": "exp_reference_llm_reference_05.jsonl",
+  "graine": 104,
+  "evenements_du_monde": 1200,
+  "decisions_llm": 287,
+  "identique_configuration_du_run": true,
+  "identique_avec_sans_souvenirs": true,
+  "monde_identique_variante": true,
+  "prompts_variante_moins_ligne_sens_identiques": true,
+  "prompts_variante_avec_sens": 274,
+  "prompts": 287
+ }
+]

@@ -28,6 +28,17 @@ extends Node2D
 ##
 ## Clavier : L passe des regards du jour au réseau, Échap désélectionne,
 ## G bascule le rendu 3D entre haute qualité et léger.
+## N passe du récit de l'observatrice au réseau interne, H montre ou masque
+## ses hypothèses et incertitudes (masquées par défaut).
+##
+## Récit : les narrations arrivent du pont, lues dans leur fichier (jamais de
+## Kafka, et rien ne repart vers la simulation). Le récit principal ne montre
+## que les CONSTATS, calculés depuis le journal et vérifiés ; les hypothèses
+## et incertitudes ne s'affichent qu'à part, annoncées comme telles.
+##
+## Mesure de la démonstration : EPHEMERE_TRACE=<fichier> note chaque message
+## reçu (run#seq, narration) ; EPHEMERE_CAPTURES=<dossier> enregistre une
+## image du campus tous les cinq jours et au dernier jour.
 ## En rejeu : espace met en pause, flèches gauche et droite changent de jour,
 ## un clic sur la courbe ou sur le tableau des groupes va à ce jour.
 
@@ -137,6 +148,13 @@ var bandeau := {"texte": "", "couleur": Color.BLACK, "reste": 0.0}
 var contre_vues := 0
 var alerte := 0.0
 
+# Récit de l'observatrice (narratrice.py, via le pont).
+var narrations := []         # canaux de chaque narration : constats, hypotheses, incertitudes
+var vue_recit := true        # faux : le panneau montre le réseau interne
+var voir_hypotheses := false
+var trace: FileAccess = null
+var captures := ""
+
 
 func _ready() -> void:
 	police = _charger_police("res://polices/NotoSans-Regular.ttf")
@@ -157,6 +175,10 @@ func _ready() -> void:
 	vue3d.lisible = _prenom
 	add_child(vue3d)
 	vue3d.agent_clique.connect(_choisir)
+	var chemin_trace := OS.get_environment("EPHEMERE_TRACE")
+	if chemin_trace != "":
+		trace = FileAccess.open(chemin_trace, FileAccess.WRITE)
+	captures = OS.get_environment("EPHEMERE_CAPTURES")
 	ws.connect_to_url(URL)
 
 
@@ -235,6 +257,9 @@ func _recevoir(brut: String) -> void:
 	if lu.get("type", "") == "accuse":
 		_annoncer(lu)
 		return
+	if lu.get("type", "") == "narration":
+		_recevoir_narration(lu["narration"])
+		return
 	var avant := {}
 	for a in etat.get("agents", []):
 		avant[a["id"]] = [a.get("porte", false), a.get("categorie", "")]
@@ -244,6 +269,8 @@ func _recevoir(brut: String) -> void:
 		etat = lu["etat"]
 	elif lu.get("type", "") == "etat":
 		etat = lu
+	narrations = etat.get("narrations", narrations)
+	_tracer(lu)
 	var saut: bool = not lu.has("evenement")   # instantané seul : connexion ou saut de rejeu
 	if str(etat.get("run", "")) != run_avant:
 		selection = ""
@@ -275,6 +302,59 @@ func _recevoir(brut: String) -> void:
 	contre_vues = n
 	if lu.has("evenement"):
 		_animer(lu["evenement"])
+		var e: Dictionary = lu["evenement"]
+		if e.get("schema", "") == "indicateurs.v1" and captures != "":
+			var j := int(e.get("t_sim", 0)) / JOUR
+			if j > 0 and (j % 5 == 0 or j == _jours()):
+				_capturer("%s/jour_%02d.png" % [captures, j])
+		elif e.get("schema", "") == "bilan.v1" and captures != "":
+			_capturer_final()
+
+
+func _recevoir_narration(n: Dictionary) -> void:
+	var garde := []
+	for x in narrations:
+		if x.get("narration", "") != n.get("narration", ""):
+			garde.append(x)
+	garde.append(n)
+	narrations = garde
+	if trace:
+		trace.store_line(JSON.stringify({"ms": Time.get_ticks_msec(), "type": "narration",
+			"run": etat.get("run", ""), "narration": n.get("narration", ""),
+			"t_sim": n.get("t_sim", 0), "constats": n.get("constats", []).size(),
+			"hypotheses": n.get("hypotheses", []).size(),
+			"incertitudes": n.get("incertitudes", []).size()}))
+		trace.flush()
+
+
+func _tracer(lu: Dictionary) -> void:
+	## Une ligne par message appliqué : c'est ce que la scène a reçu et affiché.
+	if not trace:
+		return
+	var e: Dictionary = lu.get("evenement", {})
+	trace.store_line(JSON.stringify({"ms": Time.get_ticks_msec(),
+		"type": "evenement" if lu.has("evenement") else "etat",
+		"run": etat.get("run", ""), "seq": e.get("seq", null), "schema": e.get("schema", null),
+		"vus": etat.get("indicateurs", {}).get("evenements_vus", 0),
+		"narrations": narrations.size()}))
+	trace.flush()
+
+
+func _capturer_final() -> void:
+	## La dernière narration arrive après le bilan (le modèle met quelques secondes) :
+	## l'image finale est prise 20 s plus tard, récit complet.
+	await get_tree().create_timer(20.0).timeout
+	_capturer("%s/final.png" % captures)
+
+
+func _capturer(chemin: String) -> void:
+	if DisplayServer.get_name() == "headless":
+		return
+	await RenderingServer.frame_post_draw
+	var image := get_viewport().get_texture().get_image()
+	if image:
+		DirAccess.make_dir_recursive_absolute(chemin.get_base_dir())
+		image.save_png(chemin)
 
 
 func _animer(evt: Dictionary) -> void:
@@ -443,6 +523,12 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif event.keycode == KEY_G:
 			vue3d.regler_qualite(not vue3d.haute_qualite)
 			bandeau = {"texte": "rendu 3D " + ("haute qualité" if vue3d.haute_qualite else "léger"),
+				"couleur": ENCRE, "reste": 2.0}
+		elif event.keycode == KEY_N:
+			vue_recit = not vue_recit
+		elif event.keycode == KEY_H:
+			voir_hypotheses = not voir_hypotheses
+			bandeau = {"texte": "hypothèses " + ("affichées, à part" if voir_hypotheses else "masquées"),
 				"couleur": ENCRE, "reste": 2.0}
 		elif event.keycode == KEY_SPACE:
 			_basculer_lecture()
@@ -1090,7 +1176,10 @@ func _panneau() -> void:
 	var agent := _agent(selection)
 	if agent.is_empty():
 		y = _sens_par_groupe(x + 16, y + 24, l - 32)
-		_fil(x + 16, y + 22, l - 32, bas)
+		if vue_recit and not narrations.is_empty():
+			_recit(x + 16, y + 22, l - 32, bas)
+		else:
+			_fil(x + 16, y + 22, l - 32, bas)
 		return
 	y += 28
 	var prenom := _prenom(str(agent.get("nom", "")))
@@ -1298,6 +1387,37 @@ func _fil(x: float, y: float, l: float, bas: float) -> void:
 		_txt(Vector2(x, y), "%s   %s" % [quand, qui], 11, DOUX)
 		y += 15
 		y = _bloc(x, y, l, _lisible(str(m.get("texte", ""))), bas, 2)
+		y += 6
+
+
+func _recit(x: float, y: float, l: float, bas: float) -> void:
+	## Le récit de l'observatrice, du plus récent au plus ancien. Constats seuls,
+	## sauf si H : hypothèses et incertitudes suivent, à part et en gris.
+	_txt(Vector2(x, y), "Récit de l'observatrice : constats vérifiés", 13, ENCRE, true)
+	y += 16
+	_txt(Vector2(x, y), "N : réseau interne   H : hypothèses (%s)"
+		% ("affichées" if voir_hypotheses else "masquées"), 10, DOUX)
+	y += 18
+	for i in range(narrations.size() - 1, -1, -1):
+		if y > bas - 20:
+			break
+		var n: Dictionary = narrations[i]
+		var f: Dictionary = n.get("fenetre", {})
+		_txt(Vector2(x, y), "%s → %s" % [str(f.get("debut", "")).substr(0, 3),
+			str(f.get("fin", "")).substr(0, 3)], 11, DOUX)
+		y += 15
+		var constats: Array = n.get("constats", [])
+		if constats.is_empty():
+			y = _bloc(x, y, l, "aucun constat vérifié pour cette fenêtre", bas, 1, DOUX, 11)
+		for c in constats:
+			y = _bloc(x, y, l, _lisible(str(c.get("texte", ""))), bas, 3)
+		if voir_hypotheses:
+			for h in n.get("hypotheses", []):
+				y = _bloc(x, y, l, "hypothèse, non vérifiée : " + _lisible(str(h.get("texte", ""))),
+					bas, 3, DOUX, 11)
+			for h in n.get("incertitudes", []):
+				y = _bloc(x, y, l, "incertitude : " + _lisible(str(h.get("texte", ""))),
+					bas, 3, DOUX, 11)
 		y += 6
 
 

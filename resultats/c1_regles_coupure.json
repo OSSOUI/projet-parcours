@@ -1,0 +1,39 @@
+{
+ "run": "c1_regles_coupure",
+ "date": "2026-11-04T03:05:08",
+ "duree_run_s": 0.6,
+ "evenements_fichier": 493,
+ "rejets_contrat": 0,
+ "producteur": {
+  "topic": "ephemere.evenements",
+  "cle": "c1_regles_coupure",
+  "publies": 493,
+  "confirmes": 493,
+  "perdus": 0,
+  "sans_reponse": 0,
+  "seq_perdus": [],
+  "ecrits": 493
+ },
+ "messages_recus": 513,
+ "seq_uniques_recus": 493,
+ "pertes": 0,
+ "seq_perdus": [],
+ "pertes_annoncees_par_le_producteur": 0,
+ "inconnus": 0,
+ "doublons": 20,
+ "desordres": 0,
+ "contenu_different": 0,
+ "coupure_consommateur": {
+  "apres": 320,
+  "reprises": 1,
+  "doublons_ecartes_par_le_campus": 20
+ },
+ "latence_ms": {
+  "n": 493,
+  "mediane": 7.0,
+  "p95": 480.0,
+  "max": 492.0
+ },
+ "etat_kafka_egal_etat_fichier": true,
+ "c1_ok": true
+}

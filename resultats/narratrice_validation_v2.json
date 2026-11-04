@@ -1,0 +1,45 @@
+{
+ "narrations": 55,
+ "statuts": {
+  "valide": 31,
+  "partiel": 24
+ },
+ "types": {
+  "observation": 114,
+  "mesure": 63,
+  "interpretation": 16,
+  "incertitude": 2
+ },
+ "rejets": {
+  "intention attribuee dans un constat": 12,
+  "parole presentee comme un fait": 10,
+  "source inconnue": 3,
+  "nombre non conforme": 2,
+  "personne non sourcee": 1,
+  "au-dela de 6 affirmations": 1
+ },
+ "factuelles": 177,
+ "factuelles_verifiees": 150,
+ "sources_citees": 548,
+ "sources_invalides": 0,
+ "tokens": 67065,
+ "par_fichier": {
+  "n5_regles_avec.narration.jsonl": {
+   "valide": 21,
+   "partiel": 4
+  },
+  "n5_llm_suivi.narration.jsonl": {
+   "partiel": 5
+  },
+  "n5_reference_02.narration.jsonl": {
+   "partiel": 15,
+   "valide": 10
+  }
+ },
+ "latence_s": {
+  "n": 55,
+  "mediane": 8.441,
+  "max": 26.825
+ },
+ "part_factuelles_verifiees": 0.847
+}

@@ -102,7 +102,8 @@ class ClientLLM:
             return None
         return int(hashlib.sha256(f"{self.graine}:{cle}".encode()).hexdigest()[:8], 16)
 
-    def json(self, systeme, consigne, taille="llm_petit", essais=3, schema=None, cle=None):
+    def json(self, systeme, consigne, taille="llm_petit", essais=3, schema=None, cle=None,
+             max_tokens=None):
         """Appelle le modele de la taille demandee. Renvoie un dict, ou None.
 
         schema : un schema JSON que la reponse doit respecter (sortie
@@ -120,6 +121,8 @@ class ClientLLM:
                                       "json_schema": {"name": "reponse", "strict": True,
                                                       "schema": schema}}
                                      if schema else {"type": "json_object"})}
+        if max_tokens:
+            corps["max_tokens"] = max_tokens   # absent par defaut : appels des agents inchanges
         graine = self.graine_appel(cle)
         if graine is not None:
             corps["seed"] = graine
@@ -188,6 +191,32 @@ class ClientLLM:
         casier["erreurs"] += 1
         self.nb_erreurs += 1
         return None
+
+    def empreintes(self):
+        """Empreinte et quantification de chaque modele, lues sur Ollama (reproductibilite).
+
+        Un tag comme qwen2.5:7b peut changer de poids d'un pull a l'autre :
+        l'empreinte dit lesquels ont tourne. None pour un fournisseur qui ne la
+        donne pas, ou si le serveur ne repond pas.
+        """
+        sortie = {}
+        for taille, modele in self.modeles.items():
+            url = self.urls[taille]
+            if not url.endswith("/v1/chat/completions"):
+                sortie[taille] = None
+                continue
+            try:
+                with urllib.request.urlopen(url[:-len("/v1/chat/completions")] + "/api/tags",
+                                            timeout=5) as rep:
+                    connus = {m["name"]: m for m in json.loads(rep.read().decode("utf-8"))["models"]}
+            except (urllib.error.URLError, TimeoutError, ValueError, KeyError, OSError):
+                sortie[taille] = None
+                continue
+            m = connus.get(modele) or connus.get(f"{modele}:latest")
+            sortie[taille] = None if m is None else {
+                "modele": modele, "empreinte": m.get("digest", "")[:12],
+                "quantification": (m.get("details") or {}).get("quantization_level")}
+        return sortie
 
     def bilan(self):
         """Chiffres a mettre tels quels dans le bilan de sobriete (E4, E5)."""

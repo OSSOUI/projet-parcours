@@ -1,0 +1,40 @@
+{
+ "run": "c1_llm_01",
+ "date": "2026-11-04T03:10:50",
+ "duree_run_s": 160.8,
+ "evenements_fichier": 217,
+ "rejets_contrat": 0,
+ "producteur": {
+  "topic": "ephemere.evenements",
+  "cle": "c1_llm_01",
+  "publies": 217,
+  "confirmes": 217,
+  "perdus": 0,
+  "sans_reponse": 0,
+  "seq_perdus": [],
+  "ecrits": 217
+ },
+ "messages_recus": 227,
+ "seq_uniques_recus": 217,
+ "pertes": 0,
+ "seq_perdus": [],
+ "pertes_annoncees_par_le_producteur": 0,
+ "inconnus": 0,
+ "doublons": 10,
+ "desordres": 0,
+ "contenu_different": 0,
+ "coupure_consommateur": {
+  "apres": 60,
+  "reprises": 1,
+  "doublons_ecartes_par_le_campus": 10
+ },
+ "latence_ms": {
+  "n": 217,
+  "mediane": 21.0,
+  "p95": 394.0,
+  "max": 396.0
+ },
+ "etat_kafka_egal_etat_fichier": true,
+ "pertes_silencieuses": 0,
+ "c1_ok": true
+}

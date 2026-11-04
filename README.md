@@ -349,12 +349,18 @@ en code : rien à monter dans l'éditeur.
 
 - **Lumière** : SDFGI pour la lumière indirecte et les reflets, brouillard
   volumétrique léger, SSAO pour les ombres de contact sous les pieds, SSIL pour
-  la couleur qui rebondit à courte distance, ciel procédural aux teintes de
-  l'interface.
+  la couleur qui rebondit à courte distance, ciel procédural de jour, tonemap
+  ACES.
 - **Matériaux** : PBR (`StandardMaterial3D`, rugosité et métallicité par
-  surface : sol mat, toit en zinc, vitres lisses, ruban satiné).
-- **Surfaces émissives** (énergie supérieure à 1) : les fenêtres, les lampes de
-  porche, les rubans portés et les messages en vol.
+  surface). Le décor a des teintes de campus réel : herbe, parvis de pierre,
+  façades en brique, grès ou enduit, toits en ardoise ou en tuile, une par
+  bâtiment, des arbres. Ces teintes restent assez sombres pour que le code
+  couleur des sens soit ce qui ressort.
+- **Surfaces émissives** : les rubans portés et les messages en vol passent le
+  seuil du glow ; les fenêtres et les lampes de porche restent en dessous, sans
+  halo en plein jour.
+- **Netteté** : sur un écran Retina, la 3D est calculée en pixels réels, et non
+  en pixels d'interface agrandis ensuite.
 - **Ombres** : soleil et lampes de porche ont des ombres douces (pénombre PCSS,
   filtrage « soft high »).
 
@@ -364,7 +370,7 @@ reçoit la lumière indirecte sans en émettre. Son ruban brille par l'émission
 le glow, pas par le SDFGI. Sinon le sol garderait la couleur d'un sens que
 l'étudiant a déjà quitté.
 
-Le brouillard reste faible (`BROUILLARD`, environ 20 % de voile à 40 m) : les
+Le brouillard reste faible (`BROUILLARD`, moins de 10 % de voile à 40 m) : les
 couleurs du sens sont le code de lecture de la scène. Les repères d'interface
 (sélection, alerte, regards) restent non éclairés, pour garder leur couleur
 exacte.
@@ -379,11 +385,25 @@ exacte.
   recoloré, ni animé, ni testé au survol ;
 - quand le plan 2D est affiché, la vue 3D cesse de rendre et de calculer.
 
-Il n'y a pas de `NavigationServer3D` : personne ne se déplace, et un trajet
-affiché serait un mouvement qu'aucun événement du run ne contient (F6).
+**Déplacements.** La simulation n'a pas d'espace : le lieu où l'on se croise,
+c'est le groupe. Un étudiant ne marche donc que pour un événement du run (F6) :
+- quand il écrit en privé à quelqu'un (publication privée ou réplique de
+  conversation), il va le voir : quelques pas sur le parvis dans son groupe,
+  une traversée du campus vers un autre groupe ;
+- il reste devant lui le temps de l'échange, prolongé à chaque réplique ;
+- puis il revient à sa place.
+
+Le trajet suit des allées fixes : devant sa rangée, entre deux bâtiments, puis
+devant la rangée de l'autre. Il n'y a pas de `NavigationServer3D` et aucune
+marche au hasard. Si l'un des deux marche déjà, le message reste une bille qui
+vole d'une tête à l'autre.
+
+Les traversées sont rares, et c'est un résultat du modèle : dans `demo3d_g100`
+comme dans `exp_complet_llm_synchrone_01` et `_02`, il n'y a qu'un ou deux
+messages privés vers un autre groupe, contre 12 à 16 dans le groupe.
 
 **Touche G** : rendu léger (sans SDFGI, sans SSIL, sans brouillard volumétrique,
-ombres douces simples). C'est le repli prévu pour une machine qui peine pendant
+ombres douces simples, 3D en pixels d'interface sur un écran Retina). C'est le repli prévu pour une machine qui peine pendant
 la démo. Sur une machine sans Vulkan, Godot passe en Compatibility et ignore
 ces effets.
 

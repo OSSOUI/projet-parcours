@@ -136,3 +136,114 @@ def convergence_groupes(sens_par_groupe):
         return None
     paires = [(a, b) for i, a in enumerate(reps) for b in reps[i + 1:]]
     return 1 - sum(_jsd(a, b) for a, b in paires) / len(paires)
+
+
+# ------------------------------------------------- base experimentale (3 novembre)
+#
+# Deux corrections, decidees apres l'audit :
+#
+#   persistance   le modele nul ci-dessus tire chaque releve independamment. Or
+#                 un agent garde son sens d'un releve a l'autre (72 a 88 % dans
+#                 les runs) : le minimum d'une fenetre est alors plus haut, et le
+#                 seuil independant declare emergents 31 a 38 % des runs nuls.
+#                 modele_nul_markov garde le sens avec la probabilite p.
+#   ombres        le temoin de reference est le temoin asservi (simuler.py
+#                 --ombres) : la meme decision reposee sans le social. L'ecart
+#                 d'accord reel - ombre est apparie agent par decision, et son
+#                 seuil vient d'une permutation de ces paires, pas d'un modele.
+
+
+def persistance(etats):
+    """Part des agents qui gardent leur sens d'un releve au suivant.
+
+    etats : un dict agent -> sens par releve (None = non defini, ignore).
+    """
+    gardes = paires = 0
+    for avant, apres in zip(etats, etats[1:]):
+        for a, s in avant.items():
+            if s is not None and apres.get(a) is not None:
+                paires += 1
+                gardes += apres[a] == s
+    return gardes / paires if paires else None
+
+
+def modele_nul_markov(classes, distributions, releves, p, tirages=TIRAGES_NULS, graine=0,
+                      regroupement=None):
+    """Comme modele_nul, mais chaque agent garde son sens d'un releve au suivant avec
+    la probabilite p, sinon il retire dans la distribution de sa classe.
+
+    A0 reste l'accord attendu a un releve (p ne le change pas) ; seule la
+    distribution du gain soutenu, donc le seuil, depend de p.
+    """
+    rng = random.Random(graine)
+    comptes = [distributions[c] for c in classes]
+    nul = modele_nul(classes, distributions, releves, tirages, graine, regroupement)
+    gains = []
+    for _ in range(tirages):
+        etat = [_tirer(rng, c) for c in comptes]
+        serie = []
+        for _ in range(releves):
+            etat = [s if rng.random() < p else _tirer(rng, c) for s, c in zip(etat, comptes)]
+            serie.append(accord_exprime(etat, regroupement))
+        g, _ = gain_soutenu(serie, nul["a0"])
+        if g is not None:
+            gains.append(g)
+    gains.sort()
+    return {"a0": nul["a0"], "persistance": p,
+            "seuil": gains[min(len(gains) - 1, int(len(gains) * CENTILE))], "gains": gains}
+
+
+def _series(decisions, releves, permutees=None):
+    """Sens de chaque agent a chaque releve, cote reel et cote ombre.
+
+    decisions : liste de (agent, releve, reel, ombre), releve = premier releve
+    que la decision touche ; une decision remplace la precedente du meme agent.
+    permutees : indices des decisions dont reel et ombre sont echanges.
+    """
+    reel, ombre = [{} for _ in range(releves)], [{} for _ in range(releves)]
+    courant_r, courant_o = {}, {}
+    par_releve = collections.defaultdict(list)
+    for i, d in enumerate(decisions):
+        par_releve[d[1]].append(i)
+    for j in range(releves):
+        for i in par_releve.get(j, []):
+            agent, _, r, o = decisions[i]
+            if permutees and i in permutees:
+                r, o = o, r
+            courant_r[agent], courant_o[agent] = r, o
+        reel[j], ombre[j] = dict(courant_r), dict(courant_o)
+    return reel, ombre
+
+
+def _ecart_moyen(reel, ombre, regroupement):
+    ecarts = []
+    for r, o in zip(reel, ombre):
+        agents = [a for a in r if r[a] is not None and o.get(a) is not None]
+        ar = accord_exprime([r[a] for a in agents], regroupement)
+        ao = accord_exprime([o[a] for a in agents], regroupement)
+        if ar is not None and ao is not None:
+            ecarts.append(ar - ao)
+    return (sum(ecarts) / len(ecarts), len(ecarts)) if ecarts else (None, 0)
+
+
+def ecart_ombres(decisions, releves, regroupement=None, permutations=1000, graine=0):
+    """Ecart moyen d'accord reel - ombre, et sa p-valeur par permutation des paires.
+
+    Sans effet du social, la decision reelle et son ombre sont echangeables :
+    chaque permutation echange au hasard la moitie des paires (le sens persiste
+    des deux cotes de la meme facon). Une paire ou l'un des deux cotes est en
+    incident (None) est retiree des deux cotes. p unilaterale : le social
+    augmente-t-il l'accord ?
+    """
+    reel, ombre = _series(decisions, releves)
+    observe, n = _ecart_moyen(reel, ombre, regroupement)
+    if observe is None:
+        return {"ecart": None, "p": None, "releves": 0, "decisions": len(decisions)}
+    rng = random.Random(graine)
+    au_moins = 0
+    for _ in range(permutations):
+        echanges = {i for i in range(len(decisions)) if rng.random() < 0.5}
+        e, _ = _ecart_moyen(*_series(decisions, releves, echanges), regroupement)
+        au_moins += e is not None and e >= observe
+    return {"ecart": observe, "p": (1 + au_moins) / (1 + permutations), "releves": n,
+            "decisions": len(decisions)}

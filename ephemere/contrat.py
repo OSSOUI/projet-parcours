@@ -11,7 +11,7 @@ et le rejeu (E3) casse.
 
 import difflib
 
-VERSION_CONTRAT = "1.7.0"   # 1.1 : perception, coherence, energie ; 1.2 : run.v2 ; 1.3 : population.v2 ; 1.4 : reseau.v1 ; 1.5 : perception.v2 ; 1.6 : decision.v2, publication.v2 ; 1.7 : replique.v1 (ajouts seuls)
+VERSION_CONTRAT = "1.10.0"   # 1.1 : perception, coherence, energie ; 1.2 : run.v2 ; 1.3 : population.v2 ; 1.4 : reseau.v1 ; 1.5 : perception.v2 ; 1.6 : decision.v2, publication.v2 ; 1.7 : replique.v1 ; 1.8 : ombre.v1 ; 1.9 : seq dans l'enveloppe ; 1.10 : narratrice.v1, narration.v1 (ajouts seuls)
 
 # En-tetes de run. run.v1 ne dit pas quel modele social a tourne : il se lit
 # toujours comme "v1". run.v2 le rend obligatoire.
@@ -44,6 +44,16 @@ SENS = {
 
 NUL = type(None)
 
+# Les masques des ombres ; repetes ici pour que le contrat ne depende pas des agents.
+MASQUES_OMBRE = ("sans_discours", "sans_social", "sans_souvenirs")
+
+# Evenements de l'observateur externe (narratrice.py). Ils vivent dans
+# runs/<run>.narration.jsonl, jamais dans le journal du monde : journal.Journal
+# les refuse, et le simulateur n'ouvre jamais ce fichier.
+SCHEMAS_OBSERVATEUR = ("narratrice.v1", "narration.v1")
+TYPES_AFFIRMATION = ("observation", "mesure", "interpretation", "incertitude")
+STATUTS_NARRATION = ("valide", "partiel", "vide", "incident")
+
 # Enveloppe commune a TOUS les evenements.
 # t_sim et t_traitement sont les deux horloges distinctes exigees par C3.
 ENVELOPPE = {
@@ -54,6 +64,13 @@ ENVELOPPE = {
     "t_emission": str,       # horloge reelle a la production (ISO 8601)
     "t_traitement": (str, NUL),  # horloge reelle au traitement, rempli par le consommateur
 }
+
+# Champs d'enveloppe facultatifs : verifies s'ils sont la, jamais exiges, pour
+# que les runs anterieurs restent conformes.
+#   seq  rang de l'evenement parmi les evenements conformes du run, a partir de
+#        0 ; (run, seq) l'identifie dans le fichier, dans Kafka et au rejeu.
+#        Ajoute en 1.9.0 ; pour un run plus ancien, voir journal.lire().
+OPTIONNELS = {"seq": int}
 
 CORPS = {
     "run.v1": {"mode": str, "nb_agents": int, "graine": int, "jours": int,
@@ -89,6 +106,27 @@ CORPS = {
     # ruban veut dire pour celui qui parle, a ce moment de l'echange.
     "replique.v1": {"conversation": str, "tour": int, "agent": str, "destinataire": str,
                     "texte": str, "categorie": (str, NUL), "moteur": str, "valide": bool},
+    # Temoin asservi (ombre) d'une decision LLM : la meme decision, reposee au
+    # meme instant avec une part du social masquee, jamais appliquee. Porte la
+    # decision reelle pour que la paire se lise seule, meme en asynchrone ou la
+    # decision n'est ecrite qu'a la fin de la reflexion.
+    "ombre.v1": {"agent": str, "masque": str, "t_decision": int, "porte": (bool, NUL),
+                 "categorie": (str, NUL), "valide": bool, "incident": (str, NUL),
+                 "reel_porte": bool, "reel_categorie": str, "reel_valide": bool},
+    # En-tete du fichier de narration : quel journal est observe, comment.
+    # empreinte_source : sha256 du journal lu en post-traitement, None en suivi.
+    "narratrice.v1": {"source": str, "empreinte_source": (str, NUL), "mode": str,
+                      "periode": int, "taille": str, "modele": str, "temperature": float,
+                      "empreinte_prompt": str, "version_contrat": str},
+    # Une synthese de la narratrice sur une fenetre du run. t_sim = fin de la
+    # fenetre ; t_emission = heure reelle de generation. affirmations : apres
+    # validation, chacune avec type, statut et sources run#seq ;
+    # affirmations_brutes : ce que le modele a rendu, pour revalider au rejeu.
+    "narration.v1": {"narration": str, "fenetre": dict, "texte": str, "affirmations": list,
+                     "affirmations_brutes": (list, NUL), "sources": list, "indicateurs": list,
+                     "empreinte_faits": str, "modele": dict, "empreinte_prompt": str,
+                     "statut": str, "incident": (str, NUL), "reponse_brute": (str, NUL),
+                     "mesure": dict},
     "recuperation.v1": {"agent": str, "requete": str, "resultats": list,
                         "nb_resultats": int, "corpus": dict},
     "incident.v1": {"agent": (str, NUL), "nature": str, "details": dict},
@@ -155,6 +193,11 @@ def verifier(evt):
             evt[champ] = valeur
         if not isinstance(valeur, attendu):
             return False, f"{champ} : {type(valeur).__name__} au lieu de {attendu}"
+    for champ, attendu in OPTIONNELS.items():
+        if champ in evt and (isinstance(evt[champ], bool) or not isinstance(evt[champ], attendu)):
+            return False, f"{champ} : {type(evt[champ]).__name__} au lieu de {attendu}"
+    if "seq" in evt and evt["seq"] < 0:
+        return False, "seq negatif"
     if nom == "run.v2" and evt["modele_social"] not in MODELES_SOCIAUX:
         return False, f"modele_social inconnu : {evt['modele_social']!r}"
     if nom == "decision.v2" and evt["sens_percu"] not in SENS:
@@ -163,6 +206,18 @@ def verifier(evt):
         return False, f"categorie hors liste fermee : {evt['categorie']!r}"
     if nom == "replique.v1" and evt["categorie"] is not None and evt["categorie"] not in SENS:
         return False, f"categorie hors liste fermee : {evt['categorie']!r}"
+    if nom == "ombre.v1":
+        if evt["masque"] not in MASQUES_OMBRE:
+            return False, f"masque inconnu : {evt['masque']!r}"
+        for champ in ("categorie", "reel_categorie"):
+            if evt[champ] is not None and evt[champ] not in SENS:
+                return False, f"{champ} hors liste fermee : {evt[champ]!r}"
+    if nom == "narration.v1":
+        if evt["statut"] not in STATUTS_NARRATION:
+            return False, f"statut de narration inconnu : {evt['statut']!r}"
+        for a in evt["affirmations"]:
+            if not isinstance(a, dict) or a.get("type") not in TYPES_AFFIRMATION:
+                return False, f"affirmation sans type valide : {a!r}"[:200]
     if nom == "indicateurs.v1" and evt["sens_dominant"] not in SENS:
         return False, f"sens_dominant hors liste fermee : {evt['sens_dominant']!r}"
     return True, None

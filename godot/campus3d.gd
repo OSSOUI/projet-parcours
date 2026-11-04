@@ -4,10 +4,14 @@ extends SubViewportContainer
 ## Mêmes règles que le plan : la vue AFFICHE l'état reçu du pont, elle ne
 ## simule rien. Chaque groupe est un bâtiment, les étudiants se tiennent sur
 ## le parvis de leur bâtiment, les ponts du réseau sont les chemins au sol et
-## les traits sont les regards du jour (perception.v2). Personne ne se déplace :
-## le modèle n'a pas d'espace, le "lieu" où l'on se croise est le groupe. C'est
-## pour cela qu'il n'y a ni navigation ni NavigationServer3D : un trajet affiché
-## serait un déplacement qu'aucun événement du run ne contient (F6).
+## les traits sont les regards du jour (perception.v2). Le modèle n'a pas
+## d'espace : le "lieu" où l'on se croise est le groupe. Un étudiant ne marche
+## donc que pour un événement du run : quand il écrit en privé à quelqu'un
+## (publication privée ou réplique de conversation), il va le voir, reste le
+## temps de l'échange, puis revient à sa place. Dans son groupe, ce sont
+## quelques pas sur le parvis ; vers un autre groupe, une traversée du campus. Aucun trajet sans
+## événement (F6), et pas de NavigationServer3D : les trajets suivent des
+## allées fixes (devant chaque rangée, entre les bâtiments).
 ##
 ## Lecture : la couleur du corps dit ce que le ruban veut dire pour l'étudiant ;
 ## corps franc et anneau lumineux au poignet : il le porte ; corps pâle sans
@@ -40,17 +44,32 @@ const PAS_AGENT := 0.95
 const DUREE_VOL := 0.9
 const DUREE_ONDE := 1.2
 const DUREE_SAUT := 0.6
+const VITESSE_MARCHE := 6.0   # m/s : accéléré, un trajet dure deux à cinq secondes
+const DUREE_ECHANGE := 2.0    # arrêt devant le destinataire, prolongé à chaque réplique
+const RECUL_ALLEE := 6.6      # allée devant une rangée, depuis le centre des bâtiments
 const HAUTEUR_TRAIT := 1.05
 
 # Émission : au-dessus de 1, une surface dépasse le blanc et passe le seuil du
 # glow ; statique, elle éclaire aussi son entourage par le SDFGI.
-const EMISSION_RUBAN := 2.2
-const EMISSION_RUBAN_ESTOMPE := 0.4
-const EMISSION_FENETRE := 1.4
-const EMISSION_LAMPE := 4.0
+const EMISSION_RUBAN := 1.4
+const EMISSION_RUBAN_ESTOMPE := 0.3
+const EMISSION_FENETRE := 0.35   # de jour : un reflet chaud, pas une lampe
+const EMISSION_LAMPE := 0.6   # sous le seuil du glow : pas de halo blanc en plein jour
 const EMISSION_BILLE := 3.0
 const EMISSION_ONDE := 2.0
-const BROUILLARD := 0.006   # densité par mètre : à 40 m, environ 20 % de voile
+const BROUILLARD := 0.0025  # densité par mètre : à 40 m, moins de 10 % de voile
+
+# Matériaux du décor : des teintes de campus réel, assez sombres pour que le
+# code couleur des sens (corps et rubans) reste ce qui ressort. Une façade et
+# un toit par bâtiment, dans l'ordre des groupes.
+const FACADES := [Color("#a4553a"), Color("#d2b07c"), Color("#8b9aa6"),
+	Color("#c27a4f"), Color("#e0d2b4"), Color("#7a4a35")]
+const TOITS := [Color("#3a3f47"), Color("#7a3a28"), Color("#3a3f47"),
+	Color("#5e3426"), Color("#464b53"), Color("#7a3a28")]
+const HERBE := Color("#4a7232")
+const PARVIS := Color("#857d71")
+const PEAU := Color("#d9a882")
+const PALE := Color("#c4c1ca")   # vers quoi tire le corps d'un non-porteur
 
 var couleurs := {}
 var plan := {}
@@ -96,6 +115,9 @@ var _hors_champ := {}      # id -> true, tenu par les VisibleOnScreenNotifier3D
 var _etat := {}
 var _voisins := {}
 var _sale := true          # couleurs et traits à recalculer
+var _echelle := 1.0        # pixels réels par pixel d'interface (2 sur un écran Retina)
+var _taille_affichee := Vector2.ZERO   # taille voulue par la scène 2D, en pixels d'interface
+var _n_batiments := 0
 
 var _cible := Vector3(0, 0, 2.5)   # centre des parvis
 var _lacet := 0.0          # rotation autour de la verticale, en radians
@@ -107,6 +129,7 @@ var _depart_clic := Vector2.ZERO
 var _vols := []            # {de, vers, reste, noeud}
 var _ondes := []           # {noeud, mat, reste}
 var _sauts := {}           # id -> reste
+var _marches := {}         # id -> {chemin, vers, t, longueur, pause, retour}
 
 
 func _ready() -> void:
@@ -119,6 +142,13 @@ func _ready() -> void:
 	_vp.positional_shadow_atlas_size = 4096
 	_vp.handle_input_locally = false
 	add_child(_vp)
+	# Le conteneur dimensionne la vue en pixels d'interface : sur un écran
+	# Retina, la 3D serait calculée à moitié de la résolution puis agrandie,
+	# donc floue. Le conteneur prend donc la taille en pixels réels et se
+	# réduit d'autant à l'affichage (scale) : un pixel calculé, un pixel affiché.
+	_taille_affichee = size
+	get_tree().root.size_changed.connect(_ajuster_resolution)
+	_ajuster_resolution.call_deferred()
 	_monde = Node3D.new()
 	_vp.add_child(_monde)
 
@@ -129,8 +159,8 @@ func _ready() -> void:
 
 	_soleil = DirectionalLight3D.new()
 	_soleil.rotation_degrees = Vector3(-55, -35, 0)
-	_soleil.light_energy = 1.1
-	_soleil.light_color = Color("#fff4e6")
+	_soleil.light_energy = 1.25
+	_soleil.light_color = Color("#fff1dc")
 	_soleil.shadow_enabled = true
 	_soleil.light_angular_distance = 1.2      # pénombre PCSS : ombres douces
 	_soleil.shadow_blur = 1.5
@@ -147,7 +177,7 @@ func _ready() -> void:
 	dalle.size = Vector3(60, 0.2, 50)
 	sol.mesh = dalle
 	sol.position = Vector3(0, -0.1, 0)
-	sol.material_override = _matiere(Color("#e3e8dc"), 0.95)
+	sol.material_override = _matiere(HERBE, 1.0)
 	_monde.add_child(sol)
 
 	_camera = Camera3D.new()
@@ -188,27 +218,32 @@ func _ready() -> void:
 
 func _environnement() -> Environment:
 	var env := Environment.new()
-	# Ciel procédural aux teintes du fond de l'interface : il éclaire la scène
-	# (lumière ambiante, reflets, et le SDFGI lit sa lumière).
+	# Ciel procédural de jour : il éclaire la scène (lumière ambiante, reflets,
+	# et le SDFGI lit sa lumière).
 	var ciel := ProceduralSkyMaterial.new()
-	ciel.sky_top_color = Color("#b8c7dc")
-	ciel.sky_horizon_color = Color("#eef0f5")
-	ciel.ground_bottom_color = Color("#d9dccf")
-	ciel.ground_horizon_color = Color("#eef0f5")
+	ciel.sky_top_color = Color("#2f6cb3")
+	ciel.sky_horizon_color = Color("#a3c4e4")
+	ciel.ground_bottom_color = Color("#3d4a32")
+	ciel.ground_horizon_color = Color("#a3c4e4")
 	var sky := Sky.new()
 	sky.sky_material = ciel
 	env.background_mode = Environment.BG_SKY
 	env.sky = sky
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
-	env.ambient_light_energy = 0.6
+	env.ambient_light_energy = 0.45
 	env.reflected_light_source = Environment.REFLECTION_SOURCE_SKY
-	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
+	# ACES : plus de contraste que Filmic, les couleurs ne virent plus au blanc.
+	env.tonemap_mode = Environment.TONE_MAPPER_ACES
+	env.tonemap_exposure = 0.9
+	env.adjustment_enabled = true
+	env.adjustment_contrast = 1.08
+	env.adjustment_saturation = 1.15
 
 	# SDFGI : lumière indirecte et reflets en temps réel. Campus plat : la
 	# résolution verticale est réduite de moitié au profit de l'horizontale.
 	env.sdfgi_use_occlusion = true
 	env.sdfgi_read_sky_light = true
-	env.sdfgi_bounce_feedback = 0.5
+	env.sdfgi_bounce_feedback = 0.3
 	env.sdfgi_cascades = 4
 	env.sdfgi_min_cell_size = 0.2
 	env.sdfgi_y_scale = Environment.SDFGI_Y_SCALE_50_PERCENT
@@ -216,7 +251,7 @@ func _environnement() -> Environment:
 	# Brouillard volumétrique léger : de la profondeur sans délaver les couleurs
 	# du sens, qui sont le code de lecture de la scène.
 	env.volumetric_fog_density = BROUILLARD
-	env.volumetric_fog_albedo = Color("#eef0f5")
+	env.volumetric_fog_albedo = Color("#b9c9da")
 	env.volumetric_fog_anisotropy = 0.3
 	env.volumetric_fog_length = 80.0
 	env.volumetric_fog_detail_spread = 2.0
@@ -236,14 +271,14 @@ func _environnement() -> Environment:
 	# SSIL : la couleur rebondit à courte distance (corps sur le sol, sol sur
 	# les façades), en complément du SDFGI qui travaille à plus grande échelle.
 	env.ssil_radius = 4.0
-	env.ssil_intensity = 1.2
+	env.ssil_intensity = 0.7
 	env.ssil_sharpness = 0.98
 	env.ssil_normal_rejection = 1.0
 
 	# Glow : seules les surfaces au-dessus de 1 (rubans, lampes, messages)
 	# s'auréolent ; textes et corps restent nets.
 	env.glow_enabled = true
-	env.glow_intensity = 0.6
+	env.glow_intensity = 0.3
 	env.glow_bloom = 0.0
 	env.glow_hdr_threshold = 1.0
 	env.glow_blend_mode = Environment.GLOW_BLEND_MODE_SCREEN
@@ -261,10 +296,22 @@ func regler_qualite(haute: bool) -> void:
 	_env.ssil_enabled = haute
 	_env.volumetric_fog_enabled = haute
 	_vp.msaa_3d = Viewport.MSAA_4X if haute else Viewport.MSAA_2X
+	_ajuster_resolution()
 	var douceur: RenderingServer.ShadowQuality = RenderingServer.SHADOW_QUALITY_SOFT_HIGH \
 		if haute else RenderingServer.SHADOW_QUALITY_SOFT_LOW
 	RenderingServer.directional_soft_shadow_filter_set_quality(douceur)
 	RenderingServer.positional_soft_shadow_filter_set_quality(douceur)
+
+
+func _ajuster_resolution() -> void:
+	## En haute qualité, la 3D se calcule en pixels réels ; en rendu léger, en
+	## pixels d'interface (quatre fois moins de pixels sur un écran Retina).
+	if _vp == null or not is_inside_tree():
+		return
+	_echelle = maxf(1.0, get_viewport().get_final_transform().get_scale().x) \
+		if haute_qualite else 1.0
+	scale = Vector2.ONE / _echelle
+	size = (_taille_affichee * _echelle).round()
 
 
 # ------------------------------------------------------------------ outils
@@ -313,10 +360,12 @@ func _etiquette(texte: String, taille: int, couleur: Color) -> Label3D:
 	if police:
 		l.font = police
 	l.font_size = taille
-	l.pixel_size = 0.006
-	l.modulate = couleur
-	l.outline_size = 10
-	l.outline_modulate = Color(1, 1, 1, 0.9)
+	l.pixel_size = 0.008
+	# Texte clair sur contour sombre : lisible sur un toit comme sur l'herbe.
+	# La couleur demandée devient celle du contour.
+	l.modulate = Color("#fbfaf7")
+	l.outline_size = 14
+	l.outline_modulate = Color(couleur, 0.95)
 	l.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	l.no_depth_test = true
 	_sans_ombre_ni_gi(l)
@@ -336,6 +385,76 @@ func _placer_camera() -> void:
 func _centre_groupe(g: String) -> Vector3:
 	var c: Vector2i = plan.get(g, Vector2i(0, 0))
 	return Vector3((c.x - 1) * COLONNE, 0, (c.y - 0.5) * RANG)
+
+
+func _colonnes() -> int:
+	var n := 1
+	for g in plan:
+		n = maxi(n, (plan[g] as Vector2i).x + 1)
+	return n
+
+
+func _groupe_de(id: String) -> String:
+	for a in _etat.get("agents", []):
+		if a["id"] == id:
+			return a.get("groupe", "?")
+	return "?"
+
+
+func _trajet(de: String, vers: String) -> PackedVector3Array:
+	## Du parvis de l'un au parvis de l'autre par les allées : devant sa
+	## rangée, puis l'allée entre deux colonnes de bâtiments la plus proche,
+	## puis devant la rangée de l'autre. Arrivée juste devant le destinataire.
+	var a: Vector3 = _places[de]
+	var b: Vector3 = _places[vers] + Vector3(0, 0, 0.75)
+	if _groupe_de(de) == _groupe_de(vers):
+		# Même parvis, aucun bâtiment entre eux : droit devant le destinataire.
+		return PackedVector3Array([a, b])
+	var za := _centre_groupe(_groupe_de(de)).z + RECUL_ALLEE
+	var zb := _centre_groupe(_groupe_de(vers)).z + RECUL_ALLEE
+	var chemin := PackedVector3Array([a, Vector3(a.x, 0, za)])
+	if absf(za - zb) > 0.1:
+		# Allées entre colonnes, et de part et d'autre du campus.
+		var meilleure := 0.0
+		var cout_min := INF
+		for i in range(-1, _colonnes()):
+			var x := (i - 0.5) * COLONNE
+			var bord := i == -1 or i == _colonnes() - 1
+			var cout := absf(a.x - x) + absf(b.x - x) + (1.0 if bord else 0.0)
+			if cout < cout_min:
+				cout_min = cout
+				meilleure = x
+		chemin.append(Vector3(meilleure, 0, za))
+		chemin.append(Vector3(meilleure, 0, zb))
+	chemin.append(Vector3(b.x, 0, zb))
+	chemin.append(b)
+	return chemin
+
+
+func _longueur(chemin: PackedVector3Array) -> float:
+	var l := 0.0
+	for i in range(1, chemin.size()):
+		l += chemin[i - 1].distance_to(chemin[i])
+	return l
+
+
+func _le_long(chemin: PackedVector3Array, d: float) -> Array:
+	## Position à la distance d du départ, et direction de la marche.
+	for i in range(1, chemin.size()):
+		var seg := chemin[i - 1].distance_to(chemin[i])
+		if d <= seg or i == chemin.size() - 1:
+			var dir := (chemin[i] - chemin[i - 1]).normalized()
+			return [chemin[i - 1] + dir * minf(d, seg), dir]
+		d -= seg
+	return [chemin[-1], Vector3.FORWARD]
+
+
+func _position(id: String) -> Vector3:
+	## Où se tient l'étudiant maintenant : sa place, ou là où sa marche l'a mené.
+	if _noeuds.has(id):
+		var racine: Node3D = _noeuds[id]["racine"]
+		return Vector3(racine.position.x, 0, racine.position.z)
+	return _places.get(id, Vector3.ZERO)
 
 
 func _reveiller() -> void:
@@ -385,6 +504,7 @@ func mettre_a_jour(etat: Dictionary, voisins: Dictionary) -> void:
 
 func _construire(agents: Array) -> void:
 	_vider(_batiments)
+	_n_batiments = 0
 	_vider(_agents)
 	_comptes.clear()
 	_noeuds.clear()
@@ -421,24 +541,51 @@ func _batiment(g: String, centre: Vector3) -> void:
 	boite.size = BATIMENT
 	corps.mesh = boite
 	corps.position = centre + Vector3(0, BATIMENT.y / 2.0, 0)
-	corps.material_override = _matiere(Color("#f4f2f7"), 0.8)
+	var rang_couleur := _n_batiments % FACADES.size()
+	_n_batiments += 1
+	corps.material_override = _matiere(FACADES[rang_couleur], 0.85)
 	_batiments.add_child(corps)
+	# Le parvis : une dalle de pierre devant la façade, où se tiennent les étudiants.
+	var parvis := MeshInstance3D.new()
+	var pierre := BoxMesh.new()
+	pierre.size = Vector3(BATIMENT.x + 2.0, 0.04, 6.5)
+	parvis.mesh = pierre
+	parvis.position = centre + Vector3(0, 0.02, BATIMENT.z / 2.0 + 2.6)
+	parvis.material_override = _matiere(PARVIS, 0.9)
+	_batiments.add_child(parvis)
+	# La porte ; des arbres derrière les bâtiments du fond et sur les côtés du
+	# campus, jamais dans les allées où les étudiants marchent.
+	var porte := MeshInstance3D.new()
+	var battant := BoxMesh.new()
+	battant.size = Vector3(1.0, 1.6, 0.06)
+	porte.mesh = battant
+	porte.position = centre + Vector3(0, 0.8, BATIMENT.z / 2.0 + 0.02)
+	porte.material_override = _matiere(Color("#4e3423"), 0.6)
+	_batiments.add_child(porte)
+	var c: Vector2i = plan.get(g, Vector2i(0, 0))
+	if c.y == 0:
+		for dx in [-2.4, 2.4]:
+			_arbre(centre + Vector3(dx, 0, -BATIMENT.z / 2.0 - 1.6))
+	if c.x == 0 or c.x == _colonnes() - 1:
+		var cote := -1.0 if c.x == 0 else 1.0
+		_arbre(centre + Vector3(cote * (COLONNE / 2.0 + 1.5), 0, 0))
 	var toit := MeshInstance3D.new()
 	var dalle := BoxMesh.new()
 	dalle.size = Vector3(BATIMENT.x + 0.3, 0.25, BATIMENT.z + 0.3)
 	toit.mesh = dalle
 	toit.position = centre + Vector3(0, BATIMENT.y + 0.12, 0)
-	toit.material_override = _matiere(Color("#c9c3d8"), 0.45, 0.35)   # zinc
+	toit.material_override = _matiere(TOITS[rang_couleur], 0.7)   # ardoise ou tuile
 	_batiments.add_child(toit)
 	# Une rangée de fenêtres éclairées sur la façade, pour lire l'échelle.
-	var vitrage := _lumineuse(Color("#ffe3b3"), EMISSION_FENETRE, 0.08)
-	vitrage.albedo_color = Color("#b9c6d8")
+	var vitrage := _lumineuse(Color("#ffd9a0"), EMISSION_FENETRE, 0.08)
+	vitrage.albedo_color = Color("#2b3a4a")
+	vitrage.metallic = 0.3
 	for i in 5:
 		var f := MeshInstance3D.new()
 		var vitre := BoxMesh.new()
 		vitre.size = Vector3(0.8, 0.9, 0.05)
 		f.mesh = vitre
-		f.position = centre + Vector3((i - 2) * 1.3, BATIMENT.y * 0.6, BATIMENT.z / 2.0 + 0.01)
+		f.position = centre + Vector3((i - 2) * 1.3, BATIMENT.y * 0.72, BATIMENT.z / 2.0 + 0.01)
 		f.material_override = vitrage
 		_batiments.add_child(f)
 	# La lampe du porche : un globe émissif et sa lumière, ombres douces.
@@ -449,13 +596,14 @@ func _batiment(g: String, centre: Vector3) -> void:
 	boule.height = 0.24
 	globe.mesh = boule
 	globe.position = porche
-	globe.material_override = _lumineuse(Color("#ffd8a8"), EMISSION_LAMPE)
+	globe.material_override = _lumineuse(Color("#c9a77a"), EMISSION_LAMPE)
 	globe.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	_batiments.add_child(globe)
 	var lampe := OmniLight3D.new()
-	lampe.position = porche + Vector3(0, -0.2, 0.15)
+	# Assez loin du mur et du globe : collée à la façade, la lampe y faisait une tache blanche.
+	lampe.position = porche + Vector3(0, -0.9, 1.4)
 	lampe.light_color = Color("#ffd8a8")
-	lampe.light_energy = 0.8
+	lampe.light_energy = 0.3
 	lampe.omni_range = 7.0
 	lampe.shadow_enabled = true
 	lampe.omni_shadow_mode = OmniLight3D.SHADOW_CUBE
@@ -469,6 +617,27 @@ func _batiment(g: String, centre: Vector3) -> void:
 	compte.position = centre + Vector3(0, BATIMENT.y + 0.55, 0)
 	_batiments.add_child(compte)
 	_comptes[g] = compte
+
+
+func _arbre(pied: Vector3) -> void:
+	## Décor statique : un tronc et un feuillage, sans rôle dans le modèle.
+	var tronc := MeshInstance3D.new()
+	var cyl := CylinderMesh.new()
+	cyl.top_radius = 0.12
+	cyl.bottom_radius = 0.16
+	cyl.height = 1.6
+	tronc.mesh = cyl
+	tronc.position = pied + Vector3(0, 0.8, 0)
+	tronc.material_override = _matiere(Color("#5a3d27"), 0.9)
+	_batiments.add_child(tronc)
+	var feuillage := MeshInstance3D.new()
+	var boule := SphereMesh.new()
+	boule.radius = 1.1
+	boule.height = 2.0
+	feuillage.mesh = boule
+	feuillage.position = pied + Vector3(0, 2.3, 0)
+	feuillage.material_override = _matiere(Color("#3f6b2b"), 0.95)
+	_batiments.add_child(feuillage)
 
 
 func _agent(a: Dictionary, place: Vector3, nom_visible: bool) -> void:
@@ -491,7 +660,7 @@ func _agent(a: Dictionary, place: Vector3, nom_visible: bool) -> void:
 	boule.height = 0.34
 	tete.mesh = boule
 	tete.position = Vector3(0, 1.17, 0)
-	tete.material_override = _matiere(Color("#f1e3d3"), 0.7)
+	tete.material_override = _matiere(PEAU, 0.7)
 	racine.add_child(tete)
 	# Le ruban : un anneau satiné et lumineux au poignet, de la couleur du
 	# sens, s'il le porte.
@@ -547,7 +716,8 @@ func _sortir_du_champ(id: String, racine: Node3D) -> void:
 	_hors_champ[id] = true
 	if _sauts.has(id):
 		_sauts.erase(id)
-		racine.position = _places[id]
+		if not _marches.has(id):
+			racine.position = _places[id]
 
 
 func _entrer_dans_le_champ(id: String, racine: Node3D) -> void:
@@ -612,11 +782,11 @@ func _colorer() -> void:
 		var n: Dictionary = _noeuds[id]
 		var c: Color = couleurs.get(a.get("categorie", "aucun_sens"), Color.GRAY)
 		var porte: bool = a.get("porte", false)
-		var corps := c if porte else c.lerp(Color.WHITE, 0.72)
+		var corps := c if porte else c.lerp(PALE, 0.6)
 		var estompe: bool = selection != "" and id != selection \
 			and not _voisins.get(selection, {}).has(id)
 		if estompe:
-			corps = corps.lerp(Color("#d8d6de"), 0.6)
+			corps = corps.lerp(Color("#8a8792"), 0.6)
 		var nom_visible: bool = n["nom_visible"] or id == survol or id == selection
 		var vu := [corps, c, porte, a.get("valide", true), estompe, nom_visible]
 		if vu == n["vu"]:
@@ -631,7 +801,7 @@ func _colorer() -> void:
 		(n["alerte"] as Node3D).visible = not a.get("valide", true)
 		var nom: Label3D = n["nom"]
 		nom.visible = nom_visible
-		nom.modulate = Color("#24212e") if not estompe else Color("#9a97a6")
+		nom.modulate = Color("#fbfaf7") if not estompe else Color("#c9c6cf")
 	for g in totaux:
 		if _comptes.has(g):
 			(_comptes[g] as Label3D).text = "%d/%d portent" % [int(porteurs.get(g, 0)), int(totaux[g])]
@@ -654,6 +824,19 @@ func animer_message(de: String, vers: String, couleur: Color) -> void:
 	if vers != "" and _places.has(vers):
 		if _hors_champ.has(de) and _hors_champ.has(vers):
 			return
+		# Une conversation en cours : l'échange se prolonge sur place.
+		for qui in [de, vers]:
+			if _marches.has(qui) and _marches[qui]["vers"] in [de, vers] \
+					and not _marches[qui]["retour"]:
+				_marches[qui]["pause"] = DUREE_ECHANGE
+		# L'expéditeur est libre, et le destinataire n'est pas parti lui-même
+		# voir quelqu'un : il y va à pied. Sinon, la bille.
+		if not _marches.has(de) and not _marches.has(vers):
+			var chemin := _trajet(de, vers)
+			_marches[de] = {"chemin": chemin, "vers": vers, "t": 0.0,
+				"longueur": _longueur(chemin), "pause": DUREE_ECHANGE, "retour": false}
+			set_process(true)
+			return
 		var bille := MeshInstance3D.new()
 		var s := SphereMesh.new()
 		s.radius = 0.13
@@ -662,7 +845,8 @@ func animer_message(de: String, vers: String, couleur: Color) -> void:
 		bille.material_override = _lumineuse(couleur, EMISSION_BILLE)
 		_sans_ombre_ni_gi(bille)
 		_effets.add_child(bille)
-		_vols.append({"de": de, "vers": vers, "reste": DUREE_VOL, "noeud": bille})
+		_vols.append({"de": de, "vers": vers, "reste": DUREE_VOL, "noeud": bille,
+			"a": _position(de), "b": _position(vers)})
 	else:
 		if _hors_champ.has(de):
 			return
@@ -674,7 +858,7 @@ func animer_message(de: String, vers: String, couleur: Color) -> void:
 		var m := _lumineuse(Color(couleur, 0.8), EMISSION_ONDE)
 		onde.material_override = m
 		_sans_ombre_ni_gi(onde)
-		onde.position = _places[de] + Vector3(0, 0.05, 0)
+		onde.position = _position(de) + Vector3(0, 0.05, 0)
 		_effets.add_child(onde)
 		_ondes.append({"noeud": onde, "mat": m, "reste": DUREE_ONDE})
 	set_process(true)
@@ -695,10 +879,12 @@ func vider_animations() -> void:
 		(o["noeud"] as Node).queue_free()
 	_vols.clear()
 	_ondes.clear()
-	for id in _sauts:
+	for id in _sauts.keys() + _marches.keys():
 		if _noeuds.has(id):
 			(_noeuds[id]["racine"] as Node3D).position = _places[id]
+			(_noeuds[id]["racine"] as Node3D).rotation.y = 0.0
 	_sauts.clear()
+	_marches.clear()
 
 
 func _process(delta: float) -> void:
@@ -707,7 +893,7 @@ func _process(delta: float) -> void:
 		_sale = false
 		_colorer()
 		_dessiner_traits()
-	if _vols.is_empty() and _ondes.is_empty() and _sauts.is_empty():
+	if _vols.is_empty() and _ondes.is_empty() and _sauts.is_empty() and _marches.is_empty():
 		set_process(false)   # plus rien ne bouge : la vue dort jusqu'au prochain changement
 
 
@@ -715,8 +901,8 @@ func _animer(delta: float) -> void:
 	for v in _vols:
 		v["reste"] -= delta
 		var avance: float = 1.0 - float(v["reste"]) / DUREE_VOL
-		var a: Vector3 = _places.get(v["de"], Vector3.ZERO) + Vector3(0, 1.3, 0)
-		var b: Vector3 = _places.get(v["vers"], Vector3.ZERO) + Vector3(0, 1.3, 0)
+		var a: Vector3 = v["a"] + Vector3(0, 1.3, 0)
+		var b: Vector3 = v["b"] + Vector3(0, 1.3, 0)
 		(v["noeud"] as Node3D).position = a.lerp(b, avance) + Vector3(0, sin(avance * PI) * 2.0, 0)
 	for v in _vols.filter(func(x): return x["reste"] <= 0.0):
 		(v["noeud"] as Node).queue_free()
@@ -732,16 +918,53 @@ func _animer(delta: float) -> void:
 	for o in _ondes.filter(func(x): return x["reste"] <= 0.0):
 		(o["noeud"] as Node).queue_free()
 	_ondes = _ondes.filter(func(x): return x["reste"] > 0.0)
-	# Seuls les étudiants qui sautent bougent ; les autres restent posés.
+	# Seuls bougent les étudiants qui marchent ou qui sautent.
+	var bases := {}
+	for id in _marches.keys():
+		bases[id] = _marcher(id, delta)
 	for id in _sauts.keys():
-		var racine: Node3D = _noeuds[id]["racine"]
+		var hauteur := 0.0
 		_sauts[id] -= delta
 		if _sauts[id] <= 0.0:
 			_sauts.erase(id)
-			racine.position = _places[id]
 		else:
 			var avance: float = 1.0 - float(_sauts[id]) / DUREE_SAUT
-			racine.position = _places[id] + Vector3(0, sin(avance * PI) * 0.45, 0)
+			hauteur = sin(avance * PI) * 0.45
+		var base: Vector3 = bases.get(id, _position(id) if _marches.has(id) else _places[id])
+		(_noeuds[id]["racine"] as Node3D).position = base + Vector3(0, hauteur, 0)
+
+
+func _marcher(id: String, delta: float) -> Vector3:
+	## Aller par les allées, arrêt le temps de l'échange, retour par le même
+	## chemin. Renvoie la position au sol ; la marche se termine à sa place.
+	var m: Dictionary = _marches[id]
+	var racine: Node3D = _noeuds[id]["racine"]
+	var longueur: float = m["longueur"]
+	if m["t"] < longueur:
+		m["t"] = minf(longueur, m["t"] + VITESSE_MARCHE * delta)
+	elif m["pause"] > 0.0 and not m["retour"]:
+		m["pause"] -= delta
+		if m["pause"] <= 0.0:
+			m["retour"] = true
+			m["t"] = 0.0
+			var inverse := PackedVector3Array()
+			for i in range(m["chemin"].size() - 1, -1, -1):
+				inverse.append(m["chemin"][i])
+			m["chemin"] = inverse
+	else:
+		_marches.erase(id)
+		racine.rotation.y = 0.0
+		return _places[id]
+	var ici: Array = _le_long(m["chemin"], m["t"])
+	var dir: Vector3 = ici[1]
+	var pos: Vector3 = ici[0]
+	if m["t"] < longueur:
+		racine.rotation.y = atan2(dir.x, dir.z)
+		pos.y = absf(sin(m["t"] * 5.0)) * 0.06   # petit balancement du pas
+	else:
+		racine.rotation.y = PI   # face au destinataire, qui regarde la caméra
+	racine.position = pos
+	return pos
 
 
 func _dessiner_traits() -> void:
@@ -797,7 +1020,7 @@ func _agent_sous(p: Vector2) -> String:
 		var tete: Vector3 = (_noeuds[id]["racine"] as Node3D).position + Vector3(0, 0.8, 0)
 		if _camera.is_position_behind(tete):
 			continue
-		var d := _camera.unproject_position(tete).distance_to(p)
+		var d := _camera.unproject_position(tete).distance_to(p) / _echelle
 		if d < d_min:
 			d_min = d
 			meilleur = id
@@ -833,10 +1056,12 @@ func _gui_input(event: InputEvent) -> void:
 	elif event is InputEventMouseMotion:
 		var m := event as InputEventMouseMotion
 		if m.button_mask & MOUSE_BUTTON_MASK_LEFT:
-			if m.position.distance_to(_depart_clic) > 4.0:
+			if m.position.distance_to(_depart_clic) > 4.0 * _echelle:
 				_glisse = true
-			_lacet -= m.relative.x * 0.008
-			_tangage = clampf(_tangage + m.relative.y * 0.006, deg_to_rad(15.0), deg_to_rad(85.0))
+			# Positions locales en pixels réels : on ramène le geste en pixels d'interface.
+			_lacet -= m.relative.x / _echelle * 0.008
+			_tangage = clampf(_tangage + m.relative.y / _echelle * 0.006,
+				deg_to_rad(15.0), deg_to_rad(85.0))
 			_placer_camera()
 			accept_event()
 		_survoler(m.position)
