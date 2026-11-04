@@ -64,6 +64,8 @@ class Pont:
 
     async def diffuser(self, evt, cle=None):
         import websockets
+        if self.campus.deja_vu(evt, cle):
+            return
         t0 = time.perf_counter()
         self.campus.appliquer(evt, cle)
         charge = json.dumps({"type": "evenement", "evenement": evt,

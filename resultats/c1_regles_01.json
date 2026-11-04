@@ -1,0 +1,35 @@
+{
+ "run": "c1_regles_01",
+ "date": "2026-11-04T03:05:06",
+ "duree_run_s": 0.5,
+ "evenements_fichier": 493,
+ "rejets_contrat": 0,
+ "producteur": {
+  "topic": "ephemere.evenements",
+  "cle": "c1_regles_01",
+  "publies": 493,
+  "confirmes": 493,
+  "perdus": 0,
+  "sans_reponse": 0,
+  "seq_perdus": [],
+  "ecrits": 493
+ },
+ "messages_recus": 493,
+ "seq_uniques_recus": 493,
+ "pertes": 0,
+ "seq_perdus": [],
+ "pertes_annoncees_par_le_producteur": 0,
+ "inconnus": 0,
+ "doublons": 0,
+ "desordres": 0,
+ "contenu_different": 0,
+ "coupure_consommateur": null,
+ "latence_ms": {
+  "n": 493,
+  "mediane": 5.0,
+  "p95": 8.0,
+  "max": 109.0
+ },
+ "etat_kafka_egal_etat_fichier": true,
+ "c1_ok": true
+}

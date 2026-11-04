@@ -60,6 +60,9 @@ class Campus:
         self.sens_groupes = []    # B1 : par releve, le sens de chaque groupe
         self.contre_tendances = []
         self._releve_avant = None
+        self.dernier_seq = None   # seq du dernier evenement applique (contrat 1.9.0)
+        self.doublons = 0         # recus deux fois (renvoi Kafka), ignores
+        self.trous = 0            # seq sautes : evenements jamais recus
 
     def _agent(self, aid):
         if aid not in self.agents:
@@ -74,11 +77,27 @@ class Campus:
             }
         return self.agents[aid]
 
+    def deja_vu(self, evt, cle=None):
+        """Vrai pour un evenement de ce run deja applique : Kafka livre au moins
+        une fois, un renvoi ne doit pas compter deux fois la meme decision.
+        Un evenement sans seq (run anterieur a 1.9.0) n'est jamais ecarte."""
+        seq = evt.get("seq")
+        if seq is None or self.dernier_seq is None or (cle or evt.get("run")) != self.run:
+            return False
+        if seq <= self.dernier_seq:
+            self.doublons += 1
+            return True
+        return False
+
     def appliquer(self, evt, cle=None):
         """Integre un evenement et renvoie l'etat a diffuser."""
         schema = evt.get("schema", "")
         if schema in SCHEMAS_RUN or (cle and cle != self.run):
             self.reinitialiser(cle or evt.get("run"))
+        if evt.get("seq") is not None:
+            if self.dernier_seq is not None and evt["seq"] > self.dernier_seq + 1:
+                self.trous += evt["seq"] - self.dernier_seq - 1
+            self.dernier_seq = evt["seq"]
         if schema in SCHEMAS_RUN:
             self.modele_social = modele_social(evt)
             self.cloisonne = bool(evt.get("cloisonne", False))
@@ -295,6 +314,7 @@ class Campus:
             "sens_dominant": dominant, "part_sens_dominant": nb / n,
             "incidents": dict(self.incidents),
             "evenements_vus": self.vus,
+            "doublons_ecartes": self.doublons, "evenements_manquants": self.trous,
             "delai_traitement_ms": resumer_delais(self.delais_ms),
         }
 

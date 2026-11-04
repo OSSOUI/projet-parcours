@@ -8,6 +8,7 @@ Les deux modes relevent les indicateurs sur la MEME grille de temps simule,
 sinon leur comparaison (exigence C5) ne voudrait rien dire.
 """
 import argparse
+import hashlib
 import json
 import os
 import random
@@ -18,7 +19,7 @@ from datetime import datetime
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from ephemere import population
-from ephemere.agents_llm import DecideurLLM
+from ephemere.agents_llm import CONSIGNE, MASQUES, SYSTEME, DecideurLLM
 from ephemere import commandes as cmd
 from ephemere.rag import Base
 from ephemere.contrat import VERSION_CONTRAT
@@ -28,6 +29,10 @@ from ephemere.monde import Monde, memoriser
 from ephemere.regles_v1 import Regles
 
 RACINE = os.path.dirname(os.path.abspath(__file__))
+
+# Empreinte du prompt de decision : deux runs qui la partagent ont pose la meme
+# question au modele. Une consigne retouchee change l'empreinte (reproductibilite).
+EMPREINTE_PROMPT = hashlib.sha256((SYSTEME + CONSIGNE).encode("utf-8")).hexdigest()[:12]
 
 
 def fabriquer_decideurs(agents, args, config, base=None):
@@ -68,7 +73,8 @@ def fabriquer_decideurs(agents, args, config, base=None):
         for taille in tailles:
             moteurs[taille] = DecideurLLM(client, taille, base=base, k=args.passages,
                                           structure=getattr(args, "sortie_structuree", False),
-                                          definitions=getattr(args, "definitions", "courtes"))
+                                          definitions=getattr(args, "definitions", "courtes"),
+                                          memoire_sens=getattr(args, "memoire_sens", False))
             print(f"  {taille:10s} -> {modeles[taille]}")
     return {a["id"]: moteurs[a["moteur"]] for a in agents}, client
 
@@ -97,6 +103,11 @@ def enregistrer(journal, monde, agent, d, horloge, dialogue=None):
     if d.get("incident"):
         journal.ecrire("incident.v1", agent=agent["id"],
                        nature=d["incident"]["nature"], details=d["incident"]["details"])
+    for o in d.get("ombres", []):
+        journal.ecrire("ombre.v1", agent=agent["id"], masque=o["masque"],
+                       t_decision=d["t_decision"], porte=o["porte"], categorie=o["categorie"],
+                       valide=o["valide"], incident=o["incident"], reel_porte=d["porte"],
+                       reel_categorie=d["categorie"], reel_valide=d["valide"])
     texte = (d.get("publication") or "").strip()
     if not texte:
         return
@@ -135,6 +146,9 @@ def appliquer(agent, d, monde, horloge):
         "t_sim_lisible": horloge.lisible(),
         "fait": f"j'ai decide de {'porter' if d['porte'] else 'ne pas porter'} le ruban",
         "raison": d.get("raison", ""),
+        # Sens du ruban pour l'agent a cette decision. Garde en memoire, affiche
+        # seulement avec --memoire-sens (variante) : le prompt de reference ne change pas.
+        "categorie": d.get("categorie"),
     })
 
 
@@ -215,12 +229,26 @@ class Telemetrie:
 
 
 def _decider(decideurs, agent, monde, horloge, t_sim, args):
-    """Appelle le moteur de l'agent et note la mesure en direct, si demandee."""
+    """Appelle le moteur de l'agent et note la mesure en direct, si demandee.
+
+    Avec --ombres, la decision d'un agent LLM est reposee juste apres, au meme
+    instant et dans le meme etat, une fois par masque (temoin asservi de
+    l'indicateur d'emergence). Les ombres partent dans le journal et ne
+    touchent pas au monde ; leur latence n'entre pas dans le temps simule.
+    """
+    decideur = decideurs[agent["id"]]
     t0 = time.perf_counter()
-    d = decideurs[agent["id"]].decider(agent, monde, t_sim, horloge.lisible())
+    d = decideur.decider(agent, monde, t_sim, horloge.lisible())
     tele = getattr(args, "telemetrie", None)
     if tele:
         tele.appel(horloge, agent, d, time.perf_counter() - t0)
+    masques = getattr(args, "ombres", None) or []
+    if masques and isinstance(decideur, DecideurLLM):
+        documents = (d.get("recuperation") or {}).get("resultats") or []
+        d["t_decision"] = t_sim
+        d["ombres"] = [decideur.ombre(agent, monde, t_sim, horloge.lisible(), m, documents)
+                       for m in masques]
+        args.appels_ombres = getattr(args, "appels_ombres", 0) + len(masques)
     return d
 
 
@@ -365,6 +393,13 @@ def main():
     p.add_argument("--definitions", choices=["courtes", "nettes"], default="courtes",
                    help="definitions des six sens dans le prompt et le schema ; nettes = "
                         "celles testees le 30 octobre et non retenues (sens_a_priori.py)")
+    p.add_argument("--ombres", nargs="+", choices=MASQUES, default=[], metavar="MASQUE",
+                   help="temoin asservi : chaque decision LLM est reposee avec ce masque "
+                        f"({', '.join(MASQUES)}), sans etre appliquee ; un appel de plus "
+                        "par masque et par decision")
+    p.add_argument("--memoire-sens", action="store_true",
+                   help="variante experimentale (jamais dans la reference) : chaque souvenir de "
+                        "decision rappelle a l'agent LLM ce que le ruban voulait dire pour lui")
     p.add_argument("--conversation", type=int, default=0, metavar="N",
                    help="A2 : au plus N conversations privees par jour entre agents LLM ; "
                         "chaque conversation coute --repliques - 1 appels de plus")
@@ -429,7 +464,12 @@ def main():
                        sortie_structuree=bool(args.sortie_structuree and client),
                        definitions=args.definitions if client else None,
                        conversation={"par_jour": args.conversation if client else 0,
-                                     "repliques": args.repliques})
+                                     "repliques": args.repliques},
+                       ombres=list(args.ombres) if client else [],
+                       memoire_sens=bool(args.memoire_sens and client),
+                       temperature=client.temperature if client else None,
+                       empreinte_prompt=EMPREINTE_PROMPT,
+                       modeles=client.empreintes() if client else None)
         # Qui habite ce monde. Publie dans le flux pour que tout consommateur
         # puisse afficher des noms et des groupes sans fichier annexe.
         journal.ecrire("population.v1", resume=resume, agents=[
@@ -456,7 +496,9 @@ def main():
                        tokens_sortie=bilan["tokens_sortie"],
                        duree_run_s=round(time.perf_counter() - t0, 2),
                        interrompu=interrompu, incidents=incidents,
-                       par_taille=bilan["par_taille"])
+                       par_taille=bilan["par_taille"],
+                       # Comprises dans appels : a retrancher pour le cout du phenomene (E4).
+                       appels_ombres=getattr(args, "appels_ombres", 0))
         ecrits, rejets, chemin = journal.nb_ecrits, journal.nb_rejets, journal.chemin
     args.telemetrie.fermer()
 

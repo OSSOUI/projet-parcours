@@ -314,6 +314,17 @@ def detecter_derive(reponse):
     return None, None
 
 
+# Ombres (temoin asservi, decision du 3 novembre) : ce que chaque masque retire.
+#   sans_discours  le fil du reseau et les echanges recus ; l'adoption vue reste
+#   sans_social    tout ce qui vient des autres : discours ET adoption vue
+#   sans_souvenirs aucun souvenir (decisions ni echanges) ; le social reste :
+#                  mesure ce que la memoire individuelle change a la decision
+MASQUES = ("sans_discours", "sans_social", "sans_souvenirs")
+MASQUES_SOCIAUX = ("sans_discours", "sans_social")
+INCONNU_GROUPE = "tu ne sais pas qui le porte"
+INCONNU_CAMPUS = "tu ne sais pas ce qui se passe sur le campus"
+
+
 def choisir_souvenirs(agent, limite_recents=4):
     """Selection de memoire injectee dans le prompt (exigence A1).
 
@@ -326,8 +337,12 @@ def choisir_souvenirs(agent, limite_recents=4):
     return echanges[:1] + [m for m in memoire[-limite_recents:] if m not in echanges[:1]]
 
 
-def souvenirs(agent, limite_recents=4, choisis=None):
-    """Les souvenirs choisis, mis en forme pour le prompt."""
+def souvenirs(agent, limite_recents=4, choisis=None, avec_sens=False):
+    """Les souvenirs choisis, mis en forme pour le prompt.
+
+    avec_sens (variante --memoire-sens, jamais dans la reference) : un souvenir
+    de decision dit aussi ce que le ruban voulait dire pour l'agent ce jour-la.
+    """
     if choisis is None:
         choisis = choisir_souvenirs(agent, limite_recents)
     if not choisis:
@@ -335,7 +350,10 @@ def souvenirs(agent, limite_recents=4, choisis=None):
     lignes = []
     for m in choisis:
         lignes.append(f"- {m.get('t_sim_lisible', '')} : {m.get('fait', '')}"
-                      + (f" ({m['raison']})" if m.get("raison") else ""))
+                      + (f" ({m['raison']})" if m.get("raison") else "")
+                      + (f" ; pour toi, le ruban voulait alors dire : {SENS[m['categorie']]}"
+                         if avec_sens and m.get("genre") == "decision" and m.get("categorie") in SENS
+                         else ""))
     return "\n".join(lignes)
 
 
@@ -386,8 +404,10 @@ def requete_de(agent):
 class DecideurLLM:
     """Un moteur par taille de modele : llm_grand ou llm_petit (exigence A5)."""
 
-    def __init__(self, client, taille, base=None, k=3, structure=False, definitions="courtes"):
+    def __init__(self, client, taille, base=None, k=3, structure=False, definitions="courtes",
+                 memoire_sens=False):
         self.client = client
+        self.memoire_sens = memoire_sens   # variante experimentale, False dans la reference
         self.taille = taille
         self.base = base      # base de connaissances, exigence F1
         self.k = k
@@ -424,14 +444,27 @@ class DecideurLLM:
             return requete, []
         return requete, trouves
 
-    def _consigne(self, agent, monde, t_sim, horloge_lisible, documents=None):
-        """Renvoie (consigne, perception) : le prompt et ce qu'il donne a voir."""
+    def _consigne(self, agent, monde, t_sim, horloge_lisible, documents=None, masque=None):
+        """Renvoie (consigne, perception) : le prompt et ce qu'il donne a voir.
+
+        masque (ombres, voir MASQUES) retire une part du social et laisse tout
+        le reste identique : profil, etat, souvenirs de ses decisions, documents.
+        """
         groupe = agent["groupe"]
         porteurs, pairs = monde.porteurs_du_groupe(agent)
         noms = [a["nom"] for a in porteurs]
         messages = monde.fil_visible(agent, t_sim, limite=6)
         choisis = choisir_souvenirs(agent)
-        if monde.cloisonne:
+        if masque == "sans_souvenirs":
+            choisis = []
+        if masque in MASQUES_SOCIAUX:
+            # Ni fil ni echange : les memes souvenirs de decisions, au meme nombre.
+            messages = []
+            choisis = choisir_souvenirs({"memoire": [m for m in agent.get("memoire", [])
+                                                     if m.get("genre") != "echange"]})
+        if masque == "sans_social":
+            campus = INCONNU_CAMPUS
+        elif monde.cloisonne:
             # Temoin B3 : le campus n'existe plus comme espace commun. Un agent
             # LLM ne doit pas plus le voir qu'un agent a regles.
             campus = "tu ne sais pas ce qui se passe hors de ton groupe"
@@ -442,7 +475,10 @@ class DecideurLLM:
             "messages": [{"auteur": m["agent"], "t_sim": m["t_sim"], "texte": m["texte"]}
                          for m in messages],
             "souvenirs": [{"genre": m.get("genre", ""), "t_sim": m.get("t_sim"),
-                           "fait": m.get("fait", "")} for m in choisis],
+                           "fait": m.get("fait", ""),
+                           **({"sens_affiche": m.get("categorie")}
+                              if self.memoire_sens and m.get("genre") == "decision" else {})}
+                          for m in choisis],
             "documents": [{"id": d["id"], "numero": d["numero"], "jour": d["jour"]}
                           for d in (documents or [])],
             "vue": {"porteurs_groupe": noms, "pairs_groupe": len(pairs),
@@ -455,9 +491,10 @@ class DecideurLLM:
             personnalite=agent.get("personnalite", ""),
             date=horloge_lisible,
             situation=self._situation(agent),
-            nb_groupe=(f"{len(porteurs)} personne(s) sur {len(pairs)} le portent"
+            nb_groupe=(INCONNU_GROUPE if masque == "sans_social"
+                       else f"{len(porteurs)} personne(s) sur {len(pairs)} le portent"
                        if pairs else "tu es seul dans ton groupe"),
-            noms_groupe=(" : " + ", ".join(noms)) if noms else "",
+            noms_groupe=(" : " + ", ".join(noms)) if noms and masque != "sans_social" else "",
             campus=campus,
             documents="\n".join(
                 f"- {d['titre']} ({d['source']}) : {d['passage'][:220]}"
@@ -465,7 +502,7 @@ class DecideurLLM:
             messages="\n".join(
                 f"- {m['nom_auteur']} : {m['texte']}" for m in messages
             ) or "- (rien de nouveau)",
-            souvenirs=souvenirs(agent, choisis=choisis),
+            souvenirs=souvenirs(agent, choisis=choisis, avec_sens=self.memoire_sens),
             etat="portes" if agent["porte"] else "ne portes pas",
             categories=lister_sens(self.definitions),
             voisins=(" Dans ton groupe il y a : "
@@ -514,6 +551,28 @@ class DecideurLLM:
                 "valide": True, "moteur": self.taille, "mesure": mesure,
                 "perception": perception,
                 "recuperation": {"requete": requete, "resultats": documents}}
+
+    def ombre(self, agent, monde, t_sim, horloge_lisible, masque, documents):
+        """La meme decision, reposee au meme instant avec une part du social masquee.
+
+        Temoin asservi de l'indicateur d'emergence : meme agent, meme etat, memes
+        documents et MEME graine que la decision reelle, si bien que l'ecart ne
+        vient que de ce que le masque retire. Rien n'est applique au monde.
+        """
+        consigne, _ = self._consigne(agent, monde, t_sim, horloge_lisible, documents,
+                                     masque=masque)
+        reponse = self.client.json(SYSTEME, consigne, self.taille,
+                                   **self._options(self.schema_decision,
+                                                   f"decision:{agent['id']}:{t_sim}"))
+        mesure = dict(self.client.derniere_mesure)
+        nature, _ = detecter_derive(reponse)
+        if nature is None and self.structure and valider(reponse, self.schema_decision):
+            nature = "schema_non_respecte"
+        if nature:
+            return {"masque": masque, "porte": None, "categorie": None, "valide": False,
+                    "incident": nature, "mesure": mesure}
+        return {"masque": masque, "porte": reponse["porte"], "categorie": reponse["categorie"],
+                "valide": True, "incident": None, "mesure": mesure}
 
     def _options(self, schema, cle):
         """Options d'appel : schema si sortie structuree, cle de graine si le

@@ -67,6 +67,18 @@ CONFIGURATIONS = {
                     "quand meme le seuil, il vient de la ressemblance des reponses "
                     "d'un meme modele et non d'un contexte commun (question Q2)"),
     },
+    # Base experimentale du 3 novembre : la consigne v1 inchangee, plus deux
+    # ombres par decision LLM (temoin asservi). Lecture : emergence.py.
+    "llm_reference": {
+        "titre": "Reference LLM avec ombres (temoin asservi)",
+        "options": ["--mode", "synchrone", "--ombres", "sans_discours", "sans_social"],
+        "attendu": ("H6 : si le sens partage vient des interactions, l'accord reel depasse "
+                    "celui de l'ombre sans_social (p < 0,05) dans au moins 4 runs sur 5 ; "
+                    "l'ecart avec l'ombre sans_discours dit la part du discours (H1). "
+                    "Au vu de la relecture du 3 novembre (0 run sur 6 emergent en six "
+                    "sens avec le seuil a persistance), l'absence d'ecart est plausible "
+                    "et sera ecrite telle quelle"),
+    },
     "tout_grand": {
         "titre": "Tous les agents sur le grand modele (reference E5)",
         "options": ["--mode", "synchrone", "--tout-grand"],
@@ -87,6 +99,7 @@ PLANS = {
     # reference, puis Q2/B3, C5 et E5 sur les memes graines, avec une graine
     # envoyee au LLM. Le plus cher (tout_grand) passe en dernier.
     "phase1": ["llm_synchrone", "llm_temoin_cloisonne", "llm_asynchrone", "tout_grand"],
+    "reference": ["llm_reference"],
     "complet": ["baseline", "temoin_cloisonne", "llm_synchrone", "llm_temoin_cloisonne",
                 "llm_asynchrone", "tout_grand"],
 }
