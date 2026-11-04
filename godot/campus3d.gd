@@ -4,10 +4,14 @@ extends SubViewportContainer
 ## Mêmes règles que le plan : la vue AFFICHE l'état reçu du pont, elle ne
 ## simule rien. Chaque groupe est un bâtiment, les étudiants se tiennent sur
 ## le parvis de leur bâtiment, les ponts du réseau sont les chemins au sol et
-## les traits sont les regards du jour (perception.v2). Personne ne se déplace :
-## le modèle n'a pas d'espace, le "lieu" où l'on se croise est le groupe. C'est
-## pour cela qu'il n'y a ni navigation ni NavigationServer3D : un trajet affiché
-## serait un déplacement qu'aucun événement du run ne contient (F6).
+## les traits sont les regards du jour (perception.v2). Le modèle n'a pas
+## d'espace : le "lieu" où l'on se croise est le groupe. Un étudiant ne marche
+## donc que pour un événement du run : quand il écrit en privé à quelqu'un
+## (publication privée ou réplique de conversation), il va le voir, reste le
+## temps de l'échange, puis revient à sa place. Dans son groupe, ce sont
+## quelques pas sur le parvis ; vers un autre groupe, une traversée du campus. Aucun trajet sans
+## événement (F6), et pas de NavigationServer3D : les trajets suivent des
+## allées fixes (devant chaque rangée, entre les bâtiments).
 ##
 ## Lecture : la couleur du corps dit ce que le ruban veut dire pour l'étudiant ;
 ## corps franc et anneau lumineux au poignet : il le porte ; corps pâle sans
@@ -40,6 +44,9 @@ const PAS_AGENT := 0.95
 const DUREE_VOL := 0.9
 const DUREE_ONDE := 1.2
 const DUREE_SAUT := 0.6
+const VITESSE_MARCHE := 6.0   # m/s : accéléré, un trajet dure deux à cinq secondes
+const DUREE_ECHANGE := 2.0    # arrêt devant le destinataire, prolongé à chaque réplique
+const RECUL_ALLEE := 6.6      # allée devant une rangée, depuis le centre des bâtiments
 const HAUTEUR_TRAIT := 1.05
 
 # Émission : au-dessus de 1, une surface dépasse le blanc et passe le seuil du
@@ -122,6 +129,7 @@ var _depart_clic := Vector2.ZERO
 var _vols := []            # {de, vers, reste, noeud}
 var _ondes := []           # {noeud, mat, reste}
 var _sauts := {}           # id -> reste
+var _marches := {}         # id -> {chemin, vers, t, longueur, pause, retour}
 
 
 func _ready() -> void:
@@ -379,6 +387,76 @@ func _centre_groupe(g: String) -> Vector3:
 	return Vector3((c.x - 1) * COLONNE, 0, (c.y - 0.5) * RANG)
 
 
+func _colonnes() -> int:
+	var n := 1
+	for g in plan:
+		n = maxi(n, (plan[g] as Vector2i).x + 1)
+	return n
+
+
+func _groupe_de(id: String) -> String:
+	for a in _etat.get("agents", []):
+		if a["id"] == id:
+			return a.get("groupe", "?")
+	return "?"
+
+
+func _trajet(de: String, vers: String) -> PackedVector3Array:
+	## Du parvis de l'un au parvis de l'autre par les allées : devant sa
+	## rangée, puis l'allée entre deux colonnes de bâtiments la plus proche,
+	## puis devant la rangée de l'autre. Arrivée juste devant le destinataire.
+	var a: Vector3 = _places[de]
+	var b: Vector3 = _places[vers] + Vector3(0, 0, 0.75)
+	if _groupe_de(de) == _groupe_de(vers):
+		# Même parvis, aucun bâtiment entre eux : droit devant le destinataire.
+		return PackedVector3Array([a, b])
+	var za := _centre_groupe(_groupe_de(de)).z + RECUL_ALLEE
+	var zb := _centre_groupe(_groupe_de(vers)).z + RECUL_ALLEE
+	var chemin := PackedVector3Array([a, Vector3(a.x, 0, za)])
+	if absf(za - zb) > 0.1:
+		# Allées entre colonnes, et de part et d'autre du campus.
+		var meilleure := 0.0
+		var cout_min := INF
+		for i in range(-1, _colonnes()):
+			var x := (i - 0.5) * COLONNE
+			var bord := i == -1 or i == _colonnes() - 1
+			var cout := absf(a.x - x) + absf(b.x - x) + (1.0 if bord else 0.0)
+			if cout < cout_min:
+				cout_min = cout
+				meilleure = x
+		chemin.append(Vector3(meilleure, 0, za))
+		chemin.append(Vector3(meilleure, 0, zb))
+	chemin.append(Vector3(b.x, 0, zb))
+	chemin.append(b)
+	return chemin
+
+
+func _longueur(chemin: PackedVector3Array) -> float:
+	var l := 0.0
+	for i in range(1, chemin.size()):
+		l += chemin[i - 1].distance_to(chemin[i])
+	return l
+
+
+func _le_long(chemin: PackedVector3Array, d: float) -> Array:
+	## Position à la distance d du départ, et direction de la marche.
+	for i in range(1, chemin.size()):
+		var seg := chemin[i - 1].distance_to(chemin[i])
+		if d <= seg or i == chemin.size() - 1:
+			var dir := (chemin[i] - chemin[i - 1]).normalized()
+			return [chemin[i - 1] + dir * minf(d, seg), dir]
+		d -= seg
+	return [chemin[-1], Vector3.FORWARD]
+
+
+func _position(id: String) -> Vector3:
+	## Où se tient l'étudiant maintenant : sa place, ou là où sa marche l'a mené.
+	if _noeuds.has(id):
+		var racine: Node3D = _noeuds[id]["racine"]
+		return Vector3(racine.position.x, 0, racine.position.z)
+	return _places.get(id, Vector3.ZERO)
+
+
 func _reveiller() -> void:
 	## Couleurs et traits à recalculer à la prochaine image.
 	_sale = true
@@ -475,7 +553,8 @@ func _batiment(g: String, centre: Vector3) -> void:
 	parvis.position = centre + Vector3(0, 0.02, BATIMENT.z / 2.0 + 2.6)
 	parvis.material_override = _matiere(PARVIS, 0.9)
 	_batiments.add_child(parvis)
-	# La porte, et deux arbres derrière le bâtiment.
+	# La porte ; des arbres derrière les bâtiments du fond et sur les côtés du
+	# campus, jamais dans les allées où les étudiants marchent.
 	var porte := MeshInstance3D.new()
 	var battant := BoxMesh.new()
 	battant.size = Vector3(1.0, 1.6, 0.06)
@@ -483,8 +562,13 @@ func _batiment(g: String, centre: Vector3) -> void:
 	porte.position = centre + Vector3(0, 0.8, BATIMENT.z / 2.0 + 0.02)
 	porte.material_override = _matiere(Color("#4e3423"), 0.6)
 	_batiments.add_child(porte)
-	for cote in [-1.0, 1.0]:
-		_arbre(centre + Vector3(cote * (BATIMENT.x / 2.0 + 1.4), 0, -BATIMENT.z / 2.0 - 1.2))
+	var c: Vector2i = plan.get(g, Vector2i(0, 0))
+	if c.y == 0:
+		for dx in [-2.4, 2.4]:
+			_arbre(centre + Vector3(dx, 0, -BATIMENT.z / 2.0 - 1.6))
+	if c.x == 0 or c.x == _colonnes() - 1:
+		var cote := -1.0 if c.x == 0 else 1.0
+		_arbre(centre + Vector3(cote * (COLONNE / 2.0 + 1.5), 0, 0))
 	var toit := MeshInstance3D.new()
 	var dalle := BoxMesh.new()
 	dalle.size = Vector3(BATIMENT.x + 0.3, 0.25, BATIMENT.z + 0.3)
@@ -512,13 +596,14 @@ func _batiment(g: String, centre: Vector3) -> void:
 	boule.height = 0.24
 	globe.mesh = boule
 	globe.position = porche
-	globe.material_override = _lumineuse(Color("#ffd8a8"), EMISSION_LAMPE)
+	globe.material_override = _lumineuse(Color("#c9a77a"), EMISSION_LAMPE)
 	globe.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	_batiments.add_child(globe)
 	var lampe := OmniLight3D.new()
-	lampe.position = porche + Vector3(0, -0.2, 0.15)
+	# Assez loin du mur et du globe : collée à la façade, la lampe y faisait une tache blanche.
+	lampe.position = porche + Vector3(0, -0.9, 1.4)
 	lampe.light_color = Color("#ffd8a8")
-	lampe.light_energy = 0.4
+	lampe.light_energy = 0.3
 	lampe.omni_range = 7.0
 	lampe.shadow_enabled = true
 	lampe.omni_shadow_mode = OmniLight3D.SHADOW_CUBE
@@ -631,7 +716,8 @@ func _sortir_du_champ(id: String, racine: Node3D) -> void:
 	_hors_champ[id] = true
 	if _sauts.has(id):
 		_sauts.erase(id)
-		racine.position = _places[id]
+		if not _marches.has(id):
+			racine.position = _places[id]
 
 
 func _entrer_dans_le_champ(id: String, racine: Node3D) -> void:
@@ -738,6 +824,19 @@ func animer_message(de: String, vers: String, couleur: Color) -> void:
 	if vers != "" and _places.has(vers):
 		if _hors_champ.has(de) and _hors_champ.has(vers):
 			return
+		# Une conversation en cours : l'échange se prolonge sur place.
+		for qui in [de, vers]:
+			if _marches.has(qui) and _marches[qui]["vers"] in [de, vers] \
+					and not _marches[qui]["retour"]:
+				_marches[qui]["pause"] = DUREE_ECHANGE
+		# L'expéditeur est libre, et le destinataire n'est pas parti lui-même
+		# voir quelqu'un : il y va à pied. Sinon, la bille.
+		if not _marches.has(de) and not _marches.has(vers):
+			var chemin := _trajet(de, vers)
+			_marches[de] = {"chemin": chemin, "vers": vers, "t": 0.0,
+				"longueur": _longueur(chemin), "pause": DUREE_ECHANGE, "retour": false}
+			set_process(true)
+			return
 		var bille := MeshInstance3D.new()
 		var s := SphereMesh.new()
 		s.radius = 0.13
@@ -746,7 +845,8 @@ func animer_message(de: String, vers: String, couleur: Color) -> void:
 		bille.material_override = _lumineuse(couleur, EMISSION_BILLE)
 		_sans_ombre_ni_gi(bille)
 		_effets.add_child(bille)
-		_vols.append({"de": de, "vers": vers, "reste": DUREE_VOL, "noeud": bille})
+		_vols.append({"de": de, "vers": vers, "reste": DUREE_VOL, "noeud": bille,
+			"a": _position(de), "b": _position(vers)})
 	else:
 		if _hors_champ.has(de):
 			return
@@ -758,7 +858,7 @@ func animer_message(de: String, vers: String, couleur: Color) -> void:
 		var m := _lumineuse(Color(couleur, 0.8), EMISSION_ONDE)
 		onde.material_override = m
 		_sans_ombre_ni_gi(onde)
-		onde.position = _places[de] + Vector3(0, 0.05, 0)
+		onde.position = _position(de) + Vector3(0, 0.05, 0)
 		_effets.add_child(onde)
 		_ondes.append({"noeud": onde, "mat": m, "reste": DUREE_ONDE})
 	set_process(true)
@@ -779,10 +879,12 @@ func vider_animations() -> void:
 		(o["noeud"] as Node).queue_free()
 	_vols.clear()
 	_ondes.clear()
-	for id in _sauts:
+	for id in _sauts.keys() + _marches.keys():
 		if _noeuds.has(id):
 			(_noeuds[id]["racine"] as Node3D).position = _places[id]
+			(_noeuds[id]["racine"] as Node3D).rotation.y = 0.0
 	_sauts.clear()
+	_marches.clear()
 
 
 func _process(delta: float) -> void:
@@ -791,7 +893,7 @@ func _process(delta: float) -> void:
 		_sale = false
 		_colorer()
 		_dessiner_traits()
-	if _vols.is_empty() and _ondes.is_empty() and _sauts.is_empty():
+	if _vols.is_empty() and _ondes.is_empty() and _sauts.is_empty() and _marches.is_empty():
 		set_process(false)   # plus rien ne bouge : la vue dort jusqu'au prochain changement
 
 
@@ -799,8 +901,8 @@ func _animer(delta: float) -> void:
 	for v in _vols:
 		v["reste"] -= delta
 		var avance: float = 1.0 - float(v["reste"]) / DUREE_VOL
-		var a: Vector3 = _places.get(v["de"], Vector3.ZERO) + Vector3(0, 1.3, 0)
-		var b: Vector3 = _places.get(v["vers"], Vector3.ZERO) + Vector3(0, 1.3, 0)
+		var a: Vector3 = v["a"] + Vector3(0, 1.3, 0)
+		var b: Vector3 = v["b"] + Vector3(0, 1.3, 0)
 		(v["noeud"] as Node3D).position = a.lerp(b, avance) + Vector3(0, sin(avance * PI) * 2.0, 0)
 	for v in _vols.filter(func(x): return x["reste"] <= 0.0):
 		(v["noeud"] as Node).queue_free()
@@ -816,16 +918,53 @@ func _animer(delta: float) -> void:
 	for o in _ondes.filter(func(x): return x["reste"] <= 0.0):
 		(o["noeud"] as Node).queue_free()
 	_ondes = _ondes.filter(func(x): return x["reste"] > 0.0)
-	# Seuls les étudiants qui sautent bougent ; les autres restent posés.
+	# Seuls bougent les étudiants qui marchent ou qui sautent.
+	var bases := {}
+	for id in _marches.keys():
+		bases[id] = _marcher(id, delta)
 	for id in _sauts.keys():
-		var racine: Node3D = _noeuds[id]["racine"]
+		var hauteur := 0.0
 		_sauts[id] -= delta
 		if _sauts[id] <= 0.0:
 			_sauts.erase(id)
-			racine.position = _places[id]
 		else:
 			var avance: float = 1.0 - float(_sauts[id]) / DUREE_SAUT
-			racine.position = _places[id] + Vector3(0, sin(avance * PI) * 0.45, 0)
+			hauteur = sin(avance * PI) * 0.45
+		var base: Vector3 = bases.get(id, _position(id) if _marches.has(id) else _places[id])
+		(_noeuds[id]["racine"] as Node3D).position = base + Vector3(0, hauteur, 0)
+
+
+func _marcher(id: String, delta: float) -> Vector3:
+	## Aller par les allées, arrêt le temps de l'échange, retour par le même
+	## chemin. Renvoie la position au sol ; la marche se termine à sa place.
+	var m: Dictionary = _marches[id]
+	var racine: Node3D = _noeuds[id]["racine"]
+	var longueur: float = m["longueur"]
+	if m["t"] < longueur:
+		m["t"] = minf(longueur, m["t"] + VITESSE_MARCHE * delta)
+	elif m["pause"] > 0.0 and not m["retour"]:
+		m["pause"] -= delta
+		if m["pause"] <= 0.0:
+			m["retour"] = true
+			m["t"] = 0.0
+			var inverse := PackedVector3Array()
+			for i in range(m["chemin"].size() - 1, -1, -1):
+				inverse.append(m["chemin"][i])
+			m["chemin"] = inverse
+	else:
+		_marches.erase(id)
+		racine.rotation.y = 0.0
+		return _places[id]
+	var ici: Array = _le_long(m["chemin"], m["t"])
+	var dir: Vector3 = ici[1]
+	var pos: Vector3 = ici[0]
+	if m["t"] < longueur:
+		racine.rotation.y = atan2(dir.x, dir.z)
+		pos.y = absf(sin(m["t"] * 5.0)) * 0.06   # petit balancement du pas
+	else:
+		racine.rotation.y = PI   # face au destinataire, qui regarde la caméra
+	racine.position = pos
+	return pos
 
 
 func _dessiner_traits() -> void:
