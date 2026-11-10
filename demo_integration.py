@@ -7,8 +7,10 @@ Chaine lancee, dans cet ordre :
   simuler.py ... --kafka --nom <nom>       produit les evenements (journal = source de verite)
 
 Configuration du monde : celle de la condition E de l'experience memoire
-(--memoire-sens, ombres sans_discours, sans_social, sans_souvenirs). Un run de
-demonstration n'est PAS une mesure : une seule graine, des pannes provoquees.
+(--memoire-sens), SANS ombres par defaut ; --ombres e ajoute les ombres de E
+(sans_discours, sans_social, sans_souvenirs). Un run de demonstration n'est PAS
+une mesure : une seule graine, des pannes provoquees. Le rapport dit si le run a
+des ombres, et donc si un effet du social y est mesurable.
 
 Avec --pannes (test de fumee), le script provoque pendant le run :
   pont arrete puis relance     il relit le run depuis le debut du topic
@@ -30,14 +32,29 @@ import socket
 import subprocess
 import sys
 import time
+import urllib.parse
 import urllib.request
 
 RACINE = os.path.dirname(os.path.abspath(__file__))
 RUNS = os.path.join(RACINE, "runs")
 PY = os.path.join(RACINE, ".venv", "bin", "python")
-OPTIONS_E = ["--mode", "synchrone", "--ombres", "sans_discours", "sans_social", "sans_souvenirs",
-             "--memoire-sens"]
+OPTIONS_E = ["--mode", "synchrone", "--memoire-sens"]
+# Ombres de la condition E. Facultatives en demonstration (--ombres aucune, defaut) :
+# sans elles, aucun effet du social n'est mesurable, et le rapport le dit.
+OMBRES_E = ["--ombres", "sans_discours", "sans_social", "sans_souvenirs"]
 CONTENEUR_KAFKA = "ephemere-kafka"
+MODELES = {"llm_grand": ("qwen2.5:7b", "845dbda0ea48"), "llm_petit": ("qwen2.5:3b", "357c53fb659c")}
+LOCAL = "http://localhost:11434/v1/chat/completions"
+# Pendant les rejeux, toute adresse de modele pointe vers un port ferme : un rejeu
+# qui reussit ainsi n'a fait aucun appel, quelle que soit la machine du modele.
+INJOIGNABLE = {k: "http://127.0.0.1:9/v1/chat/completions"
+               for k in ("OLLAMA_URL", "OLLAMA_URL_GRAND", "OLLAMA_URL_PETIT")}
+
+
+def serveurs():
+    """Le serveur Ollama de chaque taille, comme le resout ephemere/llm.py."""
+    base = os.environ.get("OLLAMA_URL") or LOCAL
+    return {t: os.environ.get(f"OLLAMA_URL_{t.split('_')[-1].upper()}") or base for t in MODELES}
 
 
 class Chaine:
@@ -93,7 +110,8 @@ class Chaine:
                                           str(self.args.jours), "--graine", str(self.args.graine),
                                           "--fournisseur", "ollama", "--pause", "0",
                                           "--kafka", self.args.kafka, "--nom", self.nom]
-                           + (["--tout-regles"] if self.args.regles else OPTIONS_E))
+                           + (["--tout-regles"] if self.args.regles else
+                              OPTIONS_E + (OMBRES_E if self.args.ombres == "e" else [])))
 
     # -------------------------------------------------------------- attentes
     def releve(self, t_sim, delai=7200):
@@ -249,6 +267,7 @@ def auditer(nom, serveur, journal_demo, godot_rejeu=None):
     for e in journal:
         schemas[e["schema"]] = schemas.get(e["schema"], 0) + 1
     rapport = {"run": nom, "deroulement": journal_demo,
+               "inference": {t: urllib.parse.urlsplit(u).netloc for t, u in serveurs().items()},
                "journal": {"evenements": len(journal), "par_schema": schemas,
                            "seq_continus": [e["seq"] for e in journal] == list(range(len(journal))),
                            "evenements_observateur": sum(1 for e in journal if e["schema"] in
@@ -258,6 +277,7 @@ def auditer(nom, serveur, journal_demo, godot_rejeu=None):
                                        "empreinte_prompt")} if journal else None,
                            "bilan": journal[-1] if journal and journal[-1]["schema"] == "bilan.v1"
                            else None},
+               "ombres": ombres_du_run(journal),
                "producteur_kafka": lire_json(f"{base}.kafka.json"),
                "pont": lire_json(f"{base}.pont.json")}
     try:
@@ -288,7 +308,9 @@ def auditer(nom, serveur, journal_demo, godot_rejeu=None):
         rapport["narrations"]["evaluateur_b"] = (b.stdout.strip().splitlines() or [""])[0]
     avant = requetes_ollama()
     r = subprocess.run([PY, "rejeu_integration.py", f"{base}.jsonl", "--json",
-                        f"{base}.rejeu.json"], cwd=RACINE, capture_output=True, text=True)
+                        f"{base}.rejeu.json"], cwd=RACINE, capture_output=True, text=True,
+                       env={**os.environ, **INJOIGNABLE})
+    rapport["rejeu_modele_injoignable"] = True
     rapport["rejeu"] = lire_json(f"{base}.rejeu.json")
     rapport["rejeu_code"] = r.returncode
     rapport["rejeu_requetes_ollama"] = None if avant is None else requetes_ollama() - avant
@@ -297,6 +319,21 @@ def auditer(nom, serveur, journal_demo, godot_rejeu=None):
     with open(f"{base}.integration.json", "w", encoding="utf-8") as f:
         json.dump(rapport, f, ensure_ascii=False, indent=1)
     return rapport
+
+
+def ombres_du_run(journal):
+    """Ce que dit l'en-tete du run, et ce qu'on peut en conclure. Un run sans ombres
+    n'a pas de temoin asservi : ni effet du social (H6), ni usage de la memoire."""
+    if not journal:
+        return None
+    masques = list(journal[0].get("ombres") or [])
+    emises = sum(1 for e in journal if e["schema"] == "ombre.v1")
+    return {"dans_l_entete": masques, "evenements_ombre": emises,
+            "coherent": bool(masques) == bool(emises),
+            "mesure_du_social_possible": bool(masques),
+            "avertissement": None if masques else
+            "run sans ombres : aucun effet du social ni usage de la memoire mesurable ; "
+            "a ne jamais verser dans une serie d'analyse"}
 
 
 def godot_actif():
@@ -324,7 +361,7 @@ def rejeu_godot(nom, godot, attente=180):
     avant = requetes_ollama()
     pont = subprocess.Popen([PY, "pont.py", "--rejeu", f"{base}.jsonl", "--vitesse", "0.02"],
                             cwd=RACINE, stdout=open(f"{dossier}/pont.log", "w"),
-                            stderr=subprocess.STDOUT)
+                            stderr=subprocess.STDOUT, env={**os.environ, **INJOIGNABLE})
     time.sleep(1)
     scene = subprocess.Popen([godot, "--path", os.path.join(RACINE, "godot")], cwd=RACINE,
                              stdout=open(f"{dossier}/godot.log", "w"), stderr=subprocess.STDOUT,
@@ -381,10 +418,17 @@ def verifier_prealables(args):
         raise SystemExit("Le port 8765 est deja pris (un autre pont tourne ?).")
     if args.regles and not args.narratrice:
         return      # ni agent LLM ni narratrice : Ollama n'est pas utilise
-    with urllib.request.urlopen("http://localhost:11434/api/tags", timeout=5) as r:
-        noms = {m["name"] for m in json.load(r)["models"]}
-    if not {"qwen2.5:7b", "qwen2.5:3b"} <= noms:
-        raise SystemExit("Modeles Ollama absents.")
+    for taille, url in serveurs().items():
+        modele, empreinte = MODELES[taille]
+        try:
+            with urllib.request.urlopen(url[:-len("/v1/chat/completions")] + "/api/tags",
+                                        timeout=5) as r:
+                connus = {m["name"]: m["digest"][:12] for m in json.load(r)["models"]}
+        except OSError as e:
+            raise SystemExit(f"{taille} : serveur Ollama injoignable ({url}) : {e}")
+        if connus.get(modele) != empreinte:
+            raise SystemExit(f"{taille} : {modele} absent ou poids differents sur {url} "
+                             f"({connus.get(modele)} au lieu de {empreinte}).")
     if godot_actif():
         raise SystemExit("Un Godot tourne deja : il se connecterait au pont et fausserait les traces.")
     occupe = subprocess.run(["pgrep", "-f", "experience_memoire.py --lancer"],
@@ -401,6 +445,8 @@ def main():
     p.add_argument("--graine", type=int, default=200)
     p.add_argument("--kafka", default="localhost:9092")
     p.add_argument("--pannes", action="store_true", help="test de fumee : pannes provoquees")
+    p.add_argument("--ombres", choices=["aucune", "e"], default="aucune",
+                   help="aucune (defaut, demonstration) ou e : les 3 ombres de la condition E")
     p.add_argument("--godot", help="executable Godot (version standard, sans .NET)")
     p.add_argument("--godot-headless", action="store_true")
     p.add_argument("--sans-scene-temoin", dest="scene_temoin", action="store_false")

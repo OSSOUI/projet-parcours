@@ -171,3 +171,46 @@ Il reste un avertissement préexistant au chargement de `main.tscn` : UID non va
 - **Narratrice relancée.** Elle renarre tout le run depuis le début, ce qui coûte des appels au modèle. Il n'y a pas de reprise à la dernière fenêtre.
 - **Conversations privées :** non rejouées.
 - **Rattrapage sans fichier.** Il suppose que le pont voit le journal (même machine). Avec un pont distant, il faudrait un autre canal (relecture du topic, ou réémission par le producteur).
+
+## 7. Godot validé dans l'application réelle (4 novembre 2026, sans Ollama)
+
+**Ce qui est vérifié.** L'application elle-même (`main.tscn`, Godot 4.7.2 standard, avec fenêtre) est connectée au vrai pont. Un pilote, `godot/verifier_rejeu.gd`, agit comme un utilisateur : touches H, espace et flèche gauche. Les adresses Ollama pointent vers un port fermé, et le journal d'Ollama est relevé avant et après.
+
+**Données de vérification.** `runs/verif_godot_hyp.jsonl` est une copie identique de `exp_complet_llm_synchrone_01` (25 jours, 1 032 événements). Sa narration est une copie de `n7_complet_01` : 25 narrations, 35 constats, 8 hypothèses. Aucune narration enregistrée ne contient d'incertitude acceptée ; leur affichage n'est vérifié que par le banc (`verifier_recit.gd`).
+
+**Défaut trouvé, puis corrigé.**
+- **Symptôme.** Au premier essai, Godot a reçu les événements 1 à 990, puis s'est reconnecté et n'a plus reçu qu'un instantané. L'état final était juste, mais les 42 derniers événements ne sont pas arrivés un par un, et une narration non plus.
+- **Cause, mesurée.**
+  - Chaque message du pont porte l'état complet du campus.
+  - Le message n° 991 est le premier à dépasser 65 535 octets, soit le tampon de réception par défaut de `WebSocketPeer`.
+  - `demo_fumee` (4 jours) n'atteignait que 25,5 Ko.
+  - **La démonstration de 25 jours aurait décroché en fin de run.**
+- **Correction (`godot/main.gd` uniquement).** Tampon de réception de 16 Mo, appliqué à la connexion comme à chaque reconnexion (`_connecter()`). Le pont n'est pas modifié.
+- **Traces.** Celles des deux essais sont conservées : `runs/verification_godot_rejeu_essai1/` (critère de test mal posé) et `_essai2_tampon_64k/` (le défaut).
+
+**Résultat après correction (`runs/verification_godot_rejeu/`) : 10 vérifications sur 10.**
+
+| Vérification | Résultat |
+|---|---|
+| L'application démarre et se connecte au pont | Oui |
+| Événements reçus | 1 032 sur 1 032, dans l'ordre, une seule connexion |
+| Narrations reçues | 25 sur 25 |
+| Adoption affichée | 75 %, le dernier relevé du journal |
+| Récit | Constats affichés. Hypothèses reçues mais **masquées par défaut** |
+| H | Hypothèses affichées à part (gris, « hypothèse, non vérifiée »), puis de nouveau masquées |
+| Espace | Le pont accuse « rejeu : en pause » |
+| Flèche gauche | Retour au jour 24 : moins d'événements vus, aucune narration postérieure à J24 |
+| Requêtes Ollama | 0 |
+
+**Images :** `rejeu_fin_hypotheses_masquees.png`, `rejeu_fin_hypotheses_affichees.png` et `rejeu_jour_precedent.png`.
+
+**Temps réel, sur 25 jours** (`demo_essai_godot_direct_25j`, agents à règles, sans narratrice, Kafka) :
+- Godot reçoit 493 événements sur 493 en direct, dans l'ordre ;
+- captures des jours 5, 10, 15, 20 et 25, plus l'image finale ;
+- le rejeu Godot du même run donne 493 sur 493, avec 0 requête Ollama.
+
+Le temps réel avec agents LLM et narratrice n'a été vérifié que sur 4 jours (`demo_fumee`, avec la scène témoin, puis le rejeu Godot). La démonstration de 25 jours le couvrira.
+
+**Banc du récit, relancé après la correction :** 8 vérifications sur 8.
+
+**Défaut visuel mineur, non corrigé.** Quand le panneau du récit est plein, la dernière ligne déborde de quelques pixels sous son cadre.

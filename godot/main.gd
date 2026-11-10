@@ -43,6 +43,11 @@ extends Node2D
 ## un clic sur la courbe ou sur le tableau des groupes va à ce jour.
 
 const URL := "ws://localhost:8765"
+## Chaque message du pont porte l'état complet du campus : il dépasse 64 Kio vers le
+## jour 24 d'un run de 25 jours (991e événement de exp_complet_llm_synchrone_01).
+## Au-delà du tampon de réception (65 535 octets par défaut), Godot rejette le message
+## et se reconnecte : les événements suivants n'arrivent plus un par un.
+const TAMPON_RECEPTION := 16 * 1024 * 1024
 const RAYON_MAX := 20.0
 const DUREE_VOL := 0.9
 const DUREE_ONDE := 1.1
@@ -179,6 +184,12 @@ func _ready() -> void:
 	if chemin_trace != "":
 		trace = FileAccess.open(chemin_trace, FileAccess.WRITE)
 	captures = OS.get_environment("EPHEMERE_CAPTURES")
+	_connecter()
+
+
+func _connecter() -> void:
+	ws = WebSocketPeer.new()
+	ws.inbound_buffer_size = TAMPON_RECEPTION
 	ws.connect_to_url(URL)
 
 
@@ -222,8 +233,7 @@ func _process(delta: float) -> void:
 		delai_reco -= delta
 		if delai_reco <= 0.0:
 			delai_reco = 2.0
-			ws = WebSocketPeer.new()
-			ws.connect_to_url(URL)
+			_connecter()
 	_vieillir(delta)
 	vue3d.selection = selection
 	vue3d.voir_reseau = voir_reseau

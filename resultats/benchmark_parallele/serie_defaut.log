@@ -1,0 +1,15 @@
+20 pas simules, 190 decisions par serie, conditions [1, 2, 4, 1, 2, 4]
+  01_N1 : 682 s, latence mediane 3.04 s, 12 incidents
+  02_N2 : 367 s, latence mediane 3.75 s, 13 incidents
+  03_N4 : 372 s, latence mediane 6.61 s, 13 incidents
+  04_N1 : 477 s, latence mediane 1.97 s, 13 incidents
+  05_N2 : 1410 s, latence mediane 12.26 s, 13 incidents
+    [erreur reseau : timed out]
+  06_N4 : 1192 s, latence mediane 16.51 s, 13 incidents
+  01_N1 : gain x0.85, decisions identiques a N1 100.0%, brut 100.0%
+  02_N2 : gain x1.58, decisions identiques a N1 96.3%, brut 80.0%
+  03_N4 : gain x1.56, decisions identiques a N1 96.3%, brut 80.0%
+  04_N1 : gain x1.21, decisions identiques a N1 96.3%, brut 80.0%
+  05_N2 : gain x0.41, decisions identiques a N1 96.3%, brut 80.0%
+  06_N4 : gain x0.49, decisions identiques a N1 96.3%, brut 80.0%
+-> /Users/chiaramegane/projet-parcours-integration/resultats/benchmark_parallele/bilan.json
