@@ -1,0 +1,304 @@
+{
+ "run": "exp_reference_llm_reference_04",
+ "fidele": true,
+ "graine": 103,
+ "prompt_identique_au_gabarit": true,
+ "B": {
+  "decisions_llm": 262,
+  "valides": 249,
+  "reference": {
+   "persistance_sens": 0.6919831223628692,
+   "adoption_finale": 0.7,
+   "adoption_pic": 0.75,
+   "adoption_moyenne": 0.6480769230769231,
+   "emergence": {
+    "six_sens": {
+     "delta_a": 0.13840252525252533,
+     "seuil": 0.2550691919191919,
+     "emergent": false
+    },
+    "regroupe": {
+     "delta_a": 0.24513181818181823,
+     "seuil": 0.2178590909090909,
+     "emergent": true
+    }
+   }
+  },
+  "regles": {
+   "R0_inertie": {
+    "description": "garder la decision precedente, toujours (borne haute de couverture)",
+    "statut": "temoin",
+    "couverture": 0.9541984732824428,
+    "accord": {
+     "n": 237,
+     "porte": 0.42616033755274263,
+     "categorie": 0.45147679324894513,
+     "les_deux": 0.14767932489451477,
+     "desaccords": {
+      "porte_seul": 72,
+      "categorie_seule": 66,
+      "les_deux": 64
+     }
+    },
+    "effets": {
+     "persistance_sens": 1.0,
+     "adoption_finale": 0.6,
+     "adoption_pic": 0.6,
+     "adoption_moyenne": 0.5615384615384615,
+     "emergence": {
+      "six_sens": {
+       "delta_a": -0.11159747474747472,
+       "seuil": 0.15506919191919194,
+       "emergent": false
+      },
+      "regroupe": {
+       "delta_a": 0.017859090909090936,
+       "seuil": 0.1542227272727273,
+       "emergent": false
+      }
+     }
+    },
+    "indirects": {
+     "publications_perdues": 125,
+     "publications_originales": 129,
+     "prompts_ulterieurs_avec_souvenir_reflexe": 0.952
+    }
+   },
+   "R1_rien_de_neuf_strict": {
+    "description": "aucun message nouveau, aucun echange nouveau, meme nombre de porteurs sur le campus et dans le groupe -> garder",
+    "statut": "pre-enregistrable",
+    "couverture": 0.003816793893129771,
+    "accord": {
+     "n": 1,
+     "porte": 1.0,
+     "categorie": 1.0,
+     "les_deux": 1.0,
+     "desaccords": {
+      "porte_seul": 0,
+      "categorie_seule": 0,
+      "les_deux": 0
+     }
+    },
+    "effets": {
+     "persistance_sens": 0.6919831223628692,
+     "adoption_finale": 0.7,
+     "adoption_pic": 0.75,
+     "adoption_moyenne": 0.6480769230769231,
+     "emergence": {
+      "six_sens": {
+       "delta_a": 0.13840252525252533,
+       "seuil": 0.2550691919191919,
+       "emergent": false
+      },
+      "regroupe": {
+       "delta_a": 0.24513181818181823,
+       "seuil": 0.2178590909090909,
+       "emergent": true
+      }
+     }
+    },
+    "indirects": {
+     "publications_perdues": 0,
+     "publications_originales": 129,
+     "prompts_ulterieurs_avec_souvenir_reflexe": 0.016
+    }
+   },
+   "R2_rien_de_neuf_tolerant": {
+    "description": "comme R1, mais le campus peut varier d'un etudiant (5 points)",
+    "statut": "exploratoire",
+    "couverture": 0.003816793893129771,
+    "accord": {
+     "n": 1,
+     "porte": 1.0,
+     "categorie": 1.0,
+     "les_deux": 1.0,
+     "desaccords": {
+      "porte_seul": 0,
+      "categorie_seule": 0,
+      "les_deux": 0
+     }
+    },
+    "effets": {
+     "persistance_sens": 0.6919831223628692,
+     "adoption_finale": 0.7,
+     "adoption_pic": 0.75,
+     "adoption_moyenne": 0.6480769230769231,
+     "emergence": {
+      "six_sens": {
+       "delta_a": 0.13840252525252533,
+       "seuil": 0.2550691919191919,
+       "emergent": false
+      },
+      "regroupe": {
+       "delta_a": 0.24513181818181823,
+       "seuil": 0.2178590909090909,
+       "emergent": true
+      }
+     }
+    },
+    "indirects": {
+     "publications_perdues": 0,
+     "publications_originales": 129,
+     "prompts_ulterieurs_avec_souvenir_reflexe": 0.016
+    }
+   },
+   "R3_stabilite_confirmee": {
+    "description": "R2, et les deux decisions precedentes etaient identiques",
+    "statut": "exploratoire",
+    "couverture": 0.003816793893129771,
+    "accord": {
+     "n": 1,
+     "porte": 1.0,
+     "categorie": 1.0,
+     "les_deux": 1.0,
+     "desaccords": {
+      "porte_seul": 0,
+      "categorie_seule": 0,
+      "les_deux": 0
+     }
+    },
+    "effets": {
+     "persistance_sens": 0.6919831223628692,
+     "adoption_finale": 0.7,
+     "adoption_pic": 0.75,
+     "adoption_moyenne": 0.6480769230769231,
+     "emergence": {
+      "six_sens": {
+       "delta_a": 0.13840252525252533,
+       "seuil": 0.2550691919191919,
+       "emergent": false
+      },
+      "regroupe": {
+       "delta_a": 0.24513181818181823,
+       "seuil": 0.2178590909090909,
+       "emergent": true
+      }
+     }
+    },
+    "indirects": {
+     "publications_perdues": 0,
+     "publications_originales": 129,
+     "prompts_ulterieurs_avec_souvenir_reflexe": 0.016
+    }
+   },
+   "R5_vue_inchangee_messages_ignores": {
+    "description": "meme nombre de porteurs (campus et groupe), aucun echange nouveau ; les messages publics sont IGNORES",
+    "statut": "exploratoire",
+    "couverture": 0.4312977099236641,
+    "accord": {
+     "n": 106,
+     "porte": 0.8867924528301887,
+     "categorie": 0.6792452830188679,
+     "les_deux": 0.6226415094339622,
+     "desaccords": {
+      "porte_seul": 6,
+      "categorie_seule": 28,
+      "les_deux": 6
+     }
+    },
+    "effets": {
+     "persistance_sens": 0.8360655737704918,
+     "adoption_finale": 0.7,
+     "adoption_pic": 0.75,
+     "adoption_moyenne": 0.6403846153846153,
+     "emergence": {
+      "six_sens": {
+       "delta_a": 0.13840252525252533,
+       "seuil": 0.2217358585858586,
+       "emergent": false
+      },
+      "regroupe": {
+       "delta_a": 0.26785909090909094,
+       "seuil": 0.2178590909090909,
+       "emergent": true
+      }
+     }
+    },
+    "indirects": {
+     "publications_perdues": 52,
+     "publications_originales": 129,
+     "prompts_ulterieurs_avec_souvenir_reflexe": 0.764
+    }
+   },
+   "R6_R5_et_stabilite": {
+    "description": "R5, et les deux decisions precedentes etaient identiques",
+    "statut": "exploratoire",
+    "couverture": 0.3015267175572519,
+    "accord": {
+     "n": 74,
+     "porte": 0.918918918918919,
+     "categorie": 0.7972972972972973,
+     "les_deux": 0.7567567567567568,
+     "desaccords": {
+      "porte_seul": 3,
+      "categorie_seule": 12,
+      "les_deux": 3
+     }
+    },
+    "effets": {
+     "persistance_sens": 0.7933884297520661,
+     "adoption_finale": 0.7,
+     "adoption_pic": 0.75,
+     "adoption_moyenne": 0.6442307692307692,
+     "emergence": {
+      "six_sens": {
+       "delta_a": 0.13840252525252533,
+       "seuil": 0.2550691919191919,
+       "emergent": false
+      },
+      "regroupe": {
+       "delta_a": 0.18452575757575757,
+       "seuil": 0.2178590909090909,
+       "emergent": false
+      }
+     }
+    },
+    "indirects": {
+     "publications_perdues": 41,
+     "publications_originales": 129,
+     "prompts_ulterieurs_avec_souvenir_reflexe": 0.688
+    }
+   },
+   "R4_moteur_a_regles": {
+    "description": "la decision du moteur a regles du projet (regles_v1), toujours",
+    "statut": "temoin",
+    "couverture": 1.0,
+    "accord": {
+     "n": 249,
+     "porte": 0.6345381526104418,
+     "categorie": 0.46586345381526106,
+     "les_deux": 0.28112449799196787,
+     "desaccords": {
+      "porte_seul": 46,
+      "categorie_seule": 88,
+      "les_deux": 45
+     }
+    },
+    "effets": {
+     "persistance_sens": 0.94,
+     "adoption_finale": 0.7,
+     "adoption_pic": 0.7,
+     "adoption_moyenne": 0.6423076923076922,
+     "emergence": {
+      "six_sens": {
+       "delta_a": -0.028264141414141353,
+       "seuil": 0.2550691919191919,
+       "emergent": false
+      },
+      "regroupe": {
+       "delta_a": 0.11785909090909091,
+       "seuil": 0.2178590909090909,
+       "emergent": false
+      }
+     }
+    },
+    "indirects": {
+     "publications_perdues": 129,
+     "publications_originales": 129,
+     "prompts_ulterieurs_avec_souvenir_reflexe": 1.0
+    }
+   }
+  }
+ },
+ "duree_s": 4.0
+}

@@ -1,0 +1,3 @@
+{"releve": "2026-11-04T12:25:29", "version": "0.40.12", "lancement": "application /Applications/Ollama.app (ollama serve lance par l'application)",
+ "variables_launchctl": {"OLLAMA_NUM_PARALLEL": null, "OLLAMA_MAX_LOADED_MODELS": null, "OLLAMA_HOST": null},
+ "modeles": {"qwen2.5:3b": "357c53fb659c", "qwen2.5:7b": "845dbda0ea48"}}

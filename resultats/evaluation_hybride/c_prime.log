@@ -1,0 +1,30 @@
+exp_reference_llm_reference_01 : 212 decisions LLM reconstruites, monde rejoue identique
+  exp_reference_llm_reference_01 : passe A' (prompt original, 212 appels)
+    A' 1/212
+    A' 51/212
+    A' 101/212
+    A' 151/212
+    A' 201/212
+  exp_reference_llm_reference_01 : passe C' (sortie courte, 212 appels)
+    C' 1/212
+    C' 51/212
+    C' 101/212
+    C' 151/212
+    C' 201/212
+  -> /Users/chiaramegane/projet-parcours-integration/resultats/evaluation_hybride/exp_reference_llm_reference_01.c_prime.json
+exp_reference_llm_reference_02 : 262 decisions LLM reconstruites, monde rejoue identique
+  exp_reference_llm_reference_02 : passe A' (prompt original, 262 appels)
+    A' 1/262
+    A' 51/262
+    A' 101/262
+    A' 151/262
+    A' 201/262
+    A' 251/262
+  exp_reference_llm_reference_02 : passe C' (sortie courte, 262 appels)
+    C' 1/262
+    C' 51/262
+    C' 101/262
+    C' 151/262
+    C' 201/262
+    C' 251/262
+  -> /Users/chiaramegane/projet-parcours-integration/resultats/evaluation_hybride/exp_reference_llm_reference_02.c_prime.json

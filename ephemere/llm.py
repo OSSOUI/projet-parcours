@@ -12,6 +12,7 @@ import json
 import os
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 
 FOURNISSEURS = {
@@ -59,6 +60,14 @@ class ClientLLM:
         par_taille = conf.get("par_taille", {})
         self.urls = {t: _url(FOURNISSEURS[par_taille[t]]) if t in par_taille else _url(conf)
                      for t in modeles}
+        # Repartition sur deux machines : OLLAMA_URL_GRAND et OLLAMA_URL_PETIT envoient
+        # chaque taille a son propre serveur Ollama. Sans elles, rien ne change.
+        self.deportes = {}
+        if fournisseur == "ollama":
+            for t in self.urls:
+                url = os.environ.get(f"OLLAMA_URL_{t.split('_')[-1].upper()}")
+                if url:
+                    self.urls[t] = self.deportes[t] = url
         self.delai_s = conf.get("delai_s", 90)
         self.cle = os.environ.get(conf["cle"], "") if conf["cle"] else ""
         if conf["cle"] and not self.cle:
@@ -216,6 +225,8 @@ class ClientLLM:
             sortie[taille] = None if m is None else {
                 "modele": modele, "empreinte": m.get("digest", "")[:12],
                 "quantification": (m.get("details") or {}).get("quantization_level")}
+            if m is not None and taille in self.deportes:
+                sortie[taille]["serveur"] = urllib.parse.urlsplit(url).netloc
         return sortie
 
     def bilan(self):

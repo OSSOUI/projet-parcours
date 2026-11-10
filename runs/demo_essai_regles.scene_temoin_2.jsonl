@@ -1,0 +1,3 @@
+{"ms": 208966585, "type": "connexion"}
+{"ms": 208966586, "type": "etat", "run": "demo_essai_regles", "seq": null, "schema": null, "vus": 100, "narrations": 0}
+{"ms": 209114219, "type": "fin", "run": "demo_essai_regles", "indicateurs": {"t_sim": 7200, "t_sim_lisible": "J06 00:00", "taux_adoption": 0.5, "repartition_sens": {"cercle_creatif": 0, "tendance": 2, "suivre_la_foule": 10, "ringard": 4, "ironie": 1, "aucun_sens": 3}, "sens_dominant": "suivre_la_foule", "part_sens_dominant": 0.5, "incidents": {}, "evenements_vus": 100, "doublons_ecartes": 0, "evenements_manquants": 0, "delai_traitement_ms": {"n": 100, "moyen": 5839.8, "median": 5834.3, "p95": 5854.1, "max": 6063.5}}, "recit_affiche": []}
