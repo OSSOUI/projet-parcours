@@ -17,3 +17,5 @@ runs/*
 
 # Poids des modeles (GLM-5.2 sous Colibri : ~430 Go)
 modeles/
+resultats/evaluation_humaine/cle_ne_pas_transmettre.json
+.vscode/
